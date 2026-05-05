@@ -551,6 +551,7 @@ const dbPromise = (async () => {
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       site        TEXT    NOT NULL,
       group_name  TEXT    NOT NULL DEFAULT '',
+      area        TEXT    NOT NULL DEFAULT 'Manila Area',
       ez          INTEGER NOT NULL DEFAULT 0,
       br          INTEGER NOT NULL DEFAULT 0,
       ez2         INTEGER NOT NULL DEFAULT 0,
