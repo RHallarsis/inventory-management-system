@@ -311,12 +311,9 @@ const dbPromise = (async () => {
       ci_number          TEXT        NOT NULL UNIQUE,
       supplier           TEXT        NOT NULL DEFAULT '',
       invoice_date       TEXT        NOT NULL DEFAULT '',
-      shipment_terms     TEXT        NOT NULL DEFAULT 'FOB',
       currency           TEXT        NOT NULL DEFAULT 'USD',
       total_amount       REAL        NOT NULL DEFAULT 0,
       goods_description  TEXT        NOT NULL DEFAULT '',
-      port_of_loading    TEXT        NOT NULL DEFAULT '',
-      port_of_discharge  TEXT        NOT NULL DEFAULT '',
       remarks            TEXT        NOT NULL DEFAULT '',
       status             TEXT        NOT NULL DEFAULT 'Draft',
       file_name          TEXT        NOT NULL DEFAULT '',
@@ -336,8 +333,6 @@ const dbPromise = (async () => {
       pl_date            TEXT        NOT NULL DEFAULT '',
       vessel_flight      TEXT        NOT NULL DEFAULT '',
       bl_awb_number      TEXT        NOT NULL DEFAULT '',
-      port_of_loading    TEXT        NOT NULL DEFAULT '',
-      port_of_discharge  TEXT        NOT NULL DEFAULT '',
       total_packages     INTEGER     NOT NULL DEFAULT 0,
       total_net_weight   REAL        NOT NULL DEFAULT 0,
       total_gross_weight REAL        NOT NULL DEFAULT 0,
@@ -350,6 +345,16 @@ const dbPromise = (async () => {
       updated_at         TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+
+
+  // ── Drop removed CI columns from existing databases ──────────────────────
+  try {
+    await db.run(`ALTER TABLE commercial_invoices DROP COLUMN IF EXISTS shipment_terms`);
+    await db.run(`ALTER TABLE commercial_invoices DROP COLUMN IF EXISTS port_of_loading`);
+    await db.run(`ALTER TABLE commercial_invoices DROP COLUMN IF EXISTS port_of_discharge`);
+    await db.run(`ALTER TABLE packing_lists DROP COLUMN IF EXISTS port_of_loading`);
+    await db.run(`ALTER TABLE packing_lists DROP COLUMN IF EXISTS port_of_discharge`);
+  } catch (_) {}
 
   // ── Ensure line_config row exists ──────────────────────────────
   const lcCnt = await db.scalar('SELECT COUNT(*) FROM line_config');

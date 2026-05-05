@@ -1341,16 +1341,15 @@ body.staff-mode #st-add-btn { display:none !important; }
         <thead>
           <tr>
             <th>#</th><th>CI Number</th><th>Supplier / Exporter</th><th>Invoice Date</th>
-            <th>Terms</th><th>Currency</th><th>Total Amount</th><th>Port Loading</th>
-            <th>Port Discharge</th><th>Status</th><th>File</th><th>Actions</th>
+            <th>Currency</th><th>Total Amount</th><th>Status</th><th>File</th><th>Actions</th>
           </tr>
         </thead>
         <tbody id="ci-body"></tbody>
         <tfoot>
           <tr>
-            <td colspan="6" style="padding:10px 14px;font-weight:700">GRAND TOTAL (USD equiv.)</td>
+            <td colspan="4" style="padding:10px 14px;font-weight:700">GRAND TOTAL (USD equiv.)</td>
             <td id="ci-grand-total" style="padding:10px 14px;font-weight:800;color:var(--primary)">0.00</td>
-            <td colspan="5"></td>
+            <td colspan="3"></td>
           </tr>
         </tfoot>
       </table>
@@ -1417,13 +1416,6 @@ body.staff-mode #st-add-btn { display:none !important; }
           <input type="date" id="ci-f-date"/>
         </div>
         <div class="g-form-group">
-          <label>Shipment Terms</label>
-          <select id="ci-f-terms">
-            <option>FOB</option><option>CIF</option><option>CNF</option>
-            <option>EXW</option><option>DDU</option><option>DDP</option><option>FCA</option>
-          </select>
-        </div>
-        <div class="g-form-group">
           <label>Currency</label>
           <select id="ci-f-currency">
             <option>USD</option><option>PHP</option><option>EUR</option>
@@ -1439,14 +1431,6 @@ body.staff-mode #st-add-btn { display:none !important; }
           <select id="ci-f-status">
             <option>Draft</option><option>Issued</option><option>Paid</option><option>Cancelled</option>
           </select>
-        </div>
-        <div class="g-form-group" style="grid-column:1/-1">
-          <label>Port of Loading</label>
-          <input id="ci-f-pol" placeholder="e.g. Guangzhou, China"/>
-        </div>
-        <div class="g-form-group" style="grid-column:1/-1">
-          <label>Port of Discharge</label>
-          <input id="ci-f-pod" placeholder="e.g. Manila, Philippines"/>
         </div>
         <div class="g-form-group" style="grid-column:1/-1">
           <label>Goods Description</label>
@@ -1513,14 +1497,6 @@ body.staff-mode #st-add-btn { display:none !important; }
         <div class="g-form-group">
           <label>BL / AWB Number</label>
           <input id="pl-f-bl" placeholder="Bill of Lading or Air Waybill No."/>
-        </div>
-        <div class="g-form-group">
-          <label>Port of Loading</label>
-          <input id="pl-f-pol" placeholder="e.g. Shanghai, China"/>
-        </div>
-        <div class="g-form-group">
-          <label>Port of Discharge</label>
-          <input id="pl-f-pod" placeholder="e.g. Manila, Philippines"/>
         </div>
         <div class="g-form-group">
           <label>Total Packages</label>
@@ -3519,11 +3495,8 @@ function renderCI(){
       <td><strong>${esc(r.ci_number)}</strong></td>
       <td>${esc(r.supplier)||'—'}</td>
       <td>${r.invoice_date||'—'}</td>
-      <td><span style="font-size:11px;background:#f1f5f9;padding:2px 6px;border-radius:4px">${esc(r.shipment_terms)}</span></td>
       <td>${esc(r.currency)}</td>
       <td style="font-weight:700">${Number(r.total_amount||0).toLocaleString('en-US',{minimumFractionDigits:2})}</td>
-      <td>${esc(r.port_of_loading)||'—'}</td>
-      <td>${esc(r.port_of_discharge)||'—'}</td>
       <td>${ciBadge(r.status)}</td>
       <td>${fileLink(r)}</td>
       <td>
@@ -3546,19 +3519,15 @@ function openCIModal(id){
       document.getElementById('ci-f-number').value=r.ci_number||'';
       document.getElementById('ci-f-supplier').value=r.supplier||'';
       document.getElementById('ci-f-date').value=r.invoice_date||'';
-      document.getElementById('ci-f-terms').value=r.shipment_terms||'FOB';
       document.getElementById('ci-f-currency').value=r.currency||'USD';
       document.getElementById('ci-f-amount').value=r.total_amount||'';
       document.getElementById('ci-f-status').value=r.status||'Draft';
-      document.getElementById('ci-f-pol').value=r.port_of_loading||'';
-      document.getElementById('ci-f-pod').value=r.port_of_discharge||'';
       document.getElementById('ci-f-desc').value=r.goods_description||'';
       document.getElementById('ci-f-remarks').value=r.remarks||'';
       if(r.file_name)document.getElementById('ci-current-file').innerHTML='Current file: <strong>'+esc(r.file_name.replace(/^\d+[-_]/,''))+'</strong>';
     }
   } else {
-    ['ci-f-number','ci-f-supplier','ci-f-date','ci-f-amount','ci-f-pol','ci-f-pod','ci-f-desc','ci-f-remarks'].forEach(i=>document.getElementById(i).value='');
-    document.getElementById('ci-f-terms').value='FOB';
+    ['ci-f-number','ci-f-supplier','ci-f-date','ci-f-amount','ci-f-desc','ci-f-remarks'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('ci-f-currency').value='USD';
     document.getElementById('ci-f-status').value='Draft';
     document.getElementById('ci-f-date').value=new Date().toISOString().slice(0,10);
@@ -3577,12 +3546,9 @@ async function saveCI(){
   fd.append('ci_number',num);
   fd.append('supplier',document.getElementById('ci-f-supplier').value.trim());
   fd.append('invoice_date',document.getElementById('ci-f-date').value);
-  fd.append('shipment_terms',document.getElementById('ci-f-terms').value);
   fd.append('currency',document.getElementById('ci-f-currency').value);
   fd.append('total_amount',document.getElementById('ci-f-amount').value||0);
   fd.append('status',document.getElementById('ci-f-status').value);
-  fd.append('port_of_loading',document.getElementById('ci-f-pol').value.trim());
-  fd.append('port_of_discharge',document.getElementById('ci-f-pod').value.trim());
   fd.append('goods_description',document.getElementById('ci-f-desc').value.trim());
   fd.append('remarks',document.getElementById('ci-f-remarks').value.trim());
   const file=document.getElementById('ci-f-file').files[0];
@@ -3674,8 +3640,6 @@ function openPLModal(id){
       document.getElementById('pl-f-status').value=r.status||'Draft';
       document.getElementById('pl-f-vessel').value=r.vessel_flight||'';
       document.getElementById('pl-f-bl').value=r.bl_awb_number||'';
-      document.getElementById('pl-f-pol').value=r.port_of_loading||'';
-      document.getElementById('pl-f-pod').value=r.port_of_discharge||'';
       document.getElementById('pl-f-pkgs').value=r.total_packages||'';
       document.getElementById('pl-f-nw').value=r.total_net_weight||'';
       document.getElementById('pl-f-gw').value=r.total_gross_weight||'';
@@ -3684,7 +3648,7 @@ function openPLModal(id){
       if(r.file_name)document.getElementById('pl-current-file').innerHTML='Current file: <strong>'+esc(r.file_name.replace(/^\d+[-_]/,''))+'</strong>';
     }
   } else {
-    ['pl-f-number','pl-f-ci','pl-f-shipper','pl-f-consignee','pl-f-date','pl-f-vessel','pl-f-bl','pl-f-pol','pl-f-pod','pl-f-pkgs','pl-f-nw','pl-f-gw','pl-f-cbm','pl-f-remarks'].forEach(i=>document.getElementById(i).value='');
+    ['pl-f-number','pl-f-ci','pl-f-shipper','pl-f-consignee','pl-f-date','pl-f-vessel','pl-f-bl','pl-f-pkgs','pl-f-nw','pl-f-gw','pl-f-cbm','pl-f-remarks'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('pl-f-status').value='Draft';
     document.getElementById('pl-f-date').value=new Date().toISOString().slice(0,10);
     // auto-suggest CI number if one is selected
@@ -3709,8 +3673,6 @@ async function savePL(){
   fd.append('status',document.getElementById('pl-f-status').value);
   fd.append('vessel_flight',document.getElementById('pl-f-vessel').value.trim());
   fd.append('bl_awb_number',document.getElementById('pl-f-bl').value.trim());
-  fd.append('port_of_loading',document.getElementById('pl-f-pol').value.trim());
-  fd.append('port_of_discharge',document.getElementById('pl-f-pod').value.trim());
   fd.append('total_packages',document.getElementById('pl-f-pkgs').value||0);
   fd.append('total_net_weight',document.getElementById('pl-f-nw').value||0);
   fd.append('total_gross_weight',document.getElementById('pl-f-gw').value||0);
