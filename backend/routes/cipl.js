@@ -25,6 +25,10 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage, limits: { fileSize: 30 * 1024 * 1024 } });
+const uploadPL = upload.fields([
+  { name: 'file',        maxCount: 1 },
+  { name: 'bl_awb_file', maxCount: 1 }
+]);
 
 // ─── helper: delete physical file ────────────────────────────
 function removeFile(filename) {
@@ -191,41 +195,46 @@ router.get('/cipl/pl/:id', async (req, res) => {
 });
 
 // POST create
-router.post('/cipl/pl', upload.single('file'), async (req, res) => {
+router.post('/cipl/pl', uploadPL, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const {
       pl_number, ci_number, shipper, consignee, pl_date,
-      vessel_flight, bl_awb_number,
-      total_packages, total_net_weight, total_gross_weight, total_cbm,
+      bl_awb_number, bl_awb_details,
+      total_packages, total_net_weight, total_gross_weight,
       remarks, status
     } = req.body;
 
     if (!pl_number || !pl_number.trim())
       return res.status(400).json({ error: 'PL Number is required' });
 
-    const file_name = req.file ? req.file.filename : '';
-    const file_path = req.file ? '/uploads/cipl/' + req.file.filename : '';
+    const genFile    = req.files && req.files['file']        ? req.files['file'][0]        : null;
+    const blFile     = req.files && req.files['bl_awb_file'] ? req.files['bl_awb_file'][0] : null;
+    const file_name  = genFile ? genFile.filename  : '';
+    const file_path  = genFile ? '/uploads/cipl/' + genFile.filename  : '';
+    const bl_awb_file_name = blFile ? blFile.filename  : '';
+    const bl_awb_file_path = blFile ? '/uploads/cipl/' + blFile.filename : '';
 
     const id = await db.insert(
       `INSERT INTO packing_lists
-        (pl_number, ci_number, shipper, consignee, pl_date, vessel_flight,
-         bl_awb_number, total_packages,
-         total_net_weight, total_gross_weight, total_cbm, remarks, status,
-         file_name, file_path)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        (pl_number, ci_number, shipper, consignee, pl_date,
+         bl_awb_number, bl_awb_details, bl_awb_file_name, bl_awb_file_path,
+         total_packages, total_net_weight, total_gross_weight,
+         remarks, status, file_name, file_path)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         pl_number.trim(),
         (ci_number || '').trim(),
         (shipper || '').trim(),
         (consignee || '').trim(),
         pl_date || new Date().toISOString().slice(0, 10),
-        (vessel_flight || '').trim(),
         (bl_awb_number || '').trim(),
+        (bl_awb_details || '').trim(),
+        bl_awb_file_name,
+        bl_awb_file_path,
         parseInt(total_packages) || 0,
         parseFloat(total_net_weight) || 0,
         parseFloat(total_gross_weight) || 0,
-        parseFloat(total_cbm) || 0,
         (remarks || '').trim(),
         status || 'Draft',
         file_name,
@@ -236,7 +245,7 @@ router.post('/cipl/pl', upload.single('file'), async (req, res) => {
       await db.getOne('SELECT * FROM packing_lists WHERE id=?', [id])
     );
   } catch (err) {
-    if (req.file) removeFile(req.file.filename);
+    if (req.files) { Object.values(req.files).flat().forEach(f => removeFile(f.filename)); }
     if (err.message && err.message.includes('unique'))
       return res.status(409).json({ error: 'PL Number already exists' });
     res.status(500).json({ error: err.message });
@@ -244,7 +253,7 @@ router.post('/cipl/pl', upload.single('file'), async (req, res) => {
 });
 
 // PUT update
-router.put('/cipl/pl/:id', upload.single('file'), async (req, res) => {
+router.put('/cipl/pl/:id', uploadPL, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne(
@@ -254,24 +263,25 @@ router.put('/cipl/pl/:id', upload.single('file'), async (req, res) => {
 
     const {
       pl_number, ci_number, shipper, consignee, pl_date,
-      vessel_flight, bl_awb_number,
-      total_packages, total_net_weight, total_gross_weight, total_cbm,
+      bl_awb_number, bl_awb_details,
+      total_packages, total_net_weight, total_gross_weight,
       remarks, status
     } = req.body;
 
     let file_name = existing.file_name;
-    let file_path = existing.file_path;
-    if (req.file) {
-      removeFile(existing.file_name);
-      file_name = req.file.filename;
-      file_path = '/uploads/cipl/' + req.file.filename;
-    }
+    let file_path  = existing.file_path;
+    let bl_awb_file_name = existing.bl_awb_file_name || '';
+    let bl_awb_file_path = existing.bl_awb_file_path || '';
+    const genFile = req.files && req.files['file']        ? req.files['file'][0]        : null;
+    const blFile  = req.files && req.files['bl_awb_file'] ? req.files['bl_awb_file'][0] : null;
+    if (genFile) { removeFile(existing.file_name); file_name = genFile.filename; file_path = '/uploads/cipl/' + genFile.filename; }
+    if (blFile)  { removeFile(existing.bl_awb_file_name); bl_awb_file_name = blFile.filename; bl_awb_file_path = '/uploads/cipl/' + blFile.filename; }
 
     await db.run(
       `UPDATE packing_lists SET
         pl_number=?, ci_number=?, shipper=?, consignee=?, pl_date=?,
-        vessel_flight=?, bl_awb_number=?,
-        total_packages=?, total_net_weight=?, total_gross_weight=?, total_cbm=?,
+        bl_awb_number=?, bl_awb_details=?, bl_awb_file_name=?, bl_awb_file_path=?,
+        total_packages=?, total_net_weight=?, total_gross_weight=?,
         remarks=?, status=?, file_name=?, file_path=?, updated_at=NOW()
        WHERE id=?`,
       [
@@ -280,12 +290,13 @@ router.put('/cipl/pl/:id', upload.single('file'), async (req, res) => {
         (shipper !== undefined ? shipper : existing.shipper).trim(),
         (consignee !== undefined ? consignee : existing.consignee).trim(),
         pl_date || existing.pl_date,
-        (vessel_flight !== undefined ? vessel_flight : existing.vessel_flight).trim(),
         (bl_awb_number !== undefined ? bl_awb_number : existing.bl_awb_number).trim(),
+        (bl_awb_details !== undefined ? bl_awb_details : existing.bl_awb_details || '').trim(),
+        bl_awb_file_name,
+        bl_awb_file_path,
         parseInt(total_packages) || existing.total_packages,
         parseFloat(total_net_weight) || existing.total_net_weight,
         parseFloat(total_gross_weight) || existing.total_gross_weight,
-        parseFloat(total_cbm) || existing.total_cbm,
         (remarks !== undefined ? remarks : existing.remarks).trim(),
         status || existing.status,
         file_name,

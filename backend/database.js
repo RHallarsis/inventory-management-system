@@ -354,6 +354,13 @@ const dbPromise = (async () => {
     await db.run(`ALTER TABLE commercial_invoices DROP COLUMN IF EXISTS port_of_discharge`);
     await db.run(`ALTER TABLE packing_lists DROP COLUMN IF EXISTS port_of_loading`);
     await db.run(`ALTER TABLE packing_lists DROP COLUMN IF EXISTS port_of_discharge`);
+    await db.run(`ALTER TABLE packing_lists DROP COLUMN IF EXISTS vessel_flight`);
+    await db.run(`ALTER TABLE packing_lists DROP COLUMN IF EXISTS total_cbm`);
+    // Add new BL/AWB columns if they don't exist yet
+    await db.run(`ALTER TABLE packing_lists ADD COLUMN IF NOT EXISTS bl_awb_details TEXT NOT NULL DEFAULT ''`);
+    await db.run(`ALTER TABLE packing_lists ADD COLUMN IF NOT EXISTS bl_awb_file_name TEXT NOT NULL DEFAULT ''`);
+    await db.run(`ALTER TABLE packing_lists ADD COLUMN IF NOT EXISTS bl_awb_file_path TEXT NOT NULL DEFAULT ''`);
+    await db.run(`ALTER TABLE packing_lists DROP COLUMN IF EXISTS port_of_discharge`);
   } catch (_) {}
 
   // ── Ensure line_config row exists ──────────────────────────────

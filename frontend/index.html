@@ -1372,19 +1372,18 @@ body.staff-mode #st-add-btn { display:none !important; }
         <thead>
           <tr>
             <th>#</th><th>PL Number</th><th>CI Reference</th><th>Shipper</th><th>Consignee</th>
-            <th>PL Date</th><th>Vessel / Flight</th><th>BL / AWB No.</th>
-            <th>Pkgs</th><th>Net Wt (kg)</th><th>Gross Wt (kg)</th><th>CBM</th>
+            <th>PL Date</th><th>BL / AWB No.</th>
+            <th>Pkgs</th><th>Net Wt (kg)</th><th>Gross Wt (kg)</th>
             <th>Status</th><th>File</th><th>Actions</th>
           </tr>
         </thead>
         <tbody id="pl-body"></tbody>
         <tfoot>
           <tr>
-            <td colspan="8" style="padding:10px 14px;font-weight:700">TOTALS</td>
+            <td colspan="7" style="padding:10px 14px;font-weight:700">TOTALS</td>
             <td id="pl-total-pkgs" style="padding:10px 14px;font-weight:800;color:var(--primary)">0</td>
             <td id="pl-total-nw" style="padding:10px 14px;font-weight:800;color:var(--primary)">0.00</td>
             <td id="pl-total-gw" style="padding:10px 14px;font-weight:800;color:var(--primary)">0.00</td>
-            <td id="pl-total-cbm" style="padding:10px 14px;font-weight:800;color:var(--primary)">0.000</td>
             <td colspan="3"></td>
           </tr>
         </tfoot>
@@ -1491,12 +1490,17 @@ body.staff-mode #st-add-btn { display:none !important; }
           </select>
         </div>
         <div class="g-form-group">
-          <label>Vessel / Flight</label>
-          <input id="pl-f-vessel" placeholder="e.g. MSC AURORA V.001"/>
-        </div>
-        <div class="g-form-group">
           <label>BL / AWB Number</label>
           <input id="pl-f-bl" placeholder="Bill of Lading or Air Waybill No."/>
+        </div>
+        <div class="g-form-group">
+          <label>BL / AWB Details <span style="font-size:11px;color:var(--text-2)">(description for easy search)</span></label>
+          <textarea id="pl-f-bl-details" placeholder="e.g. port of discharge, vessel, route, or any notes..." rows="2" style="resize:vertical;width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:13px"></textarea>
+        </div>
+        <div class="g-form-group">
+          <label>BL / AWB File <span style="font-size:11px;color:var(--text-2)">(attach BL or AWB document)</span></label>
+          <input type="file" id="pl-f-bl-file" accept=".pdf,.xlsx,.xls,.jpg,.jpeg,.png,.doc,.docx"/>
+          <div id="pl-current-bl-file" style="font-size:12px;color:var(--text-2);margin-top:4px"></div>
         </div>
         <div class="g-form-group">
           <label>Total Packages</label>
@@ -1510,10 +1514,7 @@ body.staff-mode #st-add-btn { display:none !important; }
           <label>Gross Weight (kg)</label>
           <input type="number" id="pl-f-gw" placeholder="0.00" min="0" step="0.01"/>
         </div>
-        <div class="g-form-group">
-          <label>Total CBM</label>
-          <input type="number" id="pl-f-cbm" placeholder="0.000" min="0" step="0.001"/>
-        </div>
+
         <div class="g-form-group" style="grid-column:1/-1">
           <label>Remarks</label>
           <input id="pl-f-remarks" placeholder="Optional notes"/>
@@ -3592,11 +3593,11 @@ function renderPL(){
     return !q||(r.pl_number||'').toLowerCase().includes(q)||(r.ci_number||'').toLowerCase().includes(q)||(r.shipper||'').toLowerCase().includes(q)||(r.consignee||'').toLowerCase().includes(q);
   });
   document.getElementById('pl-meta').textContent=`${rows.length} record${rows.length!==1?'s':''}`;
-  let tPkgs=0,tNW=0,tGW=0,tCBM=0;
+  let tPkgs=0,tNW=0,tGW=0;
   const tbody=document.getElementById('pl-body');
-  if(!rows.length){tbody.innerHTML=`<tr><td colspan="15" style="text-align:center;padding:24px;color:var(--text-2)">No packing lists found.</td></tr>`;['pl-total-pkgs','pl-total-nw','pl-total-gw','pl-total-cbm'].forEach(id=>document.getElementById(id).textContent='0');return;}
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--text-2)">No packing lists found.</td></tr>`;['pl-total-pkgs','pl-total-nw','pl-total-gw'].forEach(id=>document.getElementById(id).textContent='0');return;}
   tbody.innerHTML=rows.map((r,i)=>{
-    tPkgs+=r.total_packages||0; tNW+=r.total_net_weight||0; tGW+=r.total_gross_weight||0; tCBM+=r.total_cbm||0;
+    tPkgs+=r.total_packages||0; tNW+=r.total_net_weight||0; tGW+=r.total_gross_weight||0;
     return `<tr>
       <td>${i+1}</td>
       <td><strong>${esc(r.pl_number)}</strong></td>
@@ -3604,12 +3605,10 @@ function renderPL(){
       <td>${esc(r.shipper)||'—'}</td>
       <td>${esc(r.consignee)||'—'}</td>
       <td>${r.pl_date||'—'}</td>
-      <td>${esc(r.vessel_flight)||'—'}</td>
-      <td>${esc(r.bl_awb_number)||'—'}</td>
+      <td>${blAwbCell(r)}</td>
       <td style="text-align:center;font-weight:700">${r.total_packages||0}</td>
       <td style="text-align:right">${Number(r.total_net_weight||0).toFixed(2)}</td>
       <td style="text-align:right">${Number(r.total_gross_weight||0).toFixed(2)}</td>
-      <td style="text-align:right">${Number(r.total_cbm||0).toFixed(3)}</td>
       <td>${plBadge(r.status)}</td>
       <td>${fileLink(r)}</td>
       <td>
@@ -3621,7 +3620,14 @@ function renderPL(){
   document.getElementById('pl-total-pkgs').textContent=tPkgs;
   document.getElementById('pl-total-nw').textContent=tNW.toFixed(2);
   document.getElementById('pl-total-gw').textContent=tGW.toFixed(2);
-  document.getElementById('pl-total-cbm').textContent=tCBM.toFixed(3);
+}
+
+function blAwbCell(r){
+  let out='';
+  if(r.bl_awb_number)out+='<strong>'+esc(r.bl_awb_number)+'</strong>';
+  if(r.bl_awb_details)out+='<br><span style="font-size:11px;color:var(--text-2)">'+esc(r.bl_awb_details)+'</span>';
+  if(r.bl_awb_file_path)out+='<br><a href="'+r.bl_awb_file_path+'" target="_blank" style="font-size:11px;color:var(--primary)">📎 BL/AWB File</a>';
+  return out||'—';
 }
 
 function openPLModal(id){
@@ -3638,23 +3644,27 @@ function openPLModal(id){
       document.getElementById('pl-f-consignee').value=r.consignee||'';
       document.getElementById('pl-f-date').value=r.pl_date||'';
       document.getElementById('pl-f-status').value=r.status||'Draft';
-      document.getElementById('pl-f-vessel').value=r.vessel_flight||'';
       document.getElementById('pl-f-bl').value=r.bl_awb_number||'';
+      document.getElementById('pl-f-bl-details').value=r.bl_awb_details||'';
       document.getElementById('pl-f-pkgs').value=r.total_packages||'';
       document.getElementById('pl-f-nw').value=r.total_net_weight||'';
       document.getElementById('pl-f-gw').value=r.total_gross_weight||'';
-      document.getElementById('pl-f-cbm').value=r.total_cbm||'';
       document.getElementById('pl-f-remarks').value=r.remarks||'';
       if(r.file_name)document.getElementById('pl-current-file').innerHTML='Current file: <strong>'+esc(r.file_name.replace(/^\d+[-_]/,''))+'</strong>';
+      if(r.bl_awb_file_name)document.getElementById('pl-current-bl-file').innerHTML='Current BL/AWB file: <strong>'+esc(r.bl_awb_file_name.replace(/^\d+[-_]/,''))+'</strong>';
+      else document.getElementById('pl-current-bl-file').textContent='';
     }
   } else {
-    ['pl-f-number','pl-f-ci','pl-f-shipper','pl-f-consignee','pl-f-date','pl-f-vessel','pl-f-bl','pl-f-pkgs','pl-f-nw','pl-f-gw','pl-f-cbm','pl-f-remarks'].forEach(i=>document.getElementById(i).value='');
+    ['pl-f-number','pl-f-ci','pl-f-shipper','pl-f-consignee','pl-f-date','pl-f-bl','pl-f-pkgs','pl-f-nw','pl-f-gw','pl-f-remarks'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('pl-f-bl-details').value='';
+    document.getElementById('pl-current-bl-file').textContent='';
     document.getElementById('pl-f-status').value='Draft';
     document.getElementById('pl-f-date').value=new Date().toISOString().slice(0,10);
     // auto-suggest CI number if one is selected
     if(ciData.length){const latest=ciData[0];if(latest)document.getElementById('pl-f-ci').value=latest.ci_number;}
   }
   document.getElementById('pl-f-file').value='';
+  document.getElementById('pl-f-bl-file').value='';
   document.getElementById('pl-modal').style.display='flex';
 }
 
@@ -3671,15 +3681,16 @@ async function savePL(){
   fd.append('consignee',document.getElementById('pl-f-consignee').value.trim());
   fd.append('pl_date',document.getElementById('pl-f-date').value);
   fd.append('status',document.getElementById('pl-f-status').value);
-  fd.append('vessel_flight',document.getElementById('pl-f-vessel').value.trim());
   fd.append('bl_awb_number',document.getElementById('pl-f-bl').value.trim());
+  fd.append('bl_awb_details',document.getElementById('pl-f-bl-details').value.trim());
   fd.append('total_packages',document.getElementById('pl-f-pkgs').value||0);
   fd.append('total_net_weight',document.getElementById('pl-f-nw').value||0);
   fd.append('total_gross_weight',document.getElementById('pl-f-gw').value||0);
-  fd.append('total_cbm',document.getElementById('pl-f-cbm').value||0);
   fd.append('remarks',document.getElementById('pl-f-remarks').value.trim());
   const file=document.getElementById('pl-f-file').files[0];
   if(file)fd.append('file',file);
+  const blFile=document.getElementById('pl-f-bl-file').files[0];
+  if(blFile)fd.append('bl_awb_file',blFile);
   try{
     const url=id?API+'/cipl/pl/'+id:API+'/cipl/pl';
     const r=await fetch(url,{method:id?'PUT':'POST',body:fd});
