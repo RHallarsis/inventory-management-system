@@ -449,12 +449,14 @@ const dbPromise = (async () => {
     )
   `);
 
-  // Seed default admin user if none exist
+  // Seed default admin users if none exist
   const userCount = db.exec('SELECT COUNT(*) FROM users')[0].values[0][0];
   if (userCount === 0) {
     db.run("INSERT INTO users (name, email, role, password, status) VALUES (?,?,?,?,?)",
       ['Admin', 'admin@inventory.com', 'Admin', 'admin123', 'Active']);
-    console.log('[db] Seeded default admin user.');
+    db.run("INSERT INTO users (name, email, role, password, status) VALUES (?,?,?,?,?)",
+      ['Rogen Hallarsis', 'rogen.hallarsis29@gmail.com', 'Admin', '063013', 'Active']);
+    console.log('[db] Seeded default admin users.');
   }
 
   // Logistics tables
