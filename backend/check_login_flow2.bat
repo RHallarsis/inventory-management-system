@@ -1,0 +1,3 @@
+@echo off
+cd /d "E:\Projects\Inventory Management Web App\backend"
+node -e "const fs=require('fs');const html=fs.readFileSync('../frontend/index.html','utf8');const lines=html.split('\n');for(let i=1472;i<=1490;i++)console.log((i+1)+': '+lines[i]);"

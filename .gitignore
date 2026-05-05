@@ -1,0 +1,21 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Database file (local only - will be regenerated in production)
+backend/data/
+
+# Uploaded files
+backend/uploads/
+
+# Logs
+*.log
+server-out.log
+server-err.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env

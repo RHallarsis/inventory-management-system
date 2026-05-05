@@ -1,0 +1,3 @@
+@echo off
+cd /d "E:\Projects\Inventory Management Web App\backend"
+node -e "const fs=require('fs');const html=fs.readFileSync('../frontend/index.html','utf8');const lines=html.split('\n');['function renderMMChart','function renderDashTable'].forEach(fn=>{const i=lines.findIndex(l=>l.includes(fn));if(i<0){console.log('NOT FOUND: '+fn);return;}console.log('--- '+fn+' at line '+(i+1)+' ---');let depth=0,started=false;for(let j=i;j<Math.min(i+80,lines.length);j++){console.log((j+1)+': '+lines[j]);for(const c of lines[j]){if(c==='{'){depth++;started=true;}else if(c==='}')depth--;}if(started&&depth===0)break;}})"

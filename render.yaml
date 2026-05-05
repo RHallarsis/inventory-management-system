@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: inventory-management
+    runtime: node
+    buildCommand: cd backend && npm install
+    startCommand: node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+    disk:
+      name: uploads
+      mountPath: /app/backend/uploads
+      sizeGB: 1
