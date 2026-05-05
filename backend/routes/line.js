@@ -4,18 +4,17 @@ const { dbPromise } = require('../database');
 const { pushLine, broadcastLine, buildCalendarMessage } = require('../utils/lineService');
 
 // -- Helpers --
-function getConfig(db) {
-  const rows = db.exec('SELECT channel_token,user_id,auto_notify FROM line_config WHERE id=1');
-  if (!rows.length || !rows[0].values.length) return { channel_token: '', user_id: '', auto_notify: 0 };
-  const [channel_token, user_id, auto_notify] = rows[0].values[0];
-  return { channel_token, user_id, auto_notify };
+async function getConfig(db) {
+  const row = await db.getOne('SELECT channel_token, user_id, auto_notify FROM line_config WHERE id=1');
+  if (!row) return { channel_token: '', user_id: '', auto_notify: 0 };
+  return { channel_token: row.channel_token || '', user_id: row.user_id || '', auto_notify: row.auto_notify || 0 };
 }
 
 // GET /api/line/config
 router.get('/line/config', async (req, res) => {
   try {
     const { db } = await dbPromise;
-    const cfg = getConfig(db);
+    const cfg = await getConfig(db);
     res.json({
       token_set  : !!cfg.channel_token,
       user_id    : cfg.user_id,
@@ -29,13 +28,12 @@ router.get('/line/config', async (req, res) => {
 // POST /api/line/config
 router.post('/line/config', async (req, res) => {
   try {
-    const { db, save } = await dbPromise;
+    const { db } = await dbPromise;
     const { channel_token, user_id, auto_notify } = req.body;
-    db.run(
-      `UPDATE line_config SET channel_token=?,user_id=?,auto_notify=?,updated_at=datetime('now') WHERE id=1`,
+    await db.run(
+      `UPDATE line_config SET channel_token=?,user_id=?,auto_notify=?,updated_at=NOW() WHERE id=1`,
       [channel_token || '', user_id || '', auto_notify ? 1 : 0]
     );
-    save();
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -46,7 +44,7 @@ router.post('/line/config', async (req, res) => {
 router.post('/line/notify', async (req, res) => {
   try {
     const { db } = await dbPromise;
-    const cfg = getConfig(db);
+    const cfg = await getConfig(db);
     if (!cfg.channel_token || !cfg.user_id) {
       return res.status(400).json({ error: 'LINE not configured. Please set your Channel Access Token and User ID in Settings.' });
     }
@@ -76,7 +74,7 @@ router.post('/line/notify', async (req, res) => {
 router.post('/line/broadcast', async (req, res) => {
   try {
     const { db } = await dbPromise;
-    const cfg = getConfig(db);
+    const cfg = await getConfig(db);
     if (!cfg.channel_token) {
       return res.status(400).json({ error: 'LINE not configured. Please set your Channel Access Token in Settings.' });
     }
@@ -113,7 +111,7 @@ router.post('/line/broadcast', async (req, res) => {
 router.post('/line/test', async (req, res) => {
   try {
     const { db } = await dbPromise;
-    const cfg = getConfig(db);
+    const cfg = await getConfig(db);
     if (!cfg.channel_token) {
       return res.status(400).json({ error: 'LINE not configured.' });
     }

@@ -1,9 +1,15 @@
-const initSqlJs = require('sql.js');
-const path = require('path');
-const fs   = require('fs');
+'use strict';
 
-const DATA_DIR = path.join(__dirname, 'data');
-const DB_PATH  = path.join(DATA_DIR, 'inventory.db');
+/**
+ * database.js — PostgreSQL schema bootstrap + seed data
+ *
+ * Exports:
+ *   dbPromise  — resolves to { db, save } once all tables exist and seeds are loaded.
+ *                save() is a no-op; pg commits immediately on every query.
+ *   calcStatus — helper used by inventory routes to compute stock status label.
+ */
+
+const { db } = require('./db');
 
 function calcStatus(qty) {
   if (qty === 0)  return 'Out of Stock';
@@ -24,7 +30,7 @@ const seedProducts = [
   { product_code: 'PRD-010', name: '4-Drawer Filing Cabinet',     category: 'Furniture',       quantity: 9,   unit_price: 199.99 },
   { product_code: 'PRD-011', name: 'Magnetic Whiteboard 4x3ft',   category: 'Office Supplies', quantity: 22,  unit_price: 129.99 },
   { product_code: 'PRD-012', name: 'Printer Paper (5-Ream Case)', category: 'Stationery',      quantity: 85,  unit_price: 45.00  },
-  { product_code: 'PRD-013', name: 'Printer Toner Cartridge Blk',category: 'Office Supplies', quantity: 3,   unit_price: 89.99  },
+  { product_code: 'PRD-013', name: 'Printer Toner Cartridge Blk', category: 'Office Supplies', quantity: 3,   unit_price: 89.99  },
   { product_code: 'PRD-014', name: 'Ergonomic Wireless Mouse',    category: 'Electronics',     quantity: 34,  unit_price: 65.99  },
   { product_code: 'PRD-015', name: 'Conference Room Table',       category: 'Furniture',       quantity: 2,   unit_price: 899.99 },
   { product_code: 'PRD-016', name: 'Notebook A5 (Pack of 6)',     category: 'Stationery',      quantity: 180, unit_price: 5.99   },
@@ -34,298 +40,289 @@ const seedProducts = [
   { product_code: 'PRD-020', name: 'Webcam 1080p HD USB',         category: 'Electronics',     quantity: 6,   unit_price: 129.99 },
 ];
 
-// Resolves to { db, save } once the sql.js WASM loads and schema/seed are ready.
-// server.js requires this module to kick off async init; routes await this promise.
+// Resolves to { db, save } once the schema and seed data are ready.
 const dbPromise = (async () => {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-  const SQL = await initSqlJs();
+  // ── Schema ─────────────────────────────────────────────────────
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS products (
+      id           SERIAL       PRIMARY KEY,
+      product_code TEXT         NOT NULL UNIQUE,
+      name         TEXT         NOT NULL,
+      category     TEXT         NOT NULL,
+      quantity     INTEGER      NOT NULL DEFAULT 0,
+      unit_price   REAL         NOT NULL,
+      status       TEXT         NOT NULL DEFAULT 'In Stock',
+      created_at   TIMESTAMPTZ  DEFAULT NOW(),
+      updated_at   TIMESTAMPTZ  DEFAULT NOW()
+    )
+  `);
 
-  let db;
-  if (fs.existsSync(DB_PATH)) {
-    try {
-      db = new SQL.Database(fs.readFileSync(DB_PATH));
-      // Quick sanity check — will throw if the file is malformed
-      db.exec('SELECT 1');
-    } catch (e) {
-      console.warn('[db] WARNING: Database file is malformed, starting fresh:', e.message);
-      const backupPath = DB_PATH + '.bak.' + Date.now();
-      fs.copyFileSync(DB_PATH, backupPath);
-      console.warn('[db] Old database backed up to:', backupPath);
-      db = new SQL.Database();
-    }
-  } else {
-    db = new SQL.Database();
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS spare_parts (
+      id            SERIAL      PRIMARY KEY,
+      name          TEXT        NOT NULL,
+      part_no       TEXT        NOT NULL UNIQUE,
+      category      TEXT        NOT NULL DEFAULT 'Spare Parts',
+      machine       TEXT        NOT NULL DEFAULT '',
+      on_hand       INTEGER     NOT NULL DEFAULT 0,
+      on_order      INTEGER     NOT NULL DEFAULT 0,
+      monthly_usage REAL        NOT NULL DEFAULT 0,
+      lead_time     REAL        NOT NULL DEFAULT 0,
+      buffer        REAL        NOT NULL DEFAULT 3,
+      safety_stock  REAL        NOT NULL DEFAULT 1,
+      created_at    TIMESTAMPTZ DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS local_purchases (
+      id            SERIAL      PRIMARY KEY,
+      po_number     TEXT        NOT NULL DEFAULT '',
+      part_name     TEXT        NOT NULL DEFAULT '',
+      supplier      TEXT        NOT NULL DEFAULT '',
+      qty_ordered   REAL        NOT NULL DEFAULT 0,
+      unit_price    REAL        NOT NULL DEFAULT 0,
+      total         REAL        NOT NULL DEFAULT 0,
+      order_date    TEXT        NOT NULL DEFAULT '',
+      expected_date TEXT        NOT NULL DEFAULT '',
+      status        TEXT        NOT NULL DEFAULT 'Pending',
+      remarks       TEXT        NOT NULL DEFAULT '',
+      created_at    TIMESTAMPTZ DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS supplier_2303_files (
+      id            SERIAL      PRIMARY KEY,
+      supplier_id   INTEGER     NOT NULL DEFAULT 0,
+      supplier_name TEXT        NOT NULL DEFAULT '',
+      remarks       TEXT        NOT NULL DEFAULT '',
+      file_name     TEXT        NOT NULL DEFAULT '',
+      file_path     TEXT        NOT NULL DEFAULT '',
+      uploaded_at   TIMESTAMPTZ DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id            SERIAL      PRIMARY KEY,
+      name          TEXT        NOT NULL UNIQUE,
+      specification TEXT        NOT NULL DEFAULT '',
+      quantity      INTEGER     NOT NULL DEFAULT 0,
+      created_at    TIMESTAMPTZ DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS suppliers (
+      id              SERIAL      PRIMARY KEY,
+      code            TEXT        NOT NULL UNIQUE,
+      name            TEXT        NOT NULL,
+      contact_person  TEXT        NOT NULL DEFAULT '',
+      role            TEXT        NOT NULL DEFAULT '',
+      email           TEXT        NOT NULL DEFAULT '',
+      phone           TEXT        NOT NULL DEFAULT '',
+      category        TEXT        NOT NULL DEFAULT '',
+      location        TEXT        NOT NULL DEFAULT '',
+      status          TEXT        NOT NULL DEFAULT 'Active',
+      file_2303_name  TEXT        NOT NULL DEFAULT '',
+      file_2303_path  TEXT        NOT NULL DEFAULT '',
+      created_at      TIMESTAMPTZ DEFAULT NOW(),
+      updated_at      TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS purchase_orders (
+      id           SERIAL      PRIMARY KEY,
+      po_number    TEXT        NOT NULL UNIQUE,
+      supplier     TEXT        NOT NULL DEFAULT '',
+      order_date   TEXT        NOT NULL DEFAULT '',
+      status       TEXT        NOT NULL DEFAULT 'Pending',
+      total_amount REAL        NOT NULL DEFAULT 0,
+      file_name    TEXT,
+      file_path    TEXT,
+      created_at   TIMESTAMPTZ DEFAULT NOW(),
+      updated_at   TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS goods_received (
+      id            SERIAL      PRIMARY KEY,
+      gr_number     TEXT        NOT NULL UNIQUE,
+      po_number     TEXT        NOT NULL DEFAULT '',
+      supplier      TEXT        NOT NULL DEFAULT '',
+      received_date TEXT        NOT NULL DEFAULT '',
+      received_by   TEXT        NOT NULL DEFAULT '',
+      status        TEXT        NOT NULL DEFAULT 'Pending',
+      total_items   INTEGER     NOT NULL DEFAULT 0,
+      created_at    TIMESTAMPTZ DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS stock_transfers (
+      id                   SERIAL      PRIMARY KEY,
+      transfer_no          TEXT        NOT NULL UNIQUE,
+      transfer_date        TEXT        NOT NULL DEFAULT '',
+      source_location      TEXT        NOT NULL DEFAULT '',
+      destination_location TEXT        NOT NULL DEFAULT '',
+      items_count          INTEGER     NOT NULL DEFAULT 0,
+      status               TEXT        NOT NULL DEFAULT 'Pending',
+      transferred_by       TEXT        NOT NULL DEFAULT '',
+      created_at           TIMESTAMPTZ DEFAULT NOW(),
+      updated_at           TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS trucking_quotations (
+      id               SERIAL      PRIMARY KEY,
+      quote_number     TEXT        NOT NULL UNIQUE,
+      trucking_service TEXT        NOT NULL DEFAULT '',
+      date_of_activity TEXT        NOT NULL DEFAULT '',
+      sites            TEXT        NOT NULL DEFAULT '',
+      total_amount     REAL        NOT NULL DEFAULT 0,
+      status           TEXT        NOT NULL DEFAULT 'Pending',
+      file_name        TEXT        DEFAULT '',
+      file_path        TEXT        DEFAULT '',
+      created_at       TIMESTAMPTZ DEFAULT NOW(),
+      updated_at       TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS manpower_requests (
+      id                SERIAL      PRIMARY KEY,
+      request_no        TEXT        NOT NULL UNIQUE,
+      location          TEXT        NOT NULL DEFAULT '',
+      machine_type      TEXT        NOT NULL DEFAULT '',
+      machine_quantity  INTEGER     NOT NULL DEFAULT 0,
+      manpower_quantity INTEGER     NOT NULL DEFAULT 0,
+      purpose           TEXT        NOT NULL DEFAULT '',
+      unit_price        REAL        NOT NULL DEFAULT 0,
+      remarks           TEXT        NOT NULL DEFAULT '',
+      total             REAL        NOT NULL DEFAULT 0,
+      file_name         TEXT        DEFAULT '',
+      file_path         TEXT        DEFAULT '',
+      created_at        TIMESTAMPTZ DEFAULT NOW(),
+      updated_at        TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS sites_activity (
+      id             SERIAL      PRIMARY KEY,
+      site_name      TEXT        NOT NULL DEFAULT '',
+      activity_type  TEXT        NOT NULL DEFAULT 'Delivery',
+      activity_date  TEXT        NOT NULL DEFAULT '',
+      location       TEXT        NOT NULL DEFAULT '',
+      description    TEXT        NOT NULL DEFAULT '',
+      status         TEXT        NOT NULL DEFAULT 'Scheduled',
+      file_name      TEXT        DEFAULT '',
+      file_path      TEXT        DEFAULT '',
+      created_at     TIMESTAMPTZ DEFAULT NOW(),
+      updated_at     TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS waybills (
+      id             SERIAL      PRIMARY KEY,
+      waybill_number TEXT        NOT NULL UNIQUE,
+      date           TEXT        NOT NULL DEFAULT '',
+      origin         TEXT        NOT NULL DEFAULT '',
+      destination    TEXT        NOT NULL DEFAULT '',
+      notes          TEXT        NOT NULL DEFAULT '',
+      file_name      TEXT        DEFAULT '',
+      file_path      TEXT        DEFAULT '',
+      created_at     TIMESTAMPTZ DEFAULT NOW(),
+      updated_at     TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS calendar_tasks (
+      id          SERIAL      PRIMARY KEY,
+      task_date   TEXT        NOT NULL,
+      title       TEXT        NOT NULL,
+      description TEXT        NOT NULL DEFAULT '',
+      category    TEXT        NOT NULL DEFAULT 'General',
+      priority    TEXT        NOT NULL DEFAULT 'Medium',
+      status      TEXT        NOT NULL DEFAULT 'Pending',
+      color       TEXT        NOT NULL DEFAULT '#6366f1',
+      created_at  TIMESTAMPTZ DEFAULT NOW(),
+      updated_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS line_config (
+      id            INTEGER     PRIMARY KEY CHECK (id = 1),
+      channel_token TEXT        NOT NULL DEFAULT '',
+      user_id       TEXT        NOT NULL DEFAULT '',
+      auto_notify   INTEGER     NOT NULL DEFAULT 0,
+      updated_at    TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id         SERIAL      PRIMARY KEY,
+      name       TEXT        NOT NULL,
+      email      TEXT        NOT NULL UNIQUE,
+      role       TEXT        NOT NULL DEFAULT 'Staff',
+      password   TEXT        NOT NULL DEFAULT 'password123',
+      status     TEXT        NOT NULL DEFAULT 'Active',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS machine_monitoring (
+      id          SERIAL      PRIMARY KEY,
+      site        TEXT        NOT NULL,
+      group_name  TEXT        NOT NULL DEFAULT '',
+      area        TEXT        NOT NULL DEFAULT 'Manila Area',
+      ez          INTEGER     NOT NULL DEFAULT 0,
+      br          INTEGER     NOT NULL DEFAULT 0,
+      ez2         INTEGER     NOT NULL DEFAULT 0,
+      ezl         INTEGER     NOT NULL DEFAULT 0,
+      lb          INTEGER     NOT NULL DEFAULT 0,
+      j_ark       INTEGER     NOT NULL DEFAULT 0,
+      total       INTEGER     NOT NULL DEFAULT 0,
+      created_at  TIMESTAMPTZ DEFAULT NOW(),
+      updated_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  // ── Ensure line_config row exists ──────────────────────────────
+  const lcCnt = await db.scalar('SELECT COUNT(*) FROM line_config');
+  if (!lcCnt) {
+    await db.run("INSERT INTO line_config (id, channel_token, user_id, auto_notify) VALUES (1,'','',0)");
   }
 
-  // ── Schema ────────────────────────────────────────────────
-  db.run(`
-    CREATE TABLE IF NOT EXISTS products (
-      id           INTEGER PRIMARY KEY AUTOINCREMENT,
-      product_code TEXT    NOT NULL UNIQUE,
-      name         TEXT    NOT NULL,
-      category     TEXT    NOT NULL,
-      quantity     INTEGER NOT NULL DEFAULT 0,
-      unit_price   REAL    NOT NULL,
-      status       TEXT    NOT NULL DEFAULT 'In Stock',
-      created_at   TEXT    DEFAULT (datetime('now')),
-      updated_at   TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS spare_parts (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      name          TEXT    NOT NULL,
-      part_no       TEXT    NOT NULL UNIQUE,
-      category      TEXT    NOT NULL DEFAULT 'Spare Parts',
-      machine       TEXT    NOT NULL DEFAULT '',
-      on_hand       INTEGER NOT NULL DEFAULT 0,
-      on_order      INTEGER NOT NULL DEFAULT 0,
-      monthly_usage REAL    NOT NULL DEFAULT 0,
-      lead_time     REAL    NOT NULL DEFAULT 0,
-      buffer        REAL    NOT NULL DEFAULT 3,
-      safety_stock  REAL    NOT NULL DEFAULT 1,
-      created_at    TEXT    DEFAULT (datetime('now')),
-      updated_at    TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-  // Add category column to existing spare_parts table if it doesn't exist
-  try { db.run("ALTER TABLE spare_parts ADD COLUMN category TEXT NOT NULL DEFAULT 'Spare Parts'"); } catch(e) { /* already exists */ }
-
-  // Add file columns to purchase_orders if they don't exist
-  try { db.run("ALTER TABLE purchase_orders ADD COLUMN file_name TEXT DEFAULT NULL"); } catch(e) { /* already exists */ }
-  try { db.run("ALTER TABLE purchase_orders ADD COLUMN file_path TEXT DEFAULT NULL"); } catch(e) { /* already exists */ }
-
-  // Add file columns to sites_activity if they don't exist
-  try { db.run("ALTER TABLE sites_activity ADD COLUMN file_name TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
-  try { db.run("ALTER TABLE sites_activity ADD COLUMN file_path TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
-
-  // Local Purchase Monitoring table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS local_purchases (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      po_number     TEXT    NOT NULL DEFAULT '',
-      part_name     TEXT    NOT NULL DEFAULT '',
-      supplier      TEXT    NOT NULL DEFAULT '',
-      qty_ordered   REAL    NOT NULL DEFAULT 0,
-      unit_price    REAL    NOT NULL DEFAULT 0,
-      total         REAL    NOT NULL DEFAULT 0,
-      order_date    TEXT    NOT NULL DEFAULT '',
-      expected_date TEXT    NOT NULL DEFAULT '',
-      status        TEXT    NOT NULL DEFAULT 'Pending',
-      remarks       TEXT    NOT NULL DEFAULT '',
-      created_at    TEXT    DEFAULT (datetime('now')),
-      updated_at    TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  // Add 2303 file columns to suppliers if they don't exist
-  try { db.run("ALTER TABLE suppliers ADD COLUMN file_2303_name TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
-  try { db.run("ALTER TABLE suppliers ADD COLUMN file_2303_path TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
-
-  // 2303 File table for supplier certificates (legacy — kept for schema compat)
-  db.run(`
-    CREATE TABLE IF NOT EXISTS supplier_2303_files (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      supplier_id   INTEGER NOT NULL DEFAULT 0,
-      supplier_name TEXT    NOT NULL DEFAULT '',
-      remarks       TEXT    NOT NULL DEFAULT '',
-      file_name     TEXT    NOT NULL DEFAULT '',
-      file_path     TEXT    NOT NULL DEFAULT '',
-      uploaded_at   TEXT    DEFAULT (datetime('now')),
-      updated_at    TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  // Add area column to machine_monitoring if it doesn't exist
-  try { db.run("ALTER TABLE machine_monitoring ADD COLUMN area TEXT NOT NULL DEFAULT 'Manila Area'"); } catch(e) { /* already exists */ }
-  // Map existing rows to correct area (wrapped in try-catch — table may not exist yet on fresh DB)
-  try { db.run("UPDATE machine_monitoring SET area='Manila Area'  WHERE group_name IN ('Group 1','Group 2','Group 3') AND (area='' OR area='Manila Area')"); } catch(e) { /* table not yet created */ }
-  try { db.run("UPDATE machine_monitoring SET area='Pampanga Area' WHERE group_name='Pampanga SP' AND (area='' OR area='Manila Area')"); } catch(e) { /* table not yet created */ }
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS categories (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      name          TEXT    NOT NULL UNIQUE,
-      specification TEXT    NOT NULL DEFAULT '',
-      quantity      INTEGER NOT NULL DEFAULT 0,
-      created_at    TEXT    DEFAULT (datetime('now')),
-      updated_at    TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS suppliers (
-      id             INTEGER PRIMARY KEY AUTOINCREMENT,
-      code           TEXT    NOT NULL UNIQUE,
-      name           TEXT    NOT NULL,
-      contact_person TEXT    NOT NULL DEFAULT '',
-      role           TEXT    NOT NULL DEFAULT '',
-      email          TEXT    NOT NULL DEFAULT '',
-      phone          TEXT    NOT NULL DEFAULT '',
-      category       TEXT    NOT NULL DEFAULT '',
-      location       TEXT    NOT NULL DEFAULT '',
-      status         TEXT    NOT NULL DEFAULT 'Active',
-      created_at     TEXT    DEFAULT (datetime('now')),
-      updated_at     TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS purchase_orders (
-      id           INTEGER PRIMARY KEY AUTOINCREMENT,
-      po_number    TEXT    NOT NULL UNIQUE,
-      supplier     TEXT    NOT NULL DEFAULT '',
-      order_date   TEXT    NOT NULL DEFAULT (date('now')),
-      status       TEXT    NOT NULL DEFAULT 'Pending',
-      total_amount REAL    NOT NULL DEFAULT 0,
-      created_at   TEXT    DEFAULT (datetime('now')),
-      updated_at   TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS goods_received (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      gr_number     TEXT    NOT NULL UNIQUE,
-      po_number     TEXT    NOT NULL DEFAULT '',
-      supplier      TEXT    NOT NULL DEFAULT '',
-      received_date TEXT    NOT NULL DEFAULT (date('now')),
-      received_by   TEXT    NOT NULL DEFAULT '',
-      status        TEXT    NOT NULL DEFAULT 'Pending',
-      total_items   INTEGER NOT NULL DEFAULT 0,
-      created_at    TEXT    DEFAULT (datetime('now')),
-      updated_at    TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS stock_transfers (
-      id                   INTEGER PRIMARY KEY AUTOINCREMENT,
-      transfer_no          TEXT    NOT NULL UNIQUE,
-      transfer_date        TEXT    NOT NULL DEFAULT (date('now')),
-      source_location      TEXT    NOT NULL DEFAULT '',
-      destination_location TEXT    NOT NULL DEFAULT '',
-      items_count          INTEGER NOT NULL DEFAULT 0,
-      status               TEXT    NOT NULL DEFAULT 'Pending',
-      transferred_by       TEXT    NOT NULL DEFAULT '',
-      created_at           TEXT    DEFAULT (datetime('now')),
-      updated_at           TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS trucking_quotations (
-      id               INTEGER PRIMARY KEY AUTOINCREMENT,
-      quote_number     TEXT    NOT NULL UNIQUE,
-      trucking_service TEXT    NOT NULL DEFAULT '',
-      date_of_activity TEXT    NOT NULL DEFAULT (date('now')),
-      sites            TEXT    NOT NULL DEFAULT '',
-      total_amount     REAL    NOT NULL DEFAULT 0,
-      status           TEXT    NOT NULL DEFAULT 'Pending',
-      file_name        TEXT    DEFAULT '',
-      file_path        TEXT    DEFAULT '',
-      created_at       TEXT    DEFAULT (datetime('now')),
-      updated_at       TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS manpower_requests (
-      id                INTEGER PRIMARY KEY AUTOINCREMENT,
-      request_no        TEXT    NOT NULL UNIQUE,
-      location          TEXT    NOT NULL DEFAULT '',
-      machine_type      TEXT    NOT NULL DEFAULT '',
-      machine_quantity  INTEGER NOT NULL DEFAULT 0,
-      manpower_quantity INTEGER NOT NULL DEFAULT 0,
-      purpose           TEXT    NOT NULL DEFAULT '',
-      unit_price        REAL    NOT NULL DEFAULT 0,
-      remarks           TEXT    NOT NULL DEFAULT '',
-      total             REAL    NOT NULL DEFAULT 0,
-      file_name         TEXT    DEFAULT '',
-      file_path         TEXT    DEFAULT '',
-      created_at        TEXT    DEFAULT (datetime('now')),
-      updated_at        TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS sites_activity (
-      id             INTEGER PRIMARY KEY AUTOINCREMENT,
-      site_name      TEXT    NOT NULL DEFAULT '',
-      activity_type  TEXT    NOT NULL DEFAULT 'Delivery',
-      activity_date  TEXT    NOT NULL DEFAULT (date('now')),
-      location       TEXT    NOT NULL DEFAULT '',
-      description    TEXT    NOT NULL DEFAULT '',
-      status         TEXT    NOT NULL DEFAULT 'Scheduled',
-      created_at     TEXT    DEFAULT (datetime('now')),
-      updated_at     TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS waybills (
-      id             INTEGER PRIMARY KEY AUTOINCREMENT,
-      waybill_number TEXT    NOT NULL UNIQUE,
-      date           TEXT    NOT NULL DEFAULT (date('now')),
-      origin         TEXT    NOT NULL DEFAULT '',
-      destination    TEXT    NOT NULL DEFAULT '',
-      notes          TEXT    NOT NULL DEFAULT '',
-      file_name      TEXT    DEFAULT '',
-      file_path      TEXT    DEFAULT '',
-      created_at     TEXT    DEFAULT (datetime('now')),
-      updated_at     TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS calendar_tasks (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      task_date   TEXT    NOT NULL,
-      title       TEXT    NOT NULL,
-      description TEXT    NOT NULL DEFAULT '',
-      category    TEXT    NOT NULL DEFAULT 'General',
-      priority    TEXT    NOT NULL DEFAULT 'Medium',
-      status      TEXT    NOT NULL DEFAULT 'Pending',
-      color       TEXT    NOT NULL DEFAULT '#6366f1',
-      created_at  TEXT    DEFAULT (datetime('now')),
-      updated_at  TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS line_config (
-      id           INTEGER PRIMARY KEY CHECK (id = 1),
-      channel_token TEXT   NOT NULL DEFAULT '',
-      user_id       TEXT   NOT NULL DEFAULT '',
-      auto_notify   INTEGER NOT NULL DEFAULT 0,
-      updated_at    TEXT   DEFAULT (datetime('now'))
-    )
-  `);
-  // Ensure exactly one config row exists
-  const lcCnt = db.exec('SELECT COUNT(*) FROM line_config')[0].values[0][0];
-  if (!lcCnt) db.run("INSERT INTO line_config (id,channel_token,user_id,auto_notify) VALUES (1,'','',0)");
-
-  // ── Seed Line Channel Access Token + enable auto-notify ──────────────────
-  // Token is written here on first boot so the broadcast works without manual setup.
+  // ── Seed LINE Channel Access Token on first boot ───────────────
   const LINE_TOKEN = 'u+HdnLwLxmJPe78tx41dTc/kZgAJ4N2OxisNaZqtSYPme0wDowGxG+XULmScf5XbAfsmrluedmUeFDJEBBy3qkhBklGSxV9aY/ELGdhGWMk+RPZtv78Rq9D8JtVOoEk5yrgxPSTV09YJqMzt15a79wdB04t89/1O/w1cDnyilFU=';
-  const existingToken = db.exec('SELECT channel_token FROM line_config WHERE id=1')[0].values[0][0];
-  if (!existingToken) {
-    db.run("UPDATE line_config SET channel_token=?,auto_notify=1,updated_at=datetime('now') WHERE id=1", [LINE_TOKEN]);
+  const lcRow = await db.getOne('SELECT channel_token FROM line_config WHERE id=1');
+  if (lcRow && !lcRow.channel_token) {
+    await db.run("UPDATE line_config SET channel_token=?, auto_notify=1, updated_at=NOW() WHERE id=1", [LINE_TOKEN]);
     console.log('[db] LINE Channel Access Token saved and auto_notify enabled.');
   }
 
-  // ── Persist helper ────────────────────────────────────────
-  function save() {
-    fs.writeFileSync(DB_PATH, Buffer.from(db.export()));
-  }
-
-  // ── Seed products if empty ────────────────────────────────
-  const cnt = db.exec('SELECT COUNT(*) FROM products')[0].values[0][0];
-  if (cnt === 0) {
+  // ── Seed products ──────────────────────────────────────────────
+  const productCnt = await db.scalar('SELECT COUNT(*) FROM products');
+  if (productCnt === 0) {
     for (const p of seedProducts) {
-      db.run(
+      await db.run(
         'INSERT INTO products (product_code, name, category, quantity, unit_price, status) VALUES (?,?,?,?,?,?)',
         [p.product_code, p.name, p.category, p.quantity, p.unit_price, calcStatus(p.quantity)]
       );
@@ -333,8 +330,8 @@ const dbPromise = (async () => {
     console.log(`[db] Seeded ${seedProducts.length} products.`);
   }
 
-  // ── Seed spare_parts if empty ─────────────────────────────
-  const spCnt = db.exec('SELECT COUNT(*) FROM spare_parts')[0].values[0][0];
+  // ── Seed spare_parts ───────────────────────────────────────────
+  const spCnt = await db.scalar('SELECT COUNT(*) FROM spare_parts');
   if (spCnt === 0) {
     const seedSpareParts = [
       { name: 'Elo Monitor',                                part_no: 'ME0010000064', machine: 'EZ1',                    on_hand: 20, on_order: 30, monthly_usage: 10, lead_time: 4,   buffer: 3, safety_stock: 1 },
@@ -349,12 +346,12 @@ const dbPromise = (async () => {
       { name: 'Gen5 Universal Ticket Printer',              part_no: 'A00900000417', machine: 'EZ, EZ2, BR & J-Ark',   on_hand: 0,  on_order: 0,  monthly_usage: 0,  lead_time: 3,   buffer: 3, safety_stock: 1 },
       { name: 'Power Supply (BR)',                          part_no: 'ME0120000124', machine: 'BR, EZ2 & J-Ark',        on_hand: 0,  on_order: 0,  monthly_usage: 0,  lead_time: 1,   buffer: 3, safety_stock: 1 },
       { name: 'Redeem Server',                              part_no: 'A00900000076', machine: 'EZ, EZ2, BR & Lounge',  on_hand: 0,  on_order: 0,  monthly_usage: 0,  lead_time: 1,   buffer: 3, safety_stock: 1 },
-      { name: 'Horse Racing Jackpot (JPC)',                 part_no: 'A00900000081', machine: 'EZ, EZ Lounge & Lounge',on_hand: 0,  on_order: 0,  monthly_usage: 0,  lead_time: 1.5, buffer: 3, safety_stock: 1 },
+      { name: 'Horse Racing Jackpot (JPC)',                 part_no: 'A00900000081', machine: 'EZ, EZ Lounge & Lounge', on_hand: 0,  on_order: 0,  monthly_usage: 0,  lead_time: 1.5, buffer: 3, safety_stock: 1 },
       { name: 'Graphic Controller Set (BR)',                part_no: 'A00700000275', machine: 'EZ2 & BR',               on_hand: 7,  on_order: 0,  monthly_usage: 1,  lead_time: 4.5, buffer: 3, safety_stock: 1 },
       { name: 'Gen 5 Bill Acceptor',                        part_no: 'A00900000419', machine: 'EZ, EZ2, BR & J-Ark',   on_hand: 0,  on_order: 0,  monthly_usage: 1,  lead_time: 1,   buffer: 3, safety_stock: 1 },
     ];
     for (const p of seedSpareParts) {
-      db.run(
+      await db.run(
         `INSERT INTO spare_parts (name, part_no, machine, on_hand, on_order, monthly_usage, lead_time, buffer, safety_stock)
          VALUES (?,?,?,?,?,?,?,?,?)`,
         [p.name, p.part_no, p.machine, p.on_hand, p.on_order, p.monthly_usage, p.lead_time, p.buffer, p.safety_stock]
@@ -363,8 +360,8 @@ const dbPromise = (async () => {
     console.log(`[db] Seeded ${seedSpareParts.length} spare parts.`);
   }
 
-  // ── Seed categories if empty ──────────────────────────────
-  const catCnt = db.exec('SELECT COUNT(*) FROM categories')[0].values[0][0];
+  // ── Seed categories ────────────────────────────────────────────
+  const catCnt = await db.scalar('SELECT COUNT(*) FROM categories');
   if (catCnt === 0) {
     const seedCats = [
       { name: 'EZ1',        specification: 'EZ1 gaming machine spare parts and components',    quantity: 0 },
@@ -379,33 +376,36 @@ const dbPromise = (async () => {
       { name: 'S27',        specification: 'S27 gaming machine spare parts and components',    quantity: 0 },
     ];
     for (const c of seedCats) {
-      db.run('INSERT INTO categories (name, specification, quantity) VALUES (?,?,?)', [c.name, c.specification, c.quantity]);
+      await db.run('INSERT INTO categories (name, specification, quantity) VALUES (?,?,?)',
+        [c.name, c.specification, c.quantity]);
     }
     console.log(`[db] Seeded ${seedCats.length} categories.`);
   }
 
-  // ── Seed suppliers if empty ───────────────────────────────
-  const supCnt = db.exec('SELECT COUNT(*) FROM suppliers')[0].values[0][0];
+  // ── Seed suppliers ─────────────────────────────────────────────
+  const supCnt = await db.scalar('SELECT COUNT(*) FROM suppliers');
   if (supCnt === 0) {
     const seedSuppliers = [
-      { code: 'SUP-0001', name: 'TechSource Global',   contact_person: 'James Carter',  role: 'Sales Manager',   email: 'james@techsource.com',  phone: '+1-555-0101', category: 'Electronics',     location: 'New York, USA',   status: 'Active'   },
-      { code: 'SUP-0002', name: 'Office World Inc.',   contact_person: 'Maria Santos',  role: 'Account Manager', email: 'maria@officeworld.com', phone: '+1-555-0102', category: 'Stationery',      location: 'Chicago, USA',    status: 'Active'   },
-      { code: 'SUP-0003', name: 'FurniCraft Co.',      contact_person: 'David Lee',     role: 'Sales Director',  email: 'david@furnicraft.com',  phone: '+63-2-8888',  category: 'Furniture',       location: 'Manila, PH',      status: 'Active'   },
-      { code: 'SUP-0004', name: 'Parts Depot PH',      contact_person: 'Ana Reyes',     role: 'Supply Officer',  email: 'ana@partsdepot.ph',     phone: '+63-2-7777',  category: 'Spare Parts',     location: 'Quezon City, PH', status: 'Pending'  },
-      { code: 'SUP-0005', name: 'CleanPro Supplies',   contact_person: 'Robert Tan',    role: 'Key Account',     email: 'robert@cleanpro.com',   phone: '+63-2-6666',  category: 'Cleaning',        location: 'Makati, PH',      status: 'Inactive' },
+      { code: 'SUP-0001', name: 'TechSource Global',  contact_person: 'James Carter', role: 'Sales Manager',   email: 'james@techsource.com',  phone: '+1-555-0101', category: 'Electronics',  location: 'New York, USA',   status: 'Active'   },
+      { code: 'SUP-0002', name: 'Office World Inc.',  contact_person: 'Maria Santos', role: 'Account Manager', email: 'maria@officeworld.com', phone: '+1-555-0102', category: 'Stationery',   location: 'Chicago, USA',    status: 'Active'   },
+      { code: 'SUP-0003', name: 'FurniCraft Co.',     contact_person: 'David Lee',    role: 'Sales Director',  email: 'david@furnicraft.com',  phone: '+63-2-8888',  category: 'Furniture',    location: 'Manila, PH',      status: 'Active'   },
+      { code: 'SUP-0004', name: 'Parts Depot PH',     contact_person: 'Ana Reyes',    role: 'Supply Officer',  email: 'ana@partsdepot.ph',     phone: '+63-2-7777',  category: 'Spare Parts',  location: 'Quezon City, PH', status: 'Pending'  },
+      { code: 'SUP-0005', name: 'CleanPro Supplies',  contact_person: 'Robert Tan',   role: 'Key Account',     email: 'robert@cleanpro.com',   phone: '+63-2-6666',  category: 'Cleaning',     location: 'Makati, PH',      status: 'Inactive' },
     ];
     for (const s of seedSuppliers) {
-      db.run('INSERT INTO suppliers (code, name, contact_person, role, email, phone, category, location, status) VALUES (?,?,?,?,?,?,?,?,?)',
-        [s.code, s.name, s.contact_person, s.role, s.email, s.phone, s.category, s.location, s.status]);
+      await db.run(
+        'INSERT INTO suppliers (code, name, contact_person, role, email, phone, category, location, status) VALUES (?,?,?,?,?,?,?,?,?)',
+        [s.code, s.name, s.contact_person, s.role, s.email, s.phone, s.category, s.location, s.status]
+      );
     }
     console.log(`[db] Seeded ${seedSuppliers.length} suppliers.`);
   }
 
-  // ── Seed purchase_orders if empty ─────────────────────────
-  const poCnt = db.exec('SELECT COUNT(*) FROM purchase_orders')[0].values[0][0];
+  // ── Seed purchase_orders ───────────────────────────────────────
+  const poCnt = await db.scalar('SELECT COUNT(*) FROM purchase_orders');
   if (poCnt === 0) {
     const seedPOs = [
-      { po_number: 'PO-2024-001', supplier: 'TechSource Global',  order_date: '2024-01-15', status: 'Completed', total_amount: 5249.75 },
+      { po_number: 'PO-2024-001', supplier: 'TechSource Global', order_date: '2024-01-15', status: 'Completed', total_amount: 5249.75 },
       { po_number: 'PO-2024-002', supplier: 'Office World Inc.',  order_date: '2024-02-10', status: 'Completed', total_amount: 1870.50 },
       { po_number: 'PO-2024-003', supplier: 'FurniCraft Co.',     order_date: '2024-03-05', status: 'Pending',   total_amount: 3599.95 },
       { po_number: 'PO-2024-004', supplier: 'Parts Depot PH',     order_date: '2024-03-20', status: 'Pending',   total_amount: 2100.00 },
@@ -413,14 +413,16 @@ const dbPromise = (async () => {
       { po_number: 'PO-2024-006', supplier: 'Office World Inc.',  order_date: '2024-04-15', status: 'Completed', total_amount: 450.25  },
     ];
     for (const p of seedPOs) {
-      db.run('INSERT INTO purchase_orders (po_number, supplier, order_date, status, total_amount) VALUES (?,?,?,?,?)',
-        [p.po_number, p.supplier, p.order_date, p.status, p.total_amount]);
+      await db.run(
+        'INSERT INTO purchase_orders (po_number, supplier, order_date, status, total_amount) VALUES (?,?,?,?,?)',
+        [p.po_number, p.supplier, p.order_date, p.status, p.total_amount]
+      );
     }
     console.log(`[db] Seeded ${seedPOs.length} purchase orders.`);
   }
 
-  // ── Seed goods_received if empty ──────────────────────────
-  const grCnt = db.exec('SELECT COUNT(*) FROM goods_received')[0].values[0][0];
+  // ── Seed goods_received ────────────────────────────────────────
+  const grCnt = await db.scalar('SELECT COUNT(*) FROM goods_received');
   if (grCnt === 0) {
     const seedGR = [
       { gr_number: 'GR-2024-001', po_number: 'PO-2024-001', supplier: 'TechSource Global', received_date: '2024-01-22', received_by: 'John Dela Cruz', status: 'Completed', total_items: 63  },
@@ -430,144 +432,26 @@ const dbPromise = (async () => {
       { gr_number: 'GR-2024-005', po_number: 'PO-2024-006', supplier: 'Office World Inc.',  received_date: '2024-04-20', received_by: 'John Dela Cruz', status: 'Completed', total_items: 90  },
     ];
     for (const g of seedGR) {
-      db.run('INSERT INTO goods_received (gr_number, po_number, supplier, received_date, received_by, status, total_items) VALUES (?,?,?,?,?,?,?)',
-        [g.gr_number, g.po_number, g.supplier, g.received_date, g.received_by, g.status, g.total_items]);
+      await db.run(
+        'INSERT INTO goods_received (gr_number, po_number, supplier, received_date, received_by, status, total_items) VALUES (?,?,?,?,?,?,?)',
+        [g.gr_number, g.po_number, g.supplier, g.received_date, g.received_by, g.status, g.total_items]
+      );
     }
     console.log(`[db] Seeded ${seedGR.length} goods received records.`);
   }
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      name       TEXT    NOT NULL,
-      email      TEXT    NOT NULL UNIQUE,
-      role       TEXT    NOT NULL DEFAULT 'Staff',
-      password   TEXT    NOT NULL DEFAULT 'password123',
-      status     TEXT    NOT NULL DEFAULT 'Active',
-      created_at TEXT    DEFAULT (datetime('now')),
-      updated_at TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  // Seed default admin users if none exist
-  const userCount = db.exec('SELECT COUNT(*) FROM users')[0].values[0][0];
-  if (userCount === 0) {
-    db.run("INSERT INTO users (name, email, role, password, status) VALUES (?,?,?,?,?)",
+  // ── Seed users ─────────────────────────────────────────────────
+  const userCnt = await db.scalar('SELECT COUNT(*) FROM users');
+  if (userCnt === 0) {
+    await db.run("INSERT INTO users (name, email, role, password, status) VALUES (?,?,?,?,?)",
       ['Admin', 'admin@inventory.com', 'Admin', 'admin123', 'Active']);
-    db.run("INSERT INTO users (name, email, role, password, status) VALUES (?,?,?,?,?)",
+    await db.run("INSERT INTO users (name, email, role, password, status) VALUES (?,?,?,?,?)",
       ['Rogen Hallarsis', 'rogen.hallarsis29@gmail.com', 'Admin', '063013', 'Active']);
     console.log('[db] Seeded default admin users.');
   }
 
-  // Logistics tables
-  db.run(`
-    CREATE TABLE IF NOT EXISTS trucking_quotations (
-      id           INTEGER PRIMARY KEY AUTOINCREMENT,
-      reference_no TEXT,
-      date         TEXT,
-      company      TEXT,
-      origin       TEXT,
-      destination  TEXT,
-      amount       REAL,
-      status       TEXT DEFAULT 'Pending',
-      remarks      TEXT,
-      file_path    TEXT,
-      created_at   TEXT DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS manpower_requests (
-      id           INTEGER PRIMARY KEY AUTOINCREMENT,
-      request_no   TEXT,
-      date         TEXT,
-      requested_by TEXT,
-      site         TEXT,
-      workers      INTEGER DEFAULT 0,
-      days         INTEGER DEFAULT 0,
-      total        INTEGER DEFAULT 0,
-      status       TEXT DEFAULT 'Pending',
-      remarks      TEXT,
-      file_path    TEXT,
-      created_at   TEXT DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS sites_activity (
-      id           INTEGER PRIMARY KEY AUTOINCREMENT,
-      date         TEXT,
-      site         TEXT,
-      activity     TEXT DEFAULT 'Delivery',
-      description  TEXT,
-      quantity     INTEGER DEFAULT 0,
-      unit         TEXT,
-      remarks      TEXT,
-      created_at   TEXT DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS waybills (
-      id           INTEGER PRIMARY KEY AUTOINCREMENT,
-      waybill_no   TEXT,
-      date         TEXT,
-      origin       TEXT,
-      destination  TEXT,
-      carrier      TEXT,
-      items        TEXT,
-      status       TEXT DEFAULT 'In Transit',
-      remarks      TEXT,
-      file_path    TEXT,
-      created_at   TEXT DEFAULT (datetime('now'))
-    )
-  `);
-
-  // Add category column to spare_parts if not exists
-  try {
-    db.run("ALTER TABLE spare_parts ADD COLUMN category TEXT NOT NULL DEFAULT 'Spare Parts'");
-  } catch(e) { /* already exists */ }
-
-
-  // ── Local Purchases table ─────────────────────────────────
-  db.run(`
-    CREATE TABLE IF NOT EXISTS local_purchases (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      po_number     TEXT    NOT NULL DEFAULT '',
-      part_name     TEXT    NOT NULL DEFAULT '',
-      supplier      TEXT    NOT NULL DEFAULT '',
-      qty_ordered   INTEGER NOT NULL DEFAULT 0,
-      unit_price    REAL    NOT NULL DEFAULT 0,
-      total         REAL    NOT NULL DEFAULT 0,
-      order_date    TEXT    NOT NULL DEFAULT (date('now')),
-      expected_date TEXT    NOT NULL DEFAULT '',
-      status        TEXT    NOT NULL DEFAULT 'Pending',
-      remarks       TEXT    NOT NULL DEFAULT '',
-      created_at    TEXT    DEFAULT (datetime('now')),
-      updated_at    TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS machine_monitoring (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      site        TEXT    NOT NULL,
-      group_name  TEXT    NOT NULL DEFAULT '',
-      area        TEXT    NOT NULL DEFAULT 'Manila Area',
-      ez          INTEGER NOT NULL DEFAULT 0,
-      br          INTEGER NOT NULL DEFAULT 0,
-      ez2         INTEGER NOT NULL DEFAULT 0,
-      ezl         INTEGER NOT NULL DEFAULT 0,
-      lb          INTEGER NOT NULL DEFAULT 0,
-      j_ark       INTEGER NOT NULL DEFAULT 0,
-      total       INTEGER NOT NULL DEFAULT 0,
-      created_at  TEXT    DEFAULT (datetime('now')),
-      updated_at  TEXT    DEFAULT (datetime('now'))
-    )
-  `);
-
-  // ── Seed machine_monitoring if empty ────────────────────────────
-  const mmCnt = db.exec('SELECT COUNT(*) FROM machine_monitoring')[0].values[0][0];
+  // ── Seed machine_monitoring ────────────────────────────────────
+  const mmCnt = await db.scalar('SELECT COUNT(*) FROM machine_monitoring');
   if (!mmCnt) {
     const mmSeed = [
       ['One North',               'Pampanga SP', 45, 0, 0,  25, 0,  0 ],
@@ -598,18 +482,19 @@ const dbPromise = (async () => {
       ['BPC - KL Meycauayan',     'Group 1',     17, 0,  0,  0,  0,  0 ],
       ['Anunas',                  'Pampanga SP', 20, 4,  4,  0,  0,  0 ],
     ];
-    mmSeed.forEach(([site, group_name, ez, br, ez2, ezl, lb, j_ark]) => {
+    for (const [site, group_name, ez, br, ez2, ezl, lb, j_ark] of mmSeed) {
       const total = ez + br + ez2 + ezl + lb + j_ark;
-      let area = 'Manila Area';
-      if (group_name === 'Pampanga SP') area = 'Pampanga Area';
-      db.run(
-        `INSERT INTO machine_monitoring (site, group_name, area, ez, br, ez2, ezl, lb, j_ark, total) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      const area  = group_name === 'Pampanga SP' ? 'Pampanga Area' : 'Manila Area';
+      await db.run(
+        'INSERT INTO machine_monitoring (site, group_name, area, ez, br, ez2, ezl, lb, j_ark, total) VALUES (?,?,?,?,?,?,?,?,?,?)',
         [site, group_name, area, ez, br, ez2, ezl, lb, j_ark, total]
       );
-    });
+    }
+    console.log('[db] Seeded machine_monitoring rows.');
   }
 
-  return { db, save: () => { fs.writeFileSync(DB_PATH, Buffer.from(db.export())); } };
+  console.log('[db] PostgreSQL schema ready.');
+  return { db, save: () => {} };
 })();
 
 module.exports = { dbPromise, calcStatus };

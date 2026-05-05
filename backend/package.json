@@ -1,7 +1,7 @@
 {
   "name": "inventory-management-backend",
   "version": "1.0.0",
-  "description": "Express + SQLite backend for the Inventory Management System",
+  "description": "Express + PostgreSQL backend for the Inventory Management System",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -11,6 +11,6 @@
     "cors": "^2.8.5",
     "express": "^4.18.3",
     "multer": "^2.1.1",
-    "sql.js": "^1.10.2"
+    "pg": "^8.13.1"
   }
 }

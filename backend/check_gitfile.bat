@@ -1,0 +1,3 @@
+@echo off
+cd /d "E:\Projects\Inventory Management Web App"
+node -e "const fs=require('fs');const html=fs.readFileSync('./frontend/index.html','utf8');const lines=html.split('\n');console.log('Total lines:',lines.length);console.log('Last 10 lines:');lines.slice(-10).forEach((l,i)=>console.log((lines.length-9+i)+': '+l.substring(0,120)));console.log('Has closing script:',html.includes('</script>'));console.log('Has closing body:',html.includes('</body>'));console.log('Has closing html:',html.includes('</html>'));const scriptTags=(html.match(/<script[\s>]/g)||[]).length;const closeScript=(html.match(/<\/script>/g)||[]).length;console.log('script open tags:',scriptTags,'close tags:',closeScript);"

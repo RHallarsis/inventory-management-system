@@ -15,15 +15,6 @@ const queue        = require('../workers/jobQueue');
 
 const router = express.Router();
 
-// ── DB helper (same pattern as inventory.js) ───────────────────
-function getAll(db, sql) {
-  const stmt = db.prepare(sql);
-  const rows = [];
-  while (stmt.step()) rows.push(stmt.getAsObject());
-  stmt.free();
-  return rows;
-}
-
 // ── Valid job types ────────────────────────────────────────────
 const VALID_TYPES = ['low-stock-check', 'reorder-calc', 'bulk-status-recalc', 'report-summary'];
 
@@ -46,20 +37,20 @@ router.post('/jobs', async (req, res) => {
 
     // ── Auto-populate from DB so callers can fire-and-forget ──
     if (type === 'low-stock-check' && !jobPayload.products) {
-      jobPayload.products = getAll(db, 'SELECT * FROM products');
+      jobPayload.products = await db.getAll('SELECT * FROM products');
     }
 
     if (type === 'reorder-calc' && !jobPayload.spareParts) {
-      jobPayload.spareParts = getAll(db, 'SELECT * FROM spare_parts');
+      jobPayload.spareParts = await db.getAll('SELECT * FROM spare_parts');
     }
 
     if (type === 'bulk-status-recalc' && !jobPayload.products) {
-      jobPayload.products = getAll(db, 'SELECT * FROM products');
+      jobPayload.products = await db.getAll('SELECT * FROM products');
     }
 
     if (type === 'report-summary') {
-      if (!jobPayload.products)   jobPayload.products   = getAll(db, 'SELECT * FROM products');
-      if (!jobPayload.spareParts) jobPayload.spareParts = getAll(db, 'SELECT * FROM spare_parts');
+      if (!jobPayload.products)   jobPayload.products   = await db.getAll('SELECT * FROM products');
+      if (!jobPayload.spareParts) jobPayload.spareParts = await db.getAll('SELECT * FROM spare_parts');
     }
 
     const job = queue.enqueue(type, jobPayload);
