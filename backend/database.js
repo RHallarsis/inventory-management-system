@@ -140,9 +140,9 @@ const dbPromise = (async () => {
 
   // Add area column to machine_monitoring if it doesn't exist
   try { db.run("ALTER TABLE machine_monitoring ADD COLUMN area TEXT NOT NULL DEFAULT 'Manila Area'"); } catch(e) { /* already exists */ }
-  // Map existing rows to correct area
-  db.run("UPDATE machine_monitoring SET area='Manila Area'  WHERE group_name IN ('Group 1','Group 2','Group 3') AND (area='' OR area='Manila Area')");
-  db.run("UPDATE machine_monitoring SET area='Pampanga Area' WHERE group_name='Pampanga SP' AND (area='' OR area='Manila Area')");
+  // Map existing rows to correct area (wrapped in try-catch — table may not exist yet on fresh DB)
+  try { db.run("UPDATE machine_monitoring SET area='Manila Area'  WHERE group_name IN ('Group 1','Group 2','Group 3') AND (area='' OR area='Manila Area')"); } catch(e) { /* table not yet created */ }
+  try { db.run("UPDATE machine_monitoring SET area='Pampanga Area' WHERE group_name='Pampanga SP' AND (area='' OR area='Manila Area')"); } catch(e) { /* table not yet created */ }
 
   db.run(`
     CREATE TABLE IF NOT EXISTS categories (
