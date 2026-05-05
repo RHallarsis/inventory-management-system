@@ -12,6 +12,7 @@ const authRouter           = require('./routes/auth');
 const calendarRouter       = require('./routes/calendar');
 const { router: lineRouter } = require('./routes/line');
 const localPurchasesRouter = require('./routes/local-purchases');
+const ciplRouter           = require('./routes/cipl');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +33,7 @@ app.use('/api', authRouter);
 app.use('/api', calendarRouter);
 app.use('/api', lineRouter);
 app.use('/api', localPurchasesRouter);
+app.use('/api', ciplRouter);
 app.use('/', lineRouter);
 
 app.get('/', (_req, res) => {

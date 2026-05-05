@@ -304,6 +304,53 @@ const dbPromise = (async () => {
     )
   `);
 
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS commercial_invoices (
+      id                 SERIAL      PRIMARY KEY,
+      ci_number          TEXT        NOT NULL UNIQUE,
+      supplier           TEXT        NOT NULL DEFAULT '',
+      invoice_date       TEXT        NOT NULL DEFAULT '',
+      shipment_terms     TEXT        NOT NULL DEFAULT 'FOB',
+      currency           TEXT        NOT NULL DEFAULT 'USD',
+      total_amount       REAL        NOT NULL DEFAULT 0,
+      goods_description  TEXT        NOT NULL DEFAULT '',
+      port_of_loading    TEXT        NOT NULL DEFAULT '',
+      port_of_discharge  TEXT        NOT NULL DEFAULT '',
+      remarks            TEXT        NOT NULL DEFAULT '',
+      status             TEXT        NOT NULL DEFAULT 'Draft',
+      file_name          TEXT        NOT NULL DEFAULT '',
+      file_path          TEXT        NOT NULL DEFAULT '',
+      created_at         TIMESTAMPTZ DEFAULT NOW(),
+      updated_at         TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS packing_lists (
+      id                 SERIAL      PRIMARY KEY,
+      pl_number          TEXT        NOT NULL UNIQUE,
+      ci_number          TEXT        NOT NULL DEFAULT '',
+      shipper            TEXT        NOT NULL DEFAULT '',
+      consignee          TEXT        NOT NULL DEFAULT '',
+      pl_date            TEXT        NOT NULL DEFAULT '',
+      vessel_flight      TEXT        NOT NULL DEFAULT '',
+      bl_awb_number      TEXT        NOT NULL DEFAULT '',
+      port_of_loading    TEXT        NOT NULL DEFAULT '',
+      port_of_discharge  TEXT        NOT NULL DEFAULT '',
+      total_packages     INTEGER     NOT NULL DEFAULT 0,
+      total_net_weight   REAL        NOT NULL DEFAULT 0,
+      total_gross_weight REAL        NOT NULL DEFAULT 0,
+      total_cbm          REAL        NOT NULL DEFAULT 0,
+      remarks            TEXT        NOT NULL DEFAULT '',
+      status             TEXT        NOT NULL DEFAULT 'Draft',
+      file_name          TEXT        NOT NULL DEFAULT '',
+      file_path          TEXT        NOT NULL DEFAULT '',
+      created_at         TIMESTAMPTZ DEFAULT NOW(),
+      updated_at         TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
   // ── Ensure line_config row exists ──────────────────────────────
   const lcCnt = await db.scalar('SELECT COUNT(*) FROM line_config');
   if (!lcCnt) {

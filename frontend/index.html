@@ -986,6 +986,8 @@ body.staff-mode #st-add-btn { display:none !important; }
       <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg><span>Goods Received</span></div>
     <div class="nav-item" data-page="stocktransfers" onclick="showPage(&apos;stocktransfers&apos;)">
       <svg viewBox="0 0 24 24"><path d="M17 4l4 4-4 4V9H3V7h14V4zm-4 13H3v-2h10v-3l4 4-4 4v-3z"/></svg><span>Stock Transfers</span></div>
+    <div class="nav-item" data-page="cipl" onclick="showPage(&apos;cipl&apos;)">
+      <svg viewBox="0 0 24 24"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v1h12v-1l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11zM9 9h6v2H9zm0 4h6v2H9zm-2-4H6v2h1zm0 4H6v2h1z"/></svg><span>CI / PL</span></div>
     <div class="nav-label">Reports</div>
     <div class="nav-item" data-page="inventoryreport" onclick="showPage(&apos;inventoryreport&apos;)">
       <svg viewBox="0 0 24 24"><path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zM20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg><span>Inventory Report</span></div>
@@ -1315,6 +1317,245 @@ body.staff-mode #st-add-btn { display:none !important; }
     </table>
   </div>
 </div>
+<!-- ===== CI / PL ===== -->
+<div id="page-cipl" class="page-section">
+  <!-- Tabs -->
+  <div class="log-tabs">
+    <button class="log-tab active" onclick="switchCIPLTab('ci',this)">📄 Commercial Invoice (CI)</button>
+    <button class="log-tab" onclick="switchCIPLTab('pl',this)">📦 Packing List (PL)</button>
+  </div>
+
+  <!-- ── COMMERCIAL INVOICE PANEL ── -->
+  <div class="log-panel active" id="cipl-panel-ci">
+    <div class="page-toolbar">
+      <input class="search-input" id="ci-search" placeholder="Search invoices..." oninput="renderCI()"/>
+      <select class="search-input" id="ci-status-filter" onchange="renderCI()" style="min-width:120px">
+        <option value="">All Status</option>
+        <option>Draft</option><option>Issued</option><option>Paid</option><option>Cancelled</option>
+      </select>
+      <span class="table-meta" id="ci-meta"></span>
+      <button class="page-add-btn" onclick="openCIModal()">+ Add CI</button>
+    </div>
+    <div class="page-tbl-wrap">
+      <table class="page-table">
+        <thead>
+          <tr>
+            <th>#</th><th>CI Number</th><th>Supplier / Exporter</th><th>Invoice Date</th>
+            <th>Terms</th><th>Currency</th><th>Total Amount</th><th>Port Loading</th>
+            <th>Port Discharge</th><th>Status</th><th>File</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="ci-body"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="6" style="padding:10px 14px;font-weight:700">GRAND TOTAL (USD equiv.)</td>
+            <td id="ci-grand-total" style="padding:10px 14px;font-weight:800;color:var(--primary)">0.00</td>
+            <td colspan="5"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PACKING LIST PANEL ── -->
+  <div class="log-panel" id="cipl-panel-pl">
+    <div class="page-toolbar">
+      <input class="search-input" id="pl-search" placeholder="Search packing lists..." oninput="renderPL()"/>
+      <select class="search-input" id="pl-status-filter" onchange="renderPL()" style="min-width:120px">
+        <option value="">All Status</option>
+        <option>Draft</option><option>Issued</option><option>Closed</option>
+      </select>
+      <span class="table-meta" id="pl-meta"></span>
+      <button class="page-add-btn" onclick="openPLModal()">+ Add PL</button>
+    </div>
+    <div class="page-tbl-wrap">
+      <table class="page-table">
+        <thead>
+          <tr>
+            <th>#</th><th>PL Number</th><th>CI Reference</th><th>Shipper</th><th>Consignee</th>
+            <th>PL Date</th><th>Vessel / Flight</th><th>BL / AWB No.</th>
+            <th>Pkgs</th><th>Net Wt (kg)</th><th>Gross Wt (kg)</th><th>CBM</th>
+            <th>Status</th><th>File</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="pl-body"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="8" style="padding:10px 14px;font-weight:700">TOTALS</td>
+            <td id="pl-total-pkgs" style="padding:10px 14px;font-weight:800;color:var(--primary)">0</td>
+            <td id="pl-total-nw" style="padding:10px 14px;font-weight:800;color:var(--primary)">0.00</td>
+            <td id="pl-total-gw" style="padding:10px 14px;font-weight:800;color:var(--primary)">0.00</td>
+            <td id="pl-total-cbm" style="padding:10px 14px;font-weight:800;color:var(--primary)">0.000</td>
+            <td colspan="3"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CI MODAL ===== -->
+<div class="g-modal" id="ci-modal" style="display:none">
+  <div class="g-modal-box" style="max-width:640px">
+    <div class="g-modal-head">
+      <span id="ci-modal-title">Add Commercial Invoice</span>
+      <button class="g-modal-close" onclick="closeCIModal()">✕</button>
+    </div>
+    <div class="g-modal-body">
+      <input type="hidden" id="ci-modal-id"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="g-form-group" style="grid-column:1/-1">
+          <label>CI Number <span style="color:var(--danger)">*</span></label>
+          <input id="ci-f-number" placeholder="e.g. CI-2025-001"/>
+        </div>
+        <div class="g-form-group">
+          <label>Supplier / Exporter</label>
+          <input id="ci-f-supplier" placeholder="Company name"/>
+        </div>
+        <div class="g-form-group">
+          <label>Invoice Date</label>
+          <input type="date" id="ci-f-date"/>
+        </div>
+        <div class="g-form-group">
+          <label>Shipment Terms</label>
+          <select id="ci-f-terms">
+            <option>FOB</option><option>CIF</option><option>CNF</option>
+            <option>EXW</option><option>DDU</option><option>DDP</option><option>FCA</option>
+          </select>
+        </div>
+        <div class="g-form-group">
+          <label>Currency</label>
+          <select id="ci-f-currency">
+            <option>USD</option><option>PHP</option><option>EUR</option>
+            <option>CNY</option><option>JPY</option><option>SGD</option>
+          </select>
+        </div>
+        <div class="g-form-group">
+          <label>Total Amount</label>
+          <input type="number" id="ci-f-amount" placeholder="0.00" min="0" step="0.01"/>
+        </div>
+        <div class="g-form-group">
+          <label>Status</label>
+          <select id="ci-f-status">
+            <option>Draft</option><option>Issued</option><option>Paid</option><option>Cancelled</option>
+          </select>
+        </div>
+        <div class="g-form-group" style="grid-column:1/-1">
+          <label>Port of Loading</label>
+          <input id="ci-f-pol" placeholder="e.g. Guangzhou, China"/>
+        </div>
+        <div class="g-form-group" style="grid-column:1/-1">
+          <label>Port of Discharge</label>
+          <input id="ci-f-pod" placeholder="e.g. Manila, Philippines"/>
+        </div>
+        <div class="g-form-group" style="grid-column:1/-1">
+          <label>Goods Description</label>
+          <textarea id="ci-f-desc" rows="3" placeholder="Brief description of goods..." style="width:100%;resize:vertical;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit"></textarea>
+        </div>
+        <div class="g-form-group" style="grid-column:1/-1">
+          <label>Remarks</label>
+          <input id="ci-f-remarks" placeholder="Optional notes"/>
+        </div>
+        <div class="g-form-group" style="grid-column:1/-1">
+          <label>Attach File <span style="font-size:11px;color:var(--text-2)">(PDF, Excel, Image — max 30 MB)</span></label>
+          <input type="file" id="ci-f-file" accept=".pdf,.xlsx,.xls,.jpg,.jpeg,.png,.doc,.docx"/>
+          <div id="ci-current-file" style="font-size:12px;color:var(--text-2);margin-top:4px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="g-modal-foot">
+      <button class="g-btn g-btn-cancel" onclick="closeCIModal()">Cancel</button>
+      <button class="g-btn g-btn-save" onclick="saveCI()">Save Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PL MODAL ===== -->
+<div class="g-modal" id="pl-modal" style="display:none">
+  <div class="g-modal-box" style="max-width:680px">
+    <div class="g-modal-head">
+      <span id="pl-modal-title">Add Packing List</span>
+      <button class="g-modal-close" onclick="closePLModal()">✕</button>
+    </div>
+    <div class="g-modal-body">
+      <input type="hidden" id="pl-modal-id"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="g-form-group">
+          <label>PL Number <span style="color:var(--danger)">*</span></label>
+          <input id="pl-f-number" placeholder="e.g. PL-2025-001"/>
+        </div>
+        <div class="g-form-group">
+          <label>CI Reference No.</label>
+          <input id="pl-f-ci" placeholder="Linked CI number (optional)"/>
+        </div>
+        <div class="g-form-group">
+          <label>Shipper</label>
+          <input id="pl-f-shipper" placeholder="Exporter / shipper name"/>
+        </div>
+        <div class="g-form-group">
+          <label>Consignee</label>
+          <input id="pl-f-consignee" placeholder="Importer / consignee name"/>
+        </div>
+        <div class="g-form-group">
+          <label>PL Date</label>
+          <input type="date" id="pl-f-date"/>
+        </div>
+        <div class="g-form-group">
+          <label>Status</label>
+          <select id="pl-f-status">
+            <option>Draft</option><option>Issued</option><option>Closed</option>
+          </select>
+        </div>
+        <div class="g-form-group">
+          <label>Vessel / Flight</label>
+          <input id="pl-f-vessel" placeholder="e.g. MSC AURORA V.001"/>
+        </div>
+        <div class="g-form-group">
+          <label>BL / AWB Number</label>
+          <input id="pl-f-bl" placeholder="Bill of Lading or Air Waybill No."/>
+        </div>
+        <div class="g-form-group">
+          <label>Port of Loading</label>
+          <input id="pl-f-pol" placeholder="e.g. Shanghai, China"/>
+        </div>
+        <div class="g-form-group">
+          <label>Port of Discharge</label>
+          <input id="pl-f-pod" placeholder="e.g. Manila, Philippines"/>
+        </div>
+        <div class="g-form-group">
+          <label>Total Packages</label>
+          <input type="number" id="pl-f-pkgs" placeholder="0" min="0"/>
+        </div>
+        <div class="g-form-group">
+          <label>Net Weight (kg)</label>
+          <input type="number" id="pl-f-nw" placeholder="0.00" min="0" step="0.01"/>
+        </div>
+        <div class="g-form-group">
+          <label>Gross Weight (kg)</label>
+          <input type="number" id="pl-f-gw" placeholder="0.00" min="0" step="0.01"/>
+        </div>
+        <div class="g-form-group">
+          <label>Total CBM</label>
+          <input type="number" id="pl-f-cbm" placeholder="0.000" min="0" step="0.001"/>
+        </div>
+        <div class="g-form-group" style="grid-column:1/-1">
+          <label>Remarks</label>
+          <input id="pl-f-remarks" placeholder="Optional notes"/>
+        </div>
+        <div class="g-form-group" style="grid-column:1/-1">
+          <label>Attach File <span style="font-size:11px;color:var(--text-2)">(PDF, Excel, Image — max 30 MB)</span></label>
+          <input type="file" id="pl-f-file" accept=".pdf,.xlsx,.xls,.jpg,.jpeg,.png,.doc,.docx"/>
+          <div id="pl-current-file" style="font-size:12px;color:var(--text-2);margin-top:4px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="g-modal-foot">
+      <button class="g-btn g-btn-cancel" onclick="closePLModal()">Cancel</button>
+      <button class="g-btn g-btn-save" onclick="savePL()">Save Packing List</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== INVENTORY REPORT ===== -->
 <div id="page-inventoryreport" class="page-section">
   <div class="page-toolbar">
@@ -2039,7 +2280,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 <script>
 const API=window.location.origin+'/api';
 let currentUser=null;
-let invData=[],catData=[],smData=[],irData=[],mmData=[],poData=[],supData=[],grData=[],stData=[],tqData=[],mpData=[],saData=[],wbData=[],lpData=[];
+let invData=[],catData=[],smData=[],irData=[],mmData=[],poData=[],supData=[],grData=[],stData=[],tqData=[],mpData=[],saData=[],wbData=[],lpData=[],ciData=[],plData=[];
 let invEditId=null,invDeleteId=null,catEditId=null,catDeleteId=null;
 let smEditId=null,smDeleteId=null,mmEditId=null,mmDeleteId=null,mmAreaFilter='';
 let poEditId=null,poDeleteId=null,supEditId=null,supDeleteId=null;
@@ -2141,7 +2382,7 @@ function applyRoleAccess(role) {
 }
 
 // ── PAGE SWITCHING ───────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Stock Transfers',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',settings:'Settings'};
+const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Stock Transfers',cipl:'CI / PL — Commercial Invoice & Packing List',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',settings:'Settings'};
 function showPage(page){
   // ── Role guard: Staff cannot visit admin-only pages ──────────
   if(currentUser && currentUser.role==='Staff' && STAFF_BLOCKED_PAGES.includes(page)){
@@ -2165,6 +2406,7 @@ function showPage(page){
   else if(page==='suppliers')loadSup();
   else if(page==='goodsreceived')loadGR();
   else if(page==='stocktransfers')loadST();
+  else if(page==='cipl')loadCIPL();
   else if(page==='inventoryreport')loadIR();
   else if(page==='purchasereport')loadPR();
   else if(page==='alerts')loadAlerts();
@@ -3047,41 +3289,26 @@ function acToggleNotif(){
 function loadACNotifications(){
   const todayStr = today();
   const urgent = [];
-
   acTasksData.forEach(t => {
     if(t.status === 'Done' || t.status === 'Cancelled') return;
     const isOverdue = t.task_date < todayStr;
     const isToday   = t.task_date === todayStr;
     const isHigh    = t.priority === 'High';
-
-    if(isOverdue){
-      urgent.push({task:t, type:'overdue', icon:'&#9940;', label:'Overdue', tagBg:'#fff0e8', tagFg:'#f97316'});
-    } else if(isToday && isHigh){
-      urgent.push({task:t, type:'urgent', icon:'&#128680;', label:'Due Today · High', tagBg:'#fef2f2', tagFg:'#ef4444'});
-    } else if(isToday){
-      urgent.push({task:t, type:'today', icon:'&#128203;', label:'Due Today', tagBg:'#fffbeb', tagFg:'#d97706'});
-    } else if(isHigh){
-      urgent.push({task:t, type:'urgent', icon:'&#128680;', label:'High Priority', tagBg:'#fef2f2', tagFg:'#ef4444'});
-    }
+    if(isOverdue){ urgent.push({task:t,type:'overdue',icon:'&#9940;',label:'Overdue',tagBg:'#fff0e8',tagFg:'#f97316'}); }
+    else if(isToday&&isHigh){ urgent.push({task:t,type:'urgent',icon:'&#128680;',label:'Due Today · High',tagBg:'#fef2f2',tagFg:'#ef4444'}); }
+    else if(isToday){ urgent.push({task:t,type:'today',icon:'&#128203;',label:'Due Today',tagBg:'#fffbeb',tagFg:'#d97706'}); }
+    else if(isHigh){ urgent.push({task:t,type:'urgent',icon:'&#128680;',label:'High Priority',tagBg:'#fef2f2',tagFg:'#ef4444'}); }
   });
-
   const bar   = document.getElementById('ac-notif-bar');
   const list  = document.getElementById('ac-notif-list');
   const badge = document.getElementById('ac-urgent-badge');
   const count = document.getElementById('ac-notif-count');
-
-  if(!urgent.length){
-    bar.classList.remove('has-alerts');
-    badge.style.display = 'none';
-    return;
-  }
-
+  if(!urgent.length){ bar.classList.remove('has-alerts'); badge.style.display='none'; return; }
   bar.classList.add('has-alerts');
-  badge.style.display = '';
-  count.textContent = urgent.length;
-
+  badge.style.display='';
+  count.textContent=urgent.length;
   if(acNotifOpen){
-    list.innerHTML = urgent.map(item => `
+    list.innerHTML=urgent.map(item=>`
       <div class="ac-notif-item ac-notif-${item.type}">
         <span class="ac-notif-icon">${item.icon}</span>
         <div class="ac-notif-body">
@@ -3097,51 +3324,37 @@ function loadACNotifications(){
 }
 
 function acGoToTask(date){
-  const [y,m] = date.split('-');
-  acYear  = +y;
-  acMonth = +m - 1;
-  renderACCalendar();
-  acSelectDay(date);
+  const [y,m]=date.split('-');
+  acYear=+y; acMonth=+m-1;
+  renderACCalendar(); acSelectDay(date);
   document.getElementById('page-activitycalendar').scrollIntoView({behavior:'smooth'});
 }
 
-
-// ── USER ACCOUNTS ────────────────────────────────────────────
-let editingUserId = null;
-
-async function loadUsers() {
-  const list = document.getElementById('users-list');
-  const countLabel = document.getElementById('ua-count-label');
-  try {
-    const res = await fetch('/api/users');
-    const users = await res.json();
-    if (!users.length) {
-      list.innerHTML = '<div style="text-align:center;color:var(--text-2);padding:24px;font-size:13px">No accounts found.</div>';
-      countLabel.textContent = '';
-      return;
-    }
-    const active = users.filter(u => u.status === 'Active').length;
-    countLabel.textContent = `${users.length} account${users.length!==1?'s':''} · ${active} active`;
-    const roleColors = { Admin:'#6366f1', Manager:'#0ea5e9', Staff:'#64748b' };
-    const avatarColors = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899'];
-    list.innerHTML = users.map((u, i) => {
-      const initials = u.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-      const avatarColor = avatarColors[i % avatarColors.length];
-      const roleColor = roleColors[u.role] || '#64748b';
-      const isActive = u.status === 'Active';
-      const escaped = JSON.stringify(u).replace(/"/g,'&quot;');
-      return `
-      <div class="ua-row">
+// ── USER ACCOUNTS ─────────────────────────────────────────────
+let editingUserId=null;
+async function loadUsers(){
+  const list=document.getElementById('users-list');
+  const countLabel=document.getElementById('ua-count-label');
+  try{
+    const res=await fetch('/api/users');
+    const users=await res.json();
+    if(!users.length){list.innerHTML='<div style="text-align:center;color:var(--text-2);padding:24px;font-size:13px">No accounts found.</div>';countLabel.textContent='';return;}
+    const active=users.filter(u=>u.status==='Active').length;
+    countLabel.textContent=`${users.length} account${users.length!==1?'s':''} · ${active} active`;
+    const roleColors={Admin:'#6366f1',Manager:'#0ea5e9',Staff:'#64748b'};
+    const avatarColors=['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899'];
+    list.innerHTML=users.map((u,i)=>{
+      const initials=u.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+      const avatarColor=avatarColors[i%avatarColors.length];
+      const roleColor=roleColors[u.role]||'#64748b';
+      const isActive=u.status==='Active';
+      const escaped=JSON.stringify(u).replace(/"/g,'&quot;');
+      return `<div class="ua-row">
         <div class="ua-avatar" style="background:${avatarColor}">${initials}</div>
-        <div class="ua-info">
-          <div class="ua-name">${u.name}</div>
-          <div class="ua-email">${u.email}</div>
-        </div>
+        <div class="ua-info"><div class="ua-name">${u.name}</div><div class="ua-email">${u.email}</div></div>
         <div class="ua-badges">
           <span class="ua-badge-role" style="background:${roleColor}1a;color:${roleColor}">${u.role}</span>
-          <span class="ua-badge-status" style="background:${isActive?'#10b9811a':'#ef44441a'};color:${isActive?'#10b981':'#ef4444'}">
-            ${isActive?'&#9679; Active':'&#9675; Inactive'}
-          </span>
+          <span class="ua-badge-status" style="background:${isActive?'#10b9811a':'#ef44441a'};color:${isActive?'#10b981':'#ef4444'}">${isActive?'&#9679; Active':'&#9675; Inactive'}</span>
         </div>
         <div class="ua-actions">
           <button class="ua-btn ua-btn-edit" onclick="openUserModal(${escaped})">✏ Edit</button>
@@ -3149,82 +3362,59 @@ async function loadUsers() {
         </div>
       </div>`;
     }).join('');
-  } catch(e) {
-    list.innerHTML = '<div style="text-align:center;color:var(--danger);padding:24px;font-size:13px">Failed to load accounts.</div>';
-  }
+  }catch(e){list.innerHTML='<div style="text-align:center;color:var(--danger);padding:24px;font-size:13px">Failed to load accounts.</div>';}
 }
-
-function openUserModal(user) {
-  editingUserId = user ? user.id : null;
-  document.getElementById('user-modal-title').textContent = user ? 'Edit User' : 'Add User';
-  document.getElementById('u-id').value = user ? user.id : '';
-  document.getElementById('u-name').value = user ? user.name : '';
-  document.getElementById('u-email').value = user ? user.email : '';
-  document.getElementById('u-role').value = user ? user.role : 'Staff';
-  document.getElementById('u-status').value = user ? user.status : 'Active';
-  document.getElementById('u-password').value = '';
-  const isEdit = !!user;
-  document.getElementById('u-pass-label').innerHTML = isEdit
-    ? 'New Password' : 'Password <span style="color:var(--danger)">*</span>';
-  document.getElementById('u-pass-hint').style.display = isEdit ? 'block' : 'none';
-  document.getElementById('user-modal').style.display = 'flex';
+function openUserModal(user){
+  editingUserId=user?user.id:null;
+  document.getElementById('user-modal-title').textContent=user?'Edit User':'Add User';
+  document.getElementById('u-id').value=user?user.id:'';
+  document.getElementById('u-name').value=user?user.name:'';
+  document.getElementById('u-email').value=user?user.email:'';
+  document.getElementById('u-role').value=user?user.role:'Staff';
+  document.getElementById('u-status').value=user?user.status:'Active';
+  document.getElementById('u-password').value='';
+  const isEdit=!!user;
+  document.getElementById('u-pass-label').innerHTML=isEdit?'New Password':'Password <span style="color:var(--danger)">*</span>';
+  document.getElementById('u-pass-hint').style.display=isEdit?'block':'none';
+  document.getElementById('user-modal').style.display='flex';
 }
-
-function closeUserModal() {
-  document.getElementById('user-modal').style.display = 'none';
+function closeUserModal(){document.getElementById('user-modal').style.display='none';}
+async function saveUser(){
+  const id=document.getElementById('u-id').value;
+  const name=document.getElementById('u-name').value.trim();
+  const email=document.getElementById('u-email').value.trim();
+  const role=document.getElementById('u-role').value;
+  const status=document.getElementById('u-status').value;
+  const password=document.getElementById('u-password').value.trim();
+  if(!name||!email){gToast('Name and email are required.','error');return;}
+  if(!id&&!password){gToast('Password is required for new users.','error');return;}
+  try{
+    const url=id?`/api/users/${id}`:'/api/users';
+    const method=id?'PUT':'POST';
+    const body={name,email,role,status};
+    if(password)body.password=password;
+    const res=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(!res.ok){gToast(data.error||'Failed to save user.','error');return;}
+    gToast(id?'User updated successfully!':'User added successfully!');
+    closeUserModal();loadUsers();
+  }catch(e){gToast('Server error. Please try again.','error');}
 }
-
-async function saveUser() {
-  const id = document.getElementById('u-id').value;
-  const name = document.getElementById('u-name').value.trim();
-  const email = document.getElementById('u-email').value.trim();
-  const role = document.getElementById('u-role').value;
-  const status = document.getElementById('u-status').value;
-  const password = document.getElementById('u-password').value.trim();
-
-  if (!name || !email) { gToast('Name and email are required.','error'); return; }
-  if (!id && !password) { gToast('Password is required for new users.','error'); return; }
-
-  try {
-    const url = id ? `/api/users/${id}` : '/api/users';
-    const method = id ? 'PUT' : 'POST';
-    const body = { name, email, role, status };
-    if (password) body.password = password;
-
-    const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    const data = await res.json();
-    if (!res.ok) { gToast(data.error || 'Failed to save user.','error'); return; }
-
-    gToast(id ? 'User updated successfully!' : 'User added successfully!');
-    closeUserModal();
-    loadUsers();
-  } catch(e) {
-    gToast('Server error. Please try again.','error');
-  }
-}
-
-async function deleteUser(id, name) {
-  if (!confirm(`Delete user "${name}"? This cannot be undone.`)) return;
-  try {
-    const res = await fetch(`/api/users/${id}`, { method:'DELETE' });
-    const data = await res.json();
-    if (!res.ok) { gToast(data.error || 'Failed to delete user.','error'); return; }
-    gToast(`User "${name}" deleted.`);
-    loadUsers();
-  } catch(e) {
-    gToast('Server error. Please try again.','error');
-  }
+async function deleteUser(id,name){
+  if(!confirm(`Delete user "${name}"? This cannot be undone.`))return;
+  try{
+    const res=await fetch(`/api/users/${id}`,{method:'DELETE'});
+    const data=await res.json();
+    if(!res.ok){gToast(data.error||'Failed to delete user.','error');return;}
+    gToast(`User "${name}" deleted.`);loadUsers();
+  }catch(e){gToast('Server error. Please try again.','error');}
 }
 
 // LINE NOTIFICATIONS
-let lineConfigured = false;
-
+let lineConfigured=false;
 async function sendLineNotification(){
   if(!lineConfigured){gToast('LINE not connected. Configure it in Settings.','error');return;}
-  const urgentTasks=acTasksData.filter(t=>{
-    const today=new Date().toISOString().slice(0,10);
-    return t.status!=='Done'&&(t.task_date<=today||t.priority==='High');
-  });
+  const urgentTasks=acTasksData.filter(t=>{const today=new Date().toISOString().slice(0,10);return t.status!=='Done'&&(t.task_date<=today||t.priority==='High');});
   if(!urgentTasks.length){gToast('No urgent tasks to notify.','info');return;}
   try{
     const btn=document.getElementById('line-notif-btn');
@@ -3236,25 +3426,16 @@ async function sendLineNotification(){
   }catch(err){gToast(err.message,'error');}
   finally{const btn=document.getElementById('line-notif-btn');if(btn){btn.disabled=false;btn.innerHTML='<img src="https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg" style="width:14px;height:14px;filter:brightness(0) invert(1)" alt="LINE"/> Notify via LINE';}}
 }
-
 async function lineAutoNotify(task){
-  try{
-    const cfg=await fetch(API+'/line/config').then(r=>r.json());
-    if(!cfg.token_set||!cfg.auto_notify)return;
-    await fetch(API+'/line/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tasks:[task]})});
-  }catch{}
+  try{const cfg=await fetch(API+'/line/config').then(r=>r.json());if(!cfg.token_set||!cfg.auto_notify)return;await fetch(API+'/line/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tasks:[task]})});}catch{}
 }
-
 async function loadLineConfig(){
   try{
-    const r=await fetch(API+'/line/config');
-    if(!r.ok)return;
+    const r=await fetch(API+'/line/config');if(!r.ok)return;
     const cfg=await r.json();
-    lineConfigured=cfg.token_set; // broadcast mode — no user_id required
-    const uid=document.getElementById('line-userid');
-    if(uid)uid.value=cfg.user_id||'';
-    const auto=document.getElementById('line-auto');
-    if(auto)auto.checked=!!cfg.auto_notify;
+    lineConfigured=cfg.token_set;
+    const uid=document.getElementById('line-userid');if(uid)uid.value=cfg.user_id||'';
+    const auto=document.getElementById('line-auto');if(auto)auto.checked=!!cfg.auto_notify;
     const st=document.getElementById('line-conn-status');
     if(st){st.textContent=lineConfigured?'● Connected':'● Not Connected';st.className='line-status '+(lineConfigured?'connected':'disconnected');}
   }catch{}
@@ -3272,12 +3453,7 @@ async function saveLineConfig(){
   }catch(err){gToast(err.message,'error');}
 }
 async function testLineNotify(){
-  try{
-    const r=await fetch(API+'/line/test',{method:'POST'});
-    const d=await r.json();
-    if(!r.ok)throw new Error(d.error||'Test failed');
-    gToast(d.message||'Test broadcast sent!');
-  }catch(err){gToast(err.message,'error');}
+  try{const r=await fetch(API+'/line/test',{method:'POST'});const d=await r.json();if(!r.ok)throw new Error(d.error||'Test failed');gToast(d.message||'Test broadcast sent!');}catch(err){gToast(err.message,'error');}
 }
 
 /* ===== SPARE PARTS MONITORING - SPM NAV TOGGLE ===== */
@@ -3290,8 +3466,289 @@ function toggleSPMGroup(el){
   if(chev)chev.style.transform=isOpen?'rotate(0deg)':'rotate(180deg)';
 }
 
+// ════════════════════════════════════════════════════════════════
+// CI / PL  —  Commercial Invoice & Packing List
+// ════════════════════════════════════════════════════════════════
+let ciEditId=null, plEditId=null;
 
+function switchCIPLTab(tab, btn){
+  document.querySelectorAll('#page-cipl .log-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#page-cipl .log-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('cipl-panel-'+tab).classList.add('active');
+}
 
+function loadCIPL(){ loadCI(); loadPL(); }
+
+// ── CI STATUS BADGE ───────────────────────────────────────────
+function ciBadge(st){
+  const map={draft:'#64748b',issued:'#0ea5e9',paid:'#10b981',cancelled:'#ef4444'};
+  const k=(st||'draft').toLowerCase();
+  return `<span style="background:${map[k]||'#64748b'}1a;color:${map[k]||'#64748b'};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${st||'—'}</span>`;
+}
+function plBadge(st){
+  const map={draft:'#64748b',issued:'#6366f1',closed:'#10b981'};
+  const k=(st||'draft').toLowerCase();
+  return `<span style="background:${map[k]||'#64748b'}1a;color:${map[k]||'#64748b'};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${st||'—'}</span>`;
+}
+
+// ── COMMERCIAL INVOICE ────────────────────────────────────────
+async function loadCI(){
+  try{
+    const r=await fetch(API+'/cipl/ci');
+    ciData=await r.json();
+    renderCI();
+  }catch(e){gToast('Failed to load commercial invoices','error');}
+}
+
+function renderCI(){
+  const q=(document.getElementById('ci-search').value||'').toLowerCase();
+  const sf=document.getElementById('ci-status-filter').value;
+  let rows=ciData.filter(r=>{
+    if(sf&&r.status!==sf)return false;
+    return !q||(r.ci_number||'').toLowerCase().includes(q)||(r.supplier||'').toLowerCase().includes(q)||(r.goods_description||'').toLowerCase().includes(q);
+  });
+  document.getElementById('ci-meta').textContent=`${rows.length} record${rows.length!==1?'s':''}`;
+  let grand=0;
+  const tbody=document.getElementById('ci-body');
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--text-2)">No commercial invoices found.</td></tr>`;document.getElementById('ci-grand-total').textContent='0.00';return;}
+  tbody.innerHTML=rows.map((r,i)=>{
+    grand+=r.total_amount||0;
+    return `<tr>
+      <td>${i+1}</td>
+      <td><strong>${esc(r.ci_number)}</strong></td>
+      <td>${esc(r.supplier)||'—'}</td>
+      <td>${r.invoice_date||'—'}</td>
+      <td><span style="font-size:11px;background:#f1f5f9;padding:2px 6px;border-radius:4px">${esc(r.shipment_terms)}</span></td>
+      <td>${esc(r.currency)}</td>
+      <td style="font-weight:700">${Number(r.total_amount||0).toLocaleString('en-US',{minimumFractionDigits:2})}</td>
+      <td>${esc(r.port_of_loading)||'—'}</td>
+      <td>${esc(r.port_of_discharge)||'—'}</td>
+      <td>${ciBadge(r.status)}</td>
+      <td>${fileLink(r)}</td>
+      <td>
+        <button class="g-icon-btn" title="Edit" onclick="openCIModal(${r.id})">✏</button>
+        <button class="g-icon-btn g-icon-btn-del" title="Delete" onclick="deleteCI(${r.id})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('ci-grand-total').textContent=grand.toLocaleString('en-US',{minimumFractionDigits:2});
+}
+
+function openCIModal(id){
+  ciEditId=id||null;
+  document.getElementById('ci-modal-title').textContent=id?'Edit Commercial Invoice':'Add Commercial Invoice';
+  document.getElementById('ci-modal-id').value=id||'';
+  document.getElementById('ci-current-file').textContent='';
+  if(id){
+    const r=ciData.find(x=>x.id===id);
+    if(r){
+      document.getElementById('ci-f-number').value=r.ci_number||'';
+      document.getElementById('ci-f-supplier').value=r.supplier||'';
+      document.getElementById('ci-f-date').value=r.invoice_date||'';
+      document.getElementById('ci-f-terms').value=r.shipment_terms||'FOB';
+      document.getElementById('ci-f-currency').value=r.currency||'USD';
+      document.getElementById('ci-f-amount').value=r.total_amount||'';
+      document.getElementById('ci-f-status').value=r.status||'Draft';
+      document.getElementById('ci-f-pol').value=r.port_of_loading||'';
+      document.getElementById('ci-f-pod').value=r.port_of_discharge||'';
+      document.getElementById('ci-f-desc').value=r.goods_description||'';
+      document.getElementById('ci-f-remarks').value=r.remarks||'';
+      if(r.file_name)document.getElementById('ci-current-file').innerHTML='Current file: <strong>'+esc(r.file_name.replace(/^\d+[-_]/,''))+'</strong>';
+    }
+  } else {
+    ['ci-f-number','ci-f-supplier','ci-f-date','ci-f-amount','ci-f-pol','ci-f-pod','ci-f-desc','ci-f-remarks'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('ci-f-terms').value='FOB';
+    document.getElementById('ci-f-currency').value='USD';
+    document.getElementById('ci-f-status').value='Draft';
+    document.getElementById('ci-f-date').value=new Date().toISOString().slice(0,10);
+  }
+  document.getElementById('ci-f-file').value='';
+  document.getElementById('ci-modal').style.display='flex';
+}
+
+function closeCIModal(){document.getElementById('ci-modal').style.display='none';}
+
+async function saveCI(){
+  const id=document.getElementById('ci-modal-id').value;
+  const num=document.getElementById('ci-f-number').value.trim();
+  if(!num){gToast('CI Number is required','error');return;}
+  const fd=new FormData();
+  fd.append('ci_number',num);
+  fd.append('supplier',document.getElementById('ci-f-supplier').value.trim());
+  fd.append('invoice_date',document.getElementById('ci-f-date').value);
+  fd.append('shipment_terms',document.getElementById('ci-f-terms').value);
+  fd.append('currency',document.getElementById('ci-f-currency').value);
+  fd.append('total_amount',document.getElementById('ci-f-amount').value||0);
+  fd.append('status',document.getElementById('ci-f-status').value);
+  fd.append('port_of_loading',document.getElementById('ci-f-pol').value.trim());
+  fd.append('port_of_discharge',document.getElementById('ci-f-pod').value.trim());
+  fd.append('goods_description',document.getElementById('ci-f-desc').value.trim());
+  fd.append('remarks',document.getElementById('ci-f-remarks').value.trim());
+  const file=document.getElementById('ci-f-file').files[0];
+  if(file)fd.append('file',file);
+  try{
+    const url=id?API+'/cipl/ci/'+id:API+'/cipl/ci';
+    const r=await fetch(url,{method:id?'PUT':'POST',body:fd});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Save failed');
+    gToast(id?'Invoice updated!':'Invoice added!');
+    closeCIModal();
+    await loadCI();
+  }catch(err){gToast(err.message,'error');}
+}
+
+async function deleteCI(id){
+  const r=ciData.find(x=>x.id===id);
+  if(!confirm(`Delete CI "${r?r.ci_number:id}"? This cannot be undone.`))return;
+  try{
+    const res=await fetch(API+'/cipl/ci/'+id,{method:'DELETE'});
+    if(!res.ok){const d=await res.json();throw new Error(d.error||'Delete failed');}
+    gToast('Invoice deleted.');
+    await loadCI();
+  }catch(err){gToast(err.message,'error');}
+}
+
+// ── PACKING LIST ──────────────────────────────────────────────
+async function loadPL(){
+  try{
+    const r=await fetch(API+'/cipl/pl');
+    plData=await r.json();
+    renderPL();
+  }catch(e){gToast('Failed to load packing lists','error');}
+}
+
+function renderPL(){
+  const q=(document.getElementById('pl-search').value||'').toLowerCase();
+  const sf=document.getElementById('pl-status-filter').value;
+  let rows=plData.filter(r=>{
+    if(sf&&r.status!==sf)return false;
+    return !q||(r.pl_number||'').toLowerCase().includes(q)||(r.ci_number||'').toLowerCase().includes(q)||(r.shipper||'').toLowerCase().includes(q)||(r.consignee||'').toLowerCase().includes(q);
+  });
+  document.getElementById('pl-meta').textContent=`${rows.length} record${rows.length!==1?'s':''}`;
+  let tPkgs=0,tNW=0,tGW=0,tCBM=0;
+  const tbody=document.getElementById('pl-body');
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="15" style="text-align:center;padding:24px;color:var(--text-2)">No packing lists found.</td></tr>`;['pl-total-pkgs','pl-total-nw','pl-total-gw','pl-total-cbm'].forEach(id=>document.getElementById(id).textContent='0');return;}
+  tbody.innerHTML=rows.map((r,i)=>{
+    tPkgs+=r.total_packages||0; tNW+=r.total_net_weight||0; tGW+=r.total_gross_weight||0; tCBM+=r.total_cbm||0;
+    return `<tr>
+      <td>${i+1}</td>
+      <td><strong>${esc(r.pl_number)}</strong></td>
+      <td>${r.ci_number?`<span style="color:var(--primary);font-size:12px">${esc(r.ci_number)}</span>`:'—'}</td>
+      <td>${esc(r.shipper)||'—'}</td>
+      <td>${esc(r.consignee)||'—'}</td>
+      <td>${r.pl_date||'—'}</td>
+      <td>${esc(r.vessel_flight)||'—'}</td>
+      <td>${esc(r.bl_awb_number)||'—'}</td>
+      <td style="text-align:center;font-weight:700">${r.total_packages||0}</td>
+      <td style="text-align:right">${Number(r.total_net_weight||0).toFixed(2)}</td>
+      <td style="text-align:right">${Number(r.total_gross_weight||0).toFixed(2)}</td>
+      <td style="text-align:right">${Number(r.total_cbm||0).toFixed(3)}</td>
+      <td>${plBadge(r.status)}</td>
+      <td>${fileLink(r)}</td>
+      <td>
+        <button class="g-icon-btn" title="Edit" onclick="openPLModal(${r.id})">✏</button>
+        <button class="g-icon-btn g-icon-btn-del" title="Delete" onclick="deletePL(${r.id})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('pl-total-pkgs').textContent=tPkgs;
+  document.getElementById('pl-total-nw').textContent=tNW.toFixed(2);
+  document.getElementById('pl-total-gw').textContent=tGW.toFixed(2);
+  document.getElementById('pl-total-cbm').textContent=tCBM.toFixed(3);
+}
+
+function openPLModal(id){
+  plEditId=id||null;
+  document.getElementById('pl-modal-title').textContent=id?'Edit Packing List':'Add Packing List';
+  document.getElementById('pl-modal-id').value=id||'';
+  document.getElementById('pl-current-file').textContent='';
+  if(id){
+    const r=plData.find(x=>x.id===id);
+    if(r){
+      document.getElementById('pl-f-number').value=r.pl_number||'';
+      document.getElementById('pl-f-ci').value=r.ci_number||'';
+      document.getElementById('pl-f-shipper').value=r.shipper||'';
+      document.getElementById('pl-f-consignee').value=r.consignee||'';
+      document.getElementById('pl-f-date').value=r.pl_date||'';
+      document.getElementById('pl-f-status').value=r.status||'Draft';
+      document.getElementById('pl-f-vessel').value=r.vessel_flight||'';
+      document.getElementById('pl-f-bl').value=r.bl_awb_number||'';
+      document.getElementById('pl-f-pol').value=r.port_of_loading||'';
+      document.getElementById('pl-f-pod').value=r.port_of_discharge||'';
+      document.getElementById('pl-f-pkgs').value=r.total_packages||'';
+      document.getElementById('pl-f-nw').value=r.total_net_weight||'';
+      document.getElementById('pl-f-gw').value=r.total_gross_weight||'';
+      document.getElementById('pl-f-cbm').value=r.total_cbm||'';
+      document.getElementById('pl-f-remarks').value=r.remarks||'';
+      if(r.file_name)document.getElementById('pl-current-file').innerHTML='Current file: <strong>'+esc(r.file_name.replace(/^\d+[-_]/,''))+'</strong>';
+    }
+  } else {
+    ['pl-f-number','pl-f-ci','pl-f-shipper','pl-f-consignee','pl-f-date','pl-f-vessel','pl-f-bl','pl-f-pol','pl-f-pod','pl-f-pkgs','pl-f-nw','pl-f-gw','pl-f-cbm','pl-f-remarks'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('pl-f-status').value='Draft';
+    document.getElementById('pl-f-date').value=new Date().toISOString().slice(0,10);
+    // auto-suggest CI number if one is selected
+    if(ciData.length){const latest=ciData[0];if(latest)document.getElementById('pl-f-ci').value=latest.ci_number;}
+  }
+  document.getElementById('pl-f-file').value='';
+  document.getElementById('pl-modal').style.display='flex';
+}
+
+function closePLModal(){document.getElementById('pl-modal').style.display='none';}
+
+async function savePL(){
+  const id=document.getElementById('pl-modal-id').value;
+  const num=document.getElementById('pl-f-number').value.trim();
+  if(!num){gToast('PL Number is required','error');return;}
+  const fd=new FormData();
+  fd.append('pl_number',num);
+  fd.append('ci_number',document.getElementById('pl-f-ci').value.trim());
+  fd.append('shipper',document.getElementById('pl-f-shipper').value.trim());
+  fd.append('consignee',document.getElementById('pl-f-consignee').value.trim());
+  fd.append('pl_date',document.getElementById('pl-f-date').value);
+  fd.append('status',document.getElementById('pl-f-status').value);
+  fd.append('vessel_flight',document.getElementById('pl-f-vessel').value.trim());
+  fd.append('bl_awb_number',document.getElementById('pl-f-bl').value.trim());
+  fd.append('port_of_loading',document.getElementById('pl-f-pol').value.trim());
+  fd.append('port_of_discharge',document.getElementById('pl-f-pod').value.trim());
+  fd.append('total_packages',document.getElementById('pl-f-pkgs').value||0);
+  fd.append('total_net_weight',document.getElementById('pl-f-nw').value||0);
+  fd.append('total_gross_weight',document.getElementById('pl-f-gw').value||0);
+  fd.append('total_cbm',document.getElementById('pl-f-cbm').value||0);
+  fd.append('remarks',document.getElementById('pl-f-remarks').value.trim());
+  const file=document.getElementById('pl-f-file').files[0];
+  if(file)fd.append('file',file);
+  try{
+    const url=id?API+'/cipl/pl/'+id:API+'/cipl/pl';
+    const r=await fetch(url,{method:id?'PUT':'POST',body:fd});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Save failed');
+    gToast(id?'Packing list updated!':'Packing list added!');
+    closePLModal();
+    await loadPL();
+  }catch(err){gToast(err.message,'error');}
+}
+
+async function deletePL(id){
+  const r=plData.find(x=>x.id===id);
+  if(!confirm(`Delete PL "${r?r.pl_number:id}"? This cannot be undone.`))return;
+  try{
+    const res=await fetch(API+'/cipl/pl/'+id,{method:'DELETE'});
+    if(!res.ok){const d=await res.json();throw new Error(d.error||'Delete failed');}
+    gToast('Packing list deleted.');
+    await loadPL();
+  }catch(err){gToast(err.message,'error');}
+}
+
+/* ===== SPARE PARTS MONITORING - SPM NAV TOGGLE ===== */
+function toggleSPMGroup(el){
+  const grp=el.nextElementSibling;
+  if(!grp)return;
+  const isOpen=grp.style.display!=='none';
+  grp.style.display=isOpen?'none':'block';
+  const chev=el.querySelector('.spm-chevron');
+  if(chev)chev.style.transform=isOpen?'rotate(0deg)':'rotate(180deg)';
+}
 </script>
 </body>
 </html>
