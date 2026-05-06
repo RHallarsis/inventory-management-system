@@ -1676,6 +1676,7 @@ body.staff-mode #st-add-btn { display:none !important; }
       <button class="ac-filter-btn" onclick="acSetFilter('Maintenance',this)">Maintenance</button>
       <button class="ac-filter-btn" onclick="acSetFilter('Personal',this)">Personal</button>
       <button class="ac-filter-btn" onclick="acSetFilter('General',this)">General</button>
+      <button class="ac-filter-btn" onclick="acSetFilter('Pullout',this)">Pullout</button>
     </div>
     <button class="page-add-btn" onclick="openACModal(null,null)">+ Add Task</button>
   </div>
@@ -1706,6 +1707,7 @@ body.staff-mode #st-add-btn { display:none !important; }
         <div class="ac-legend-item"><div class="ac-legend-dot" style="background:#8b5cf6"></div>Maintenance</div>
         <div class="ac-legend-item"><div class="ac-legend-dot" style="background:#ec4899"></div>Personal</div>
         <div class="ac-legend-item"><div class="ac-legend-dot" style="background:#64748b"></div>General</div>
+        <div class="ac-legend-item"><div class="ac-legend-dot" style="background:#f97316"></div>Pullout</div>
         <div class="ac-legend-item"><div class="ac-legend-dot" style="background:#dc2626"></div>PH Holiday</div>
       </div>
     </div>
@@ -2214,7 +2216,7 @@ body.staff-mode #st-add-btn { display:none !important; }
         <div class="g-form-group"><label>Category</label>
           <select id="ac-f-category">
             <option>Work</option><option>Meeting</option><option>Delivery</option>
-            <option>Maintenance</option><option>Personal</option><option selected>General</option>
+            <option>Maintenance</option><option>Personal</option><option selected>General</option><option>Pullout</option>
           </select>
         </div>
         <div class="g-form-group"><label>Priority</label>
@@ -3102,7 +3104,7 @@ function closeWBDelModal(){document.getElementById('wb-del-modal').classList.rem
 async function confirmDeleteWB(){try{await fetch(API+'/logistics/waybills/'+wbDeleteId,{method:'DELETE'});gToast('Deleted.');closeWBDelModal();loadWB();}catch{gToast('Delete failed','error');}}
 
 // ── ACTIVITY CALENDAR ────────────────────────────────────────
-const AC_CAT_COLOR={Work:'#6366f1',Meeting:'#f59e0b',Delivery:'#10b981',Maintenance:'#8b5cf6',Personal:'#ec4899',General:'#64748b','PH Holiday':'#dc2626'};
+const AC_CAT_COLOR={Work:'#6366f1',Meeting:'#f59e0b',Delivery:'#10b981',Maintenance:'#8b5cf6',Personal:'#ec4899',General:'#64748b',Pullout:'#f97316','PH Holiday':'#dc2626'};
 
 async function loadPHHolidays(year){
   if(phHolidays[year]) return; // already cached
