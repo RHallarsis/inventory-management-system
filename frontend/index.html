@@ -1455,12 +1455,12 @@ body.staff-mode #st-add-btn { display:none !important; }
 
 <!-- ===== PL MODAL ===== -->
 <div class="g-modal" id="pl-modal" style="display:none">
-  <div class="g-modal-box" style="max-width:680px;display:flex;flex-direction:column;max-height:88vh;">
+  <div class="g-modal-box" style="max-width:680px;display:flex;flex-direction:column;max-height:88vh;overflow:hidden;">
     <div class="g-modal-head">
       <span id="pl-modal-title">Add Packing List</span>
       <button class="g-modal-close" onclick="closePLModal()">✕</button>
     </div>
-    <div class="g-modal-body" style="overflow-y:auto;flex:1;">
+    <div class="g-modal-body" style="overflow-y:auto;flex:1;min-height:0;">
       <input type="hidden" id="pl-modal-id"/>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="g-form-group">
