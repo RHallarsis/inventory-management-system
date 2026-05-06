@@ -2059,7 +2059,7 @@ body.staff-mode #st-add-btn { display:none !important; }
     <div class="g-modal-body">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="g-form-group"><label>GR Number *</label><input id="gr-f-grno" placeholder="GR-2024-001"/></div>
-        <div class="g-form-group"><label>PO Number</label><input id="gr-f-pono" placeholder="PO-2024-001"/></div>
+        <div class="g-form-group"><label>PO Number</label><select id="gr-f-pono" onchange="onGRPOChange()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;background:var(--card);color:var(--text)"><option value="">-- Select PO (optional) --</option></select></div>
         <div class="g-form-group"><label>Supplier *</label><input id="gr-f-supplier" placeholder="Supplier name"/></div>
         <div class="g-form-group"><label>Received Date</label><input type="date" id="gr-f-date"/></div>
         <div class="g-form-group"><label>Received By</label><input id="gr-f-by" placeholder="Name"/></div>
@@ -2861,7 +2861,7 @@ function closeSupDelModal(){document.getElementById('sup-del-modal').classList.r
 async function confirmDeleteSup(){try{await fetch(API+'/suppliers/'+supDeleteId,{method:'DELETE'});gToast('Deleted.');closeSupDelModal();loadSup();}catch{gToast('Delete failed','error');}}
 
 // ── GOODS RECEIVED ──────────────────────────────────────────
-async function loadGR(){try{const r=await fetch(API+'/goods-received');grData=await r.json();renderGR();}catch{document.getElementById('gr-body').innerHTML='<tr><td colspan="9"><div class="no-results">Backend offline.</div></td></tr>';}}
+async function loadGR(){try{const r=await fetch(API+'/goods-received');grData=await r.json();if(!poData||!poData.length){const p=await fetch(API+'/purchase-orders');poData=await p.json();}renderGR();}catch{document.getElementById('gr-body').innerHTML='<tr><td colspan="9"><div class="no-results">Backend offline.</div></td></tr>';}}
 function renderGR(){
   const q=(document.getElementById('gr-search').value||'').toLowerCase();
   const rows=q?grData.filter(r=>(r.gr_number||'').toLowerCase().includes(q)||(r.supplier||'').toLowerCase().includes(q)):grData;
@@ -2869,8 +2869,9 @@ function renderGR(){
   document.getElementById('gr-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.gr_number}</strong></td><td>${r.po_number||'—'}</td><td>${r.supplier}</td><td>${r.received_date||'—'}</td><td>${r.received_by||'—'}</td><td>${r.total_items||0}</td><td>${badge(r.status)}</td>
     <td><button class="page-act-btn btn-edit" onclick="openGRModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openGRDelModal(${r.id},'${(r.gr_number||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="9"><div class="no-results">No records.</div></td></tr>';
 }
-function openGRModal(id=null){grEditId=id;const r=id?grData.find(x=>x.id===id):null;document.getElementById('gr-modal-title').textContent=id?'Edit GR':'Add Goods Received';document.getElementById('gr-f-grno').value=r?r.gr_number:'';document.getElementById('gr-f-pono').value=r?r.po_number:'';document.getElementById('gr-f-supplier').value=r?r.supplier:'';document.getElementById('gr-f-date').value=r?r.received_date:today();document.getElementById('gr-f-by').value=r?r.received_by:'';document.getElementById('gr-f-items').value=r?r.total_items:0;document.getElementById('gr-f-status').value=r?r.status:'Pending';document.getElementById('gr-modal').classList.add('open');}
+function openGRModal(id=null){grEditId=id;const r=id?grData.find(x=>x.id===id):null;document.getElementById('gr-modal-title').textContent=id?'Edit GR':'Add Goods Received';document.getElementById('gr-f-grno').value=r?r.gr_number:'';const poSel=document.getElementById('gr-f-pono');poSel.innerHTML='<option value="">-- Select PO (optional) --</option>'+(poData||[]).map(p=>`<option value="${p.po_number}">${p.po_number} — ${p.supplier}</option>`).join('');poSel.value=r?(r.po_number||''):'';document.getElementById('gr-f-supplier').value=r?r.supplier:'';document.getElementById('gr-f-date').value=r?r.received_date:today();document.getElementById('gr-f-by').value=r?r.received_by:'';document.getElementById('gr-f-items').value=r?r.total_items:0;document.getElementById('gr-f-status').value=r?r.status:'Pending';document.getElementById('gr-modal').classList.add('open');}
 function closeGRModal(){document.getElementById('gr-modal').classList.remove('open');}
+function onGRPOChange(){const sel=document.getElementById('gr-f-pono');const po=(poData||[]).find(p=>p.po_number===sel.value);if(po)document.getElementById('gr-f-supplier').value=po.supplier;}
 async function saveGR(){
   const body={gr_number:document.getElementById('gr-f-grno').value.trim(),po_number:document.getElementById('gr-f-pono').value.trim(),supplier:document.getElementById('gr-f-supplier').value.trim(),received_date:document.getElementById('gr-f-date').value,received_by:document.getElementById('gr-f-by').value.trim(),total_items:+document.getElementById('gr-f-items').value||0,status:document.getElementById('gr-f-status').value};
   if(!body.gr_number||!body.supplier){gToast('GR number and supplier required.','error');return;}
