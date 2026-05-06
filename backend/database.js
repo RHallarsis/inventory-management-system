@@ -480,24 +480,7 @@ const dbPromise = (async () => {
     console.log(`[db] Seeded ${seedPOs.length} purchase orders.`);
   }
 
-  // ── Seed goods_received ────────────────────────────────────────
-  const grCnt = await db.scalar('SELECT COUNT(*) FROM goods_received');
-  if (grCnt === 0) {
-    const seedGR = [
-      { gr_number: 'GR-2024-001', po_number: 'PO-2024-001', supplier: 'TechSource Global', received_date: '2024-01-22', received_by: 'John Dela Cruz', status: 'Completed', total_items: 63  },
-      { gr_number: 'GR-2024-002', po_number: 'PO-2024-002', supplier: 'Office World Inc.',  received_date: '2024-02-18', received_by: 'Ana Reyes',      status: 'Completed', total_items: 416 },
-      { gr_number: 'GR-2024-003', po_number: 'PO-2024-003', supplier: 'FurniCraft Co.',     received_date: '2024-03-15', received_by: 'Mark Santos',    status: 'Pending',   total_items: 23  },
-      { gr_number: 'GR-2024-004', po_number: 'PO-2024-004', supplier: 'Parts Depot PH',     received_date: '2024-04-02', received_by: 'Lisa Tan',       status: 'Pending',   total_items: 35  },
-      { gr_number: 'GR-2024-005', po_number: 'PO-2024-006', supplier: 'Office World Inc.',  received_date: '2024-04-20', received_by: 'John Dela Cruz', status: 'Completed', total_items: 90  },
-    ];
-    for (const g of seedGR) {
-      await db.run(
-        'INSERT INTO goods_received (gr_number, po_number, supplier, received_date, received_by, status, total_items) VALUES (?,?,?,?,?,?,?)',
-        [g.gr_number, g.po_number, g.supplier, g.received_date, g.received_by, g.status, g.total_items]
-      );
-    }
-    console.log(`[db] Seeded ${seedGR.length} goods received records.`);
-  }
+  // goods_received seed removed — no sample data injected
 
   // ── Seed users ─────────────────────────────────────────────────
   const userCnt = await db.scalar('SELECT COUNT(*) FROM users');
