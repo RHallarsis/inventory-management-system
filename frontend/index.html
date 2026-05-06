@@ -1730,9 +1730,9 @@ body.staff-mode #st-add-btn { display:none !important; }
       </div>
       <table class="ac-sum-tbl">
         <thead><tr>
-          <th>#</th><th>Date</th><th>Title</th><th>Category</th><th>Priority</th><th>Status</th><th>Description</th><th>Actions</th>
+          <th>#</th><th>Date</th><th>Time</th><th>Title</th><th>Category</th><th>Priority</th><th>Status</th><th>Description</th><th>Actions</th>
         </tr></thead>
-        <tbody id="acs-body"><tr><td colspan="8" class="ac-sum-empty">No tasks yet.</td></tr></tbody>
+        <tbody id="acs-body"><tr><td colspan="9" class="ac-sum-empty">No tasks yet.</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -2210,7 +2210,7 @@ body.staff-mode #st-add-btn { display:none !important; }
   <div class="g-modal" style="max-width:500px">
     <div class="g-modal-head"><span id="ac-task-modal-title">Add Task</span><button class="g-modal-close" onclick="closeACModal()">&#215;</button></div>
     <div class="g-modal-body">
-      <div class="g-form-group"><label>Date <span style="color:var(--danger)">*</span></label><input type="date" id="ac-f-date"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="g-form-group"><label>Date <span style="color:var(--danger)">*</span></label><input type="date" id="ac-f-date"/></div><div class="g-form-group"><label>Time <span style="color:var(--text-2);font-weight:400;font-size:11px">(optional)</span></label><input type="time" id="ac-f-time"/></div></div>
       <div class="g-form-group"><label>Title <span style="color:var(--danger)">*</span></label><input id="ac-f-title" placeholder="Task title"/></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="g-form-group"><label>Category</label>
@@ -3197,7 +3197,7 @@ function acSelectDay(iso){
     return`<div class="ac-task-item">
       <div class="ac-task-top">
         <div class="ac-task-dot" style="background:${dotColor}"></div>
-        <div class="ac-task-title">${t.title}</div>
+        <div style="flex:1"><div class="ac-task-title">${t.title}</div>${t.task_time?`<div style="font-size:10px;color:var(--text-2);margin-top:1px">⏰ ${t.task_time}</div>`:''}</div>
         <div class="ac-task-actions">
           <button class="ac-task-edit" onclick="openACModal('${t.task_date}',${t.id})">Edit</button>
           <button class="ac-task-del" onclick="openACDelModal(${t.id},'${t.title.replace(/'/g,"\\'")}')">Del</button>
@@ -3235,7 +3235,7 @@ function renderACSummary(){
     const [pBg,pFg]=(PRI_COLOR[t.priority]||'#f1f5f9|#64748b').split('|');
     return`<tr>
       <td>${i+1}</td>
-      <td style="white-space:nowrap">${t.task_date}</td>
+      <td style="white-space:nowrap">${t.task_date}</td><td>${t.task_time||'—'}</td>
       <td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block;flex-shrink:0"></span><strong>${t.title}</strong></span></td>
       <td><span style="background:${dotColor}22;color:${dotColor};font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">${t.category}</span></td>
       <td><span style="background:${pBg};color:${pFg};font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">${t.priority}</span></td>
@@ -3246,7 +3246,7 @@ function renderACSummary(){
         <button class="ac-sum-act ac-sum-del" onclick="openACDelModal(${t.id},'${t.title.replace(/'/g,"\\'")}')">Del</button>
       </td>
     </tr>`;
-  }).join(''):'<tr><td colspan="8" class="ac-sum-empty">No tasks this month.</td></tr>';
+  }).join(''):'<tr><td colspan="9" class="ac-sum-empty">No tasks this month.</td></tr>';
 }
 
 // ── Modal ──────────────────────────────────────────────────────
@@ -3261,6 +3261,7 @@ function openACModal(date,id){
   document.getElementById('ac-f-priority').value=r?r.priority:'Medium';
   document.getElementById('ac-f-status').value=r?r.status:'Pending';
   document.getElementById('ac-f-desc').value=r?r.description:'';
+  document.getElementById('ac-f-time').value=r&&r.task_time?r.task_time:'';
   acPickedColor=r?r.color:'#6366f1';
   document.querySelectorAll('.ac-color-swatch').forEach(s=>{s.classList.toggle('selected',s.dataset.color===acPickedColor);});
   document.getElementById('ac-task-modal').classList.add('open');
@@ -3270,7 +3271,8 @@ async function saveACTask(){
   const date=document.getElementById('ac-f-date').value;
   const title=document.getElementById('ac-f-title').value.trim();
   if(!date||!title){gToast('Date and title are required.','error');return;}
-  const body={task_date:date,title,description:document.getElementById('ac-f-desc').value.trim(),category:document.getElementById('ac-f-category').value,priority:document.getElementById('ac-f-priority').value,status:document.getElementById('ac-f-status').value,color:acPickedColor};
+  const taskTime=document.getElementById('ac-f-time').value||null;
+  const body={task_date:date,task_time:taskTime,title,description:document.getElementById('ac-f-desc').value.trim(),category:document.getElementById('ac-f-category').value,priority:document.getElementById('ac-f-priority').value,status:document.getElementById('ac-f-status').value,color:acPickedColor};
   try{
     const url=acEditId?`${API}/calendar/tasks/${acEditId}`:API+'/calendar/tasks';
     const res=await fetch(url,{method:acEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
