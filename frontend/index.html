@@ -1347,7 +1347,7 @@ body.staff-mode #st-add-btn { display:none !important; }
         <tbody id="ci-body"></tbody>
         <tfoot>
           <tr>
-            <td colspan="4" style="padding:10px 14px;font-weight:700">GRAND TOTAL (USD equiv.)</td>
+            <td colspan="5" style="padding:10px 14px;font-weight:700">GRAND TOTAL (USD equiv.)</td>
             <td id="ci-grand-total" style="padding:10px 14px;font-weight:800;color:var(--primary)">0.00</td>
             <td colspan="3"></td>
           </tr>
@@ -3488,7 +3488,7 @@ function renderCI(){
   document.getElementById('ci-meta').textContent=`${rows.length} record${rows.length!==1?'s':''}`;
   let grand=0;
   const tbody=document.getElementById('ci-body');
-  if(!rows.length){tbody.innerHTML=`<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--text-2)">No commercial invoices found.</td></tr>`;document.getElementById('ci-grand-total').textContent='0.00';return;}
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-2)">No commercial invoices found.</td></tr>`;document.getElementById('ci-grand-total').textContent='0.00';return;}
   tbody.innerHTML=rows.map((r,i)=>{
     grand+=r.total_amount||0;
     return `<tr>
@@ -3501,8 +3501,7 @@ function renderCI(){
       <td>${ciBadge(r.status)}</td>
       <td>${fileLink(r)}</td>
       <td>
-        <button class="g-icon-btn" title="Edit" onclick="openCIModal(${r.id})">✏</button>
-        <button class="g-icon-btn g-icon-btn-del" title="Delete" onclick="deleteCI(${r.id})">🗑</button>
+        <button class="page-act-btn btn-edit" onclick="openCIModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="deleteCI(${r.id})">Del</button>
       </td>
     </tr>`;
   }).join('');
@@ -3612,8 +3611,7 @@ function renderPL(){
       <td>${plBadge(r.status)}</td>
       <td>${fileLink(r)}</td>
       <td>
-        <button class="g-icon-btn" title="Edit" onclick="openPLModal(${r.id})">✏</button>
-        <button class="g-icon-btn g-icon-btn-del" title="Delete" onclick="deletePL(${r.id})">🗑</button>
+        <button class="page-act-btn btn-edit" onclick="openPLModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="deletePL(${r.id})">Del</button>
       </td>
     </tr>`;
   }).join('');
