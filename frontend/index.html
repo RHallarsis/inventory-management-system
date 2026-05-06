@@ -1256,7 +1256,7 @@ body.staff-mode #st-add-btn { display:none !important; }
     <table class="mm-table">
       <thead><tr><th>Site</th><th>EZ</th><th>BR</th><th>EZ2</th><th>EZL</th><th>LB</th><th>J-ARK</th><th>Total</th><th>Actions</th></tr></thead>
       <tbody id="mm-body"></tbody>
-      <tfoot><tr><td><strong>TOTAL</strong></td><td id="mm-f-ez">0</td><td id="mm-f-br">0</td><td id="mm-f-ez2">0</td><td id="mm-f-ezl">0</td><td id="mm-f-lb">0</td><td id="mm-f-jark">0</td><td id="mm-f-total">0</td><td></td></tr></tfoot>
+      <tfoot><tr><td><strong>TOTAL</strong></td><td id="mm-tot-ez">0</td><td id="mm-tot-br">0</td><td id="mm-tot-ez2">0</td><td id="mm-tot-ezl">0</td><td id="mm-tot-lb">0</td><td id="mm-tot-jark">0</td><td id="mm-tot-total">0</td><td></td></tr></tfoot>
     </table>
   </div>
 </div>
@@ -2701,9 +2701,9 @@ function renderMM(){
     });
   });
   document.getElementById('mm-body').innerHTML=html||'<tr><td colspan="9"><div class="no-results">No data.</div></td></tr>';
-  ['ez','br','ez2','ezl','lb'].forEach(k=>document.getElementById('mm-f-'+k).textContent=totals[k]);
-  document.getElementById('mm-f-jark').textContent=totals.j_ark;
-  document.getElementById('mm-f-total').textContent=totals.total;
+  ['ez','br','ez2','ezl','lb'].forEach(k=>document.getElementById('mm-tot-'+k).textContent=totals[k]);
+  document.getElementById('mm-tot-jark').textContent=totals.j_ark;
+  document.getElementById('mm-tot-total').textContent=totals.total;
 }
 function toggleMMGroup(){const a=document.getElementById('mm-f-area').value;document.getElementById('mm-group-row').style.display=a==='Manila Area'?'':'none';}
 function openMMModal(id=null){mmEditId=id;const r=id?mmData.find(x=>x.id===id):null;document.getElementById('mm-modal-title').textContent=id?'Edit Site':'Add Site';document.getElementById('mm-f-site').value=r?r.site:'';document.getElementById('mm-f-area').value=r?r.area:'Manila Area';document.getElementById('mm-f-group').value=r?r.group_name:'Group 1';toggleMMGroup();['ez','br','ez2','ezl','lb'].forEach(k=>document.getElementById('mm-f-'+k).value=r?r[k]:0);document.getElementById('mm-f-jark').value=r?r.j_ark:0;document.getElementById('mm-modal').classList.add('open');}
@@ -3720,6 +3720,4 @@ function toggleSPMGroup(el){
   const chev=el.querySelector('.spm-chevron');
   if(chev)chev.style.transform=isOpen?'rotate(0deg)':'rotate(180deg)';
 }
-</script>
-</body>
-</html>
+</scr
