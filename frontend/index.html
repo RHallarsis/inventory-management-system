@@ -1706,6 +1706,7 @@ body.staff-mode #st-add-btn { display:none !important; }
         <div class="ac-legend-item"><div class="ac-legend-dot" style="background:#8b5cf6"></div>Maintenance</div>
         <div class="ac-legend-item"><div class="ac-legend-dot" style="background:#ec4899"></div>Personal</div>
         <div class="ac-legend-item"><div class="ac-legend-dot" style="background:#64748b"></div>General</div>
+        <div class="ac-legend-item"><div class="ac-legend-dot" style="background:#dc2626"></div>PH Holiday</div>
       </div>
     </div>
   </div>
@@ -2264,7 +2265,7 @@ let grEditId=null,grDeleteId=null,stEditId=null,stDeleteId=null;
 let tqEditId=null,tqDeleteId=null,mpEditId=null,mpDeleteId=null;
 let saEditId=null,saDeleteId=null,wbEditId=null,wbDeleteId=null;
 let barChart=null,donutChart=null;
-let acYear=new Date().getFullYear(),acMonth=new Date().getMonth(),acSelectedDate=null,acEvents={};
+let acYear=new Date().getFullYear(),acMonth=new Date().getMonth(),acSelectedDate=null,acEvents={},phHolidays={};
 let acTasksData=[],acEditId=null,acDeleteId=null,acPickedColor='#6366f1',acCategoryFilter='';
 
 // ── UTILS ────────────────────────────────────────────────────
@@ -3101,7 +3102,16 @@ function closeWBDelModal(){document.getElementById('wb-del-modal').classList.rem
 async function confirmDeleteWB(){try{await fetch(API+'/logistics/waybills/'+wbDeleteId,{method:'DELETE'});gToast('Deleted.');closeWBDelModal();loadWB();}catch{gToast('Delete failed','error');}}
 
 // ── ACTIVITY CALENDAR ────────────────────────────────────────
-const AC_CAT_COLOR={Work:'#6366f1',Meeting:'#f59e0b',Delivery:'#10b981',Maintenance:'#8b5cf6',Personal:'#ec4899',General:'#64748b'};
+const AC_CAT_COLOR={Work:'#6366f1',Meeting:'#f59e0b',Delivery:'#10b981',Maintenance:'#8b5cf6',Personal:'#ec4899',General:'#64748b','PH Holiday':'#dc2626'};
+
+async function loadPHHolidays(year){
+  if(phHolidays[year]) return; // already cached
+  try{
+    const r=await fetch(`${API}/ph-holidays/${year}`);
+    phHolidays[year]=r.ok?await r.json():[];
+  }catch{phHolidays[year]=[];}
+}
+
 async function loadACEvents(){
   acEvents={};
   try{
@@ -3110,18 +3120,32 @@ async function loadACEvents(){
     const filtered=acCategoryFilter?acTasksData.filter(t=>t.category===acCategoryFilter):acTasksData;
     filtered.forEach(t=>{const d=t.task_date.slice(0,10);if(!acEvents[d])acEvents[d]=[];acEvents[d].push(t);});
   }catch{acTasksData=[];}
+  // ── Merge Philippine Public Holidays ──────────────────────
+  await loadPHHolidays(acYear);
+  (phHolidays[acYear]||[]).forEach(h=>{
+    if(!acEvents[h.date])acEvents[h.date]=[];
+    acEvents[h.date].push({title:h.localName||h.name,color:'#dc2626',category:'PH Holiday',holiday:true,task_date:h.date});
+  });
   renderACCalendar();
   loadACNotifications();
   if(acSelectedDate)acSelectDay(acSelectedDate);
 }
+
 function acSetFilter(cat,btn){
   acCategoryFilter=cat;
   document.querySelectorAll('.ac-filter-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
   loadACEvents();
 }
-function acGoToday(){const n=new Date();acYear=n.getFullYear();acMonth=n.getMonth();renderACCalendar();}
-function acChangeMonth(dir){acMonth+=dir;if(acMonth>11){acMonth=0;acYear++;}if(acMonth<0){acMonth=11;acYear--;}renderACCalendar();}
+function acGoToday(){const n=new Date();acYear=n.getFullYear();acMonth=n.getMonth();loadACEvents();}
+function acChangeMonth(dir){
+  const prevYear=acYear;
+  acMonth+=dir;
+  if(acMonth>11){acMonth=0;acYear++;}
+  if(acMonth<0){acMonth=11;acYear--;}
+  if(acYear!==prevYear){loadACEvents();}else{renderACCalendar();}
+}
+
 function renderACCalendar(){
   const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('ac-month-title').textContent=MONTHS[acMonth]+' '+acYear;
@@ -3134,21 +3158,38 @@ function renderACCalendar(){
     const isToday=d===now.getDate()&&acMonth===now.getMonth()&&acYear===now.getFullYear();
     const isSel=iso===acSelectedDate;
     const evs=acEvents[iso]||[];
-    const dots=evs.slice(0,5).map(e=>`<div class="ac-dot" style="background:${e.color||AC_CAT_COLOR[e.category]||'#6366f1'}" title="${e.title}"></div>`).join('');
-    cells+=`<div class="ac-cell${isToday?' ac-today':''}${isSel?' ac-selected':''}" onclick="acSelectDay('${iso}')"><div class="ac-day-num">${d}</div><div class="ac-dots">${dots}${evs.length>5?`<span style="font-size:10px;color:var(--text-2)">+${evs.length-5}</span>`:''}</div></div>`;
+    const hasHoliday=evs.some(e=>e.holiday);
+    const holEntry=evs.find(e=>e.holiday);
+    const holStyle=hasHoliday?'border-top:2px solid #dc2626;':'';
+    const holBadge=hasHoliday?`<div style="font-size:9px;color:#dc2626;font-weight:700;line-height:1.2;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${holEntry.title}">🇵🇭 ${holEntry.title}</div>`:'';
+    const nonHolEvs=evs.filter(e=>!e.holiday);
+    const dots=nonHolEvs.slice(0,4).map(e=>`<div class="ac-dot" style="background:${e.color||AC_CAT_COLOR[e.category]||'#6366f1'}" title="${e.title}"></div>`).join('');
+    cells+=`<div class="ac-cell${isToday?' ac-today':''}${isSel?' ac-selected':''}" style="${holStyle}" onclick="acSelectDay('${iso}')"><div class="ac-day-num" style="${hasHoliday&&!isToday&&!isSel?'color:#dc2626;':''}">${d}</div>${holBadge}<div class="ac-dots">${dots}${nonHolEvs.length>4?`<span style="font-size:10px;color:var(--text-2)">+${nonHolEvs.length-4}</span>`:''}</div></div>`;
   }
   const rem=(firstDay+daysInMonth)%7;if(rem)for(let d=1;d<=7-rem;d++)cells+=`<div class="ac-cell ac-other-month"><div class="ac-day-num">${d}</div></div>`;
   document.getElementById('ac-grid').innerHTML=cells;
   renderACSummary();
 }
+
 function acSelectDay(iso){
   acSelectedDate=iso;renderACCalendar();
   const [y,m,d]=iso.split('-');
   document.getElementById('ac-sel-label').textContent=new Date(+y,+m-1,+d).toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric'});
   document.getElementById('ac-add-day-btn').style.display='';
-  const tasks=acEvents[iso]||[];
-  if(!tasks.length){document.getElementById('ac-event-list').innerHTML='<div class="ac-no-events">No tasks for this day.<br><small style="color:var(--primary);cursor:pointer" onclick="openACModal(\''+iso+'\',null)">+ Add one</small></div>';return;}
-  document.getElementById('ac-event-list').innerHTML=tasks.map(t=>{
+  const allEntries=acEvents[iso]||[];
+  const holidays=allEntries.filter(e=>e.holiday);
+  const tasks=allEntries.filter(e=>!e.holiday);
+  if(!allEntries.length){document.getElementById('ac-event-list').innerHTML='<div class="ac-no-events">No tasks for this day.<br><small style="color:var(--primary);cursor:pointer" onclick="openACModal(\''+iso+'\',null)">+ Add one</small></div>';return;}
+  const holHtml=holidays.map(h=>`<div class="ac-task-item" style="border-left:3px solid #dc2626;background:#fef2f280">
+    <div class="ac-task-top">
+      <div class="ac-task-dot" style="background:#dc2626"></div>
+      <div class="ac-task-title">🇵🇭 ${h.title}</div>
+    </div>
+    <div class="ac-task-meta">
+      <span class="ac-task-badge" style="background:#fef2f2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">PH Public Holiday</span>
+    </div>
+  </div>`).join('');
+  const taskHtml=tasks.map(t=>{
     const dotColor=t.color||AC_CAT_COLOR[t.category]||'#6366f1';
     const priClass=`ac-badge-priority-${t.priority}`;
     return`<div class="ac-task-item">
@@ -3168,7 +3209,9 @@ function acSelectDay(iso){
       ${t.description?`<div class="ac-task-desc">${t.description}</div>`:''}
     </div>`;
   }).join('');
+  document.getElementById('ac-event-list').innerHTML=holHtml+taskHtml;
 }
+
 // ── Summary ──────────────────────────────────────────────────
 function renderACSummary(){
   const monthTasks=acTasksData.filter(t=>{
@@ -3203,6 +3246,7 @@ function renderACSummary(){
     </tr>`;
   }).join(''):'<tr><td colspan="8" class="ac-sum-empty">No tasks this month.</td></tr>';
 }
+
 // ── Modal ──────────────────────────────────────────────────────
 function acPickColor(el){document.querySelectorAll('.ac-color-swatch').forEach(s=>s.classList.remove('selected'));el.classList.add('selected');acPickedColor=el.dataset.color;}
 function openACModal(date,id){
@@ -3237,8 +3281,7 @@ async function saveACTask(){
     closeACModal();
     await loadACEvents();
     if(date)acSelectDay(date);
-    // Auto-notify LINE for High priority tasks
-    if(body.priority==='High') await lineAutoNotify(body);
+    if(body.priority==='High')await lineAutoNotify(body);
   }catch(err){gToast(err.message,'error');}
 }
 function openACDelModal(id,title){acDeleteId=id;document.getElementById('ac-del-name').textContent='"'+title+'"';document.getElementById('ac-del-modal').classList.add('open');}
@@ -3304,7 +3347,7 @@ function loadACNotifications(){
 function acGoToTask(date){
   const [y,m]=date.split('-');
   acYear=+y; acMonth=+m-1;
-  renderACCalendar(); acSelectDay(date);
+  loadACEvents(); acSelectDay(date);
   document.getElementById('page-activitycalendar').scrollIntoView({behavior:'smooth'});
 }
 
@@ -3458,7 +3501,6 @@ function switchCIPLTab(tab, btn){
 
 function loadCIPL(){ loadCI(); loadPL(); }
 
-// ── CI STATUS BADGE ───────────────────────────────────────────
 function ciBadge(st){
   const map={draft:'#64748b',issued:'#0ea5e9',paid:'#10b981',cancelled:'#ef4444'};
   const k=(st||'draft').toLowerCase();
@@ -3470,7 +3512,6 @@ function plBadge(st){
   return `<span style="background:${map[k]||'#64748b'}1a;color:${map[k]||'#64748b'};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${st||'—'}</span>`;
 }
 
-// ── COMMERCIAL INVOICE ────────────────────────────────────────
 async function loadCI(){
   try{
     const r=await fetch(API+'/cipl/ci');
@@ -3576,7 +3617,6 @@ async function deleteCI(id){
   }catch(err){gToast(err.message,'error');}
 }
 
-// ── PACKING LIST ──────────────────────────────────────────────
 async function loadPL(){
   try{
     const r=await fetch(API+'/cipl/pl');
@@ -3659,7 +3699,6 @@ function openPLModal(id){
     document.getElementById('pl-current-bl-file').textContent='';
     document.getElementById('pl-f-status').value='Draft';
     document.getElementById('pl-f-date').value=new Date().toISOString().slice(0,10);
-    // auto-suggest CI number if one is selected
     if(ciData.length){const latest=ciData[0];if(latest)document.getElementById('pl-f-ci').value=latest.ci_number;}
   }
   document.getElementById('pl-f-file').value='';
@@ -3712,15 +3751,14 @@ async function deletePL(id){
   }catch(err){gToast(err.message,'error');}
 }
 
-/* ===== SPARE PARTS MONITORING - SPM NAV TOGGLE ===== */
-function toggleSPMGroup(el){
-  const grp=el.nextElementSibling;
-  if(!grp)return;
-  const isOpen=grp.style.display!=='none';
-  grp.style.display=isOpen?'none':'block';
-  const chev=el.querySelector('.spm-chevron');
-  if(chev)chev.style.transform=isOpen?'rotate(0deg)':'rotate(180deg)';
-}
+// ════════════════════════════════════════════════════════════════
+// BOOT — runs after DOM is ready
+// ════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initApp();
+  loadACEvents();
+  loadLineConfig();
+});
 </script>
 </body>
 </html>

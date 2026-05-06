@@ -3,6 +3,24 @@ const router  = express.Router();
 const { dbPromise } = require('../database');
 const { broadcastLine, buildCalendarMessage } = require('../utils/lineService');
 
+// ── PH Holidays proxy — server-side cache so Railway only fetches once per year ──
+const phCache = {};
+
+// GET /api/ph-holidays/:year
+router.get('/ph-holidays/:year', async (req, res) => {
+  const year = parseInt(req.params.year, 10);
+  if (!year || year < 2000 || year > 2100) return res.status(400).json({ error: 'Invalid year' });
+  try {
+    if (!phCache[year]) {
+      const r = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/PH`);
+      phCache[year] = r.ok ? await r.json() : [];
+    }
+    res.json(phCache[year]);
+  } catch (e) {
+    res.json([]); // fail gracefully — calendar still works without holidays
+  }
+});
+
 // Internal: fire Line broadcast if auto_notify is enabled (fire-and-forget)
 async function notifyLine(db, task, action) {
   try {
