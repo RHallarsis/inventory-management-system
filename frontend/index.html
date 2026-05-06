@@ -2687,10 +2687,13 @@ function renderMM(){
   const areas=['Manila Area','Pampanga Area','Cebu Area'];
   let html='';let totals={ez:0,br:0,ez2:0,ezl:0,lb:0,j_ark:0,total:0};
   const grouped={};rows.forEach(r=>{const a=r.area||'Other';if(!grouped[a])grouped[a]={};const g=r.group_name||a;if(!grouped[a][g])grouped[a][g]=[];grouped[a][g].push(r);});
+  const grpOrder=['Group 1','Group 2','Group 3'];
   (mmAreaFilter?[mmAreaFilter]:areas).forEach(area=>{
     if(!grouped[area])return;
     html+=`<tr class="mm-area-header"><td colspan="9">${area}</td></tr>`;
-    Object.keys(grouped[area]).forEach(grp=>{
+    const grpKeys=Object.keys(grouped[area]).sort((a,b)=>{const ai=grpOrder.indexOf(a),bi=grpOrder.indexOf(b);if(ai!==-1&&bi!==-1)return ai-bi;if(ai!==-1)return -1;if(bi!==-1)return 1;return a.localeCompare(b);});
+    grpKeys.forEach(grp=>{
+      grouped[area][grp].sort((a,b)=>a.site.localeCompare(b.site));
       if(grp!==area)html+=`<tr class="mm-group-header"><td colspan="9">&nbsp;&nbsp;${grp}</td></tr>`;
       grouped[area][grp].forEach(r=>{
         html+=`<tr><td>&nbsp;&nbsp;${r.site}</td><td>${r.ez||0}</td><td>${r.br||0}</td><td>${r.ez2||0}</td><td>${r.ezl||0}</td><td>${r.lb||0}</td><td>${r.j_ark||0}</td><td><strong>${r.total||0}</strong></td>
