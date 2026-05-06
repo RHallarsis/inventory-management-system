@@ -1617,7 +1617,6 @@ body.staff-mode #st-add-btn { display:none !important; }
     <div class="page-tbl-wrap"><table class="page-table">
       <thead><tr><th>#</th><th>Request No.</th><th>Location</th><th>Machine Type</th><th>MP Qty</th><th>Unit Price</th><th>Total</th><th>Purpose</th><th>File</th><th>Actions</th></tr></thead>
       <tbody id="mp-body"></tbody>
-      <tfoot><tr><td colspan="6" style="padding:10px 14px;font-weight:700">GRAND TOTAL</td><td id="mp-grand-total" style="padding:10px 14px;font-weight:800;color:var(--primary)">&#8369;0.00</td><td colspan="3"></td></tr></tfoot>
     </table></div>
   </div>
   <!-- SITES ACTIVITY -->
@@ -3055,8 +3054,6 @@ function renderMP(){
   const q=(document.getElementById('mp-search').value||'').toLowerCase();
   const rows=q?mpData.filter(r=>(r.request_no||'').toLowerCase().includes(q)||(r.location||'').toLowerCase().includes(q)||(r.machine_type||'').toLowerCase().includes(q)):mpData;
   document.getElementById('mp-meta').textContent=`Showing ${rows.length} of ${mpData.length}`;
-  const gt=rows.reduce((a,r)=>a+(+r.total||0),0);
-  document.getElementById('mp-grand-total').textContent=fmt(gt);
   document.getElementById('mp-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.request_no}</strong></td><td>${r.location}</td><td>${r.machine_type||'—'}</td><td>${r.manpower_quantity||0}</td><td>${fmt(r.unit_price)}</td><td>${fmt(r.total)}</td><td>${r.purpose||'—'}</td><td>${fileLink(r)}</td>
     <td><button class="page-act-btn btn-edit" onclick="openMPModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openMPDelModal(${r.id},'${(r.request_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="10"><div class="no-results">No requests.</div></td></tr>';
 }
