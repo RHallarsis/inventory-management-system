@@ -3331,7 +3331,8 @@ function loadACNotifications(){
   if(!urgent.length){ bar.classList.remove('has-alerts'); badge.style.display='none'; return; }
   bar.classList.add('has-alerts');
   badge.style.display='';
-  count.textContent=urgent.length;
+  badge.textContent=urgent.length;
+  count.textContent=urgent.length+' Urgent Task'+(urgent.length===1?'':'s')+' Require Attention';
   if(acNotifOpen){
     list.innerHTML=urgent.map(item=>`
       <div class="ac-notif-item ac-notif-${item.type}">
