@@ -82,9 +82,11 @@ router.post('/line/broadcast', async (req, res) => {
     const { message, tasks } = req.body;
 
     if (tasks && tasks.length) {
-      const today = new Date().toISOString().slice(0, 10);
-      const dateLabel = new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      const header = `🔔 Inventory Management System\n📢 Urgent Task Alert — ${dateLabel}`;
+      const now = new Date();
+      const today = now.toISOString().slice(0, 10);
+      const dateLabel = now.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const timeLabel = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      const header = `🔔 Inventory Management System\n📢 Urgent Task Alert\n📅 ${dateLabel}\n🕐 ${timeLabel}`;
       const lines = tasks.map(t => {
         const overdue  = t.task_date < today;
         const prioFlag = overdue

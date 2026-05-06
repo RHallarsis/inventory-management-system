@@ -48,13 +48,15 @@ function buildCalendarMessage(task, action = 'created') {
     : '📝 LOW';
 
   const actionLabel = action === 'created' ? '🆕 New Task Added' : '✏️ Task Updated';
-  const dateLabel   = new Date().toLocaleDateString('en-PH', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-  });
+  const now       = new Date();
+  const dateLabel = now.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const timeLabel = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
   const text = [
     `🔔 Inventory Management System`,
-    `${actionLabel} — ${dateLabel}`,
+    `${actionLabel}`,
+    `📅 ${dateLabel}`,
+    `🕐 ${timeLabel}`,
     ``,
     `${prioFlag}`,
     `📌 ${task.title}`,
