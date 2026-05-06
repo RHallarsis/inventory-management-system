@@ -84,9 +84,18 @@ router.post('/line/broadcast', async (req, res) => {
     if (tasks && tasks.length) {
       const now = new Date();
       const today = now.toISOString().slice(0, 10);
-      const dateLabel = now.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      const timeLabel = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-      const header = `🔔 Inventory Management System\n📢 Urgent Task Alert\n📅 ${dateLabel}\n🕐 ${timeLabel}`;
+      const sentLabel = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      const header = `🔔 Inventory Management System\n📢 Urgent Task Alert\n🕐 Sent: ${sentLabel}`;
+
+      function formatTaskTime(raw) {
+        if (!raw) return null;
+        // raw is "HH:MM" or "HH:MM:SS" (24-hr)
+        const [h, m] = raw.split(':').map(Number);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12  = h % 12 || 12;
+        return `${String(h12).padStart(2,'0')}:${String(m).padStart(2,'0')} ${ampm}`;
+      }
+
       const lines = tasks.map(t => {
         const overdue  = t.task_date < today;
         const prioFlag = overdue
@@ -94,7 +103,8 @@ router.post('/line/broadcast', async (req, res) => {
           : t.priority === 'High'   ? '🚨 HIGH PRIORITY'
           : t.priority === 'Medium' ? '📋 MEDIUM'
           : '📝 LOW';
-        return `${prioFlag}\n📌 ${t.title}\n📅 Date     : ${t.task_date}\n🏷️  Category : ${t.category}\n🔄 Status   : ${t.status}`;
+        const timePart = t.task_time ? `\n🕐 Time     : ${formatTaskTime(t.task_time)}` : '';
+        return `${prioFlag}\n📌 ${t.title}\n📅 Date     : ${t.task_date}${timePart}\n🏷️  Category : ${t.category}\n🔄 Status   : ${t.status}`;
       });
       const footer = `\n⚠️ ${tasks.length} task${tasks.length > 1 ? 's' : ''} require${tasks.length === 1 ? 's' : ''} your attention.`;
       await broadcastLine(cfg.channel_token, [{ type: 'text', text: header + '\n\n' + lines.join('\n\n──────────────\n') + footer }]);

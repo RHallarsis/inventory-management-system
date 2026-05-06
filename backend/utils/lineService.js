@@ -49,20 +49,28 @@ function buildCalendarMessage(task, action = 'created') {
 
   const actionLabel = action === 'created' ? '🆕 New Task Added' : '✏️ Task Updated';
   const now       = new Date();
-  const dateLabel = now.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const timeLabel = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  const sentLabel = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+
+  // Format the task's scheduled time (stored as HH:MM 24-hr)
+  function fmtTime(raw) {
+    if (!raw) return null;
+    const [h, m] = raw.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return `${String(h % 12 || 12).padStart(2,'0')}:${String(m).padStart(2,'0')} ${ampm}`;
+  }
+  const taskTime = fmtTime(task.task_time);
 
   const text = [
     `🔔 Inventory Management System`,
     `${actionLabel}`,
-    `📅 ${dateLabel}`,
-    `🕐 ${timeLabel}`,
+    `🕐 Sent: ${sentLabel}`,
     ``,
     `${prioFlag}`,
     `📌 ${task.title}`,
     task.description ? `📝 ${task.description}` : null,
     ``,
     `📅 Date     : ${task.task_date}`,
+    taskTime        ? `🕐 Time     : ${taskTime}` : null,
     `🏷️  Category : ${task.category}`,
     `⚡ Priority : ${task.priority}`,
     `🔄 Status   : ${task.status}`,
