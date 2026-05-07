@@ -3,6 +3,7 @@ const path    = require('path');
 const fs      = require('fs');
 const multer  = require('multer');
 const { dbPromise, calcStatus } = require('../database');
+const { sendApprovedPODraft }   = require('../services/outlookDraftService');
 
 const router = express.Router();
 
@@ -474,14 +475,42 @@ router.put('/purchase-orders/:id', poUpload.single('file'), async (req, res) => 
       fileName = req.file.filename;
       filePath = `/uploads/po/${req.file.filename}`;
     }
+
+    // Detect if status is transitioning to 'Approved'
+    const newStatus   = status ?? ex.status;
+    const justApproved = ex.status !== 'Approved' && newStatus === 'Approved';
+
     await db.run(
       `UPDATE purchase_orders SET po_number=?, supplier=?, order_date=?, status=?, total_amount=?, file_name=?, file_path=?, updated_at=NOW() WHERE id=?`,
       [(po_number ?? ex.po_number).trim(), (supplier ?? ex.supplier).trim(),
-       order_date ?? ex.order_date, status ?? ex.status,
+       order_date ?? ex.order_date, newStatus,
        total_amount != null ? +total_amount : ex.total_amount,
        fileName, filePath, +req.params.id]
     );
-    res.json(await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]));
+
+    const updatedPO = await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]);
+
+    // Auto-create Outlook draft when PO is approved
+    if (justApproved) {
+      try {
+        const supplierRecord = await db.getOne(
+          'SELECT email FROM suppliers WHERE LOWER(name) = LOWER(?)',
+          [updatedPO.supplier]
+        );
+        await sendApprovedPODraft({
+          po_number:      updatedPO.po_number,
+          order_date:     updatedPO.order_date,
+          supplier_name:  updatedPO.supplier,
+          supplier_email: supplierRecord?.email || '',
+          total_amount:   updatedPO.total_amount,
+        });
+      } catch (emailErr) {
+        // Log but don't fail the PO update if email draft fails
+        console.error('[PO Email] Failed to create Outlook draft:', emailErr.message);
+      }
+    }
+
+    res.json(updatedPO);
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'PO number already exists' });
     res.status(500).json({ error: err.message });
