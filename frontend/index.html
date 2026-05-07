@@ -2119,6 +2119,29 @@ body.staff-mode #st-add-btn { display:none !important; }
     <div class="g-modal-foot"><button class="g-btn g-btn-cancel" onclick="closePOModal()">Cancel</button><button class="g-btn g-btn-save" onclick="savePO()">Save</button></div>
   </div>
 </div>
+<!-- PO Supplier Email Preview Modal -->
+<div class="g-modal-overlay" id="po-notify-modal">
+  <div class="g-modal" style="max-width:720px;width:95%">
+    <div class="g-modal-head" style="background:#6b2e0a;color:#fff">
+      <span>✉ Supplier Email Preview</span>
+      <button class="g-modal-close" style="color:#fff" onclick="closePONotifyModal()">&#215;</button>
+    </div>
+    <div class="g-modal-body" style="padding:0">
+      <div style="background:#f8f8f8;border-bottom:1px solid #ddd;padding:14px 20px;font-size:0.85rem;display:grid;gap:6px">
+        <div><span style="font-weight:600;color:#666;min-width:60px;display:inline-block">To:</span> <span id="po-notify-to" style="color:#333"></span></div>
+        <div><span style="font-weight:600;color:#666;min-width:60px;display:inline-block">Subject:</span> <span id="po-notify-subject" style="color:#333"></span></div>
+      </div>
+      <div style="padding:20px;max-height:420px;overflow-y:auto;background:#fff">
+        <div id="po-notify-body"></div>
+      </div>
+    </div>
+    <div class="g-modal-foot" style="justify-content:flex-end;gap:10px;border-top:2px solid #6b2e0a">
+      <button class="g-btn g-btn-cancel" onclick="closePONotifyModal()">Cancel</button>
+      <button id="po-notify-send-btn" class="g-btn g-btn-save" style="background:#6b2e0a;min-width:130px" onclick="sendPONotification()">Send Email</button>
+    </div>
+  </div>
+</div>
+
 <div class="g-modal-overlay" id="po-del-modal">
   <div class="g-modal" style="max-width:400px">
     <div class="g-modal-head"><span>Delete PO</span><button class="g-modal-close" onclick="closePODelModal()">&#215;</button></div>
@@ -2938,14 +2961,35 @@ async function savePO(){
 function openPODelModal(id,name){poDeleteId=id;document.getElementById('po-del-name').textContent=name;document.getElementById('po-del-modal').classList.add('open');}
 function closePODelModal(){document.getElementById('po-del-modal').classList.remove('open');}
 async function confirmDeletePO(){try{await fetch(API+'/purchase-orders/'+poDeleteId,{method:'DELETE'});gToast('Deleted.');closePODelModal();loadPO();}catch{gToast('Delete failed','error');}}
+let poNotifyId=null;
 async function notifyPOSupplier(id){
+  poNotifyId=id;
   try{
-    gToast('Sending notification to supplier...','info');
-    const res=await fetch(API+'/purchase-orders/'+id+'/notify-supplier',{method:'POST'});
+    const res=await fetch(API+'/purchase-orders/'+id+'/preview-email');
     const data=await res.json();
-    if(!res.ok) throw new Error(data.error||'Failed to send notification');
-    gToast('✉ '+data.message,'success');
+    if(!res.ok) throw new Error(data.error||'Preview failed');
+    document.getElementById('po-notify-subject').textContent=data.subject;
+    document.getElementById('po-notify-to').textContent=data.supplier_email||'⚠ No email address on file';
+    document.getElementById('po-notify-body').innerHTML=data.body_html;
+    document.getElementById('po-notify-modal').classList.add('open');
   }catch(err){gToast(err.message,'error');}
+}
+function closePONotifyModal(){document.getElementById('po-notify-modal').classList.remove('open');poNotifyId=null;}
+async function sendPONotification(){
+  if(!poNotifyId)return;
+  try{
+    document.getElementById('po-notify-send-btn').disabled=true;
+    document.getElementById('po-notify-send-btn').textContent='Sending...';
+    const res=await fetch(API+'/purchase-orders/'+poNotifyId+'/notify-supplier',{method:'POST'});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Send failed');
+    gToast('✉ '+data.message,'success');
+    closePONotifyModal();
+  }catch(err){
+    gToast(err.message,'error');
+    document.getElementById('po-notify-send-btn').disabled=false;
+    document.getElementById('po-notify-send-btn').textContent='Send Email';
+  }
 }
 
 // ── SUPPLIERS ────────────────────────────────────────────────

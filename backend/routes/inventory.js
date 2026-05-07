@@ -517,6 +517,50 @@ router.put('/purchase-orders/:id', poUpload.single('file'), async (req, res) => 
   }
 });
 
+// ── Preview email content for an approved PO (no send) ────────
+router.get('/purchase-orders/:id/preview-email', async (req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const po = await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]);
+    if (!po) return res.status(404).json({ error: 'Purchase order not found' });
+    const supplierRecord = await db.getOne(
+      'SELECT email FROM suppliers WHERE LOWER(name) = LOWER(?)', [po.supplier]
+    );
+    const supplierEmail = supplierRecord?.email || '';
+    // Build preview HTML inline (same as the email body)
+    const fmt = (n) => Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+    const bodyHtml = `
+<div style="font-family:Arial,sans-serif;color:#333;max-width:680px;">
+  <div style="background:#6b2e0a;padding:18px 24px;border-radius:8px 8px 0 0;">
+    <h2 style="color:#fff;margin:0;">Purchase Order Approved</h2>
+    <p style="color:#f5c88a;margin:4px 0 0;font-size:0.9rem;">PO # ${po.po_number} &mdash; ${po.order_date}</p>
+  </div>
+  <div style="background:#fff;border:1px solid #ddd;border-top:none;padding:22px;border-radius:0 0 8px 8px;">
+    <p>Dear <strong>${po.supplier}</strong>,</p>
+    <p>We are pleased to inform you that the following Purchase Order has been <strong>approved</strong>.</p>
+    <table style="width:100%;border-collapse:collapse;margin:14px 0;font-size:0.88rem;">
+      <tr style="background:#f5f5f5;"><td style="padding:9px;font-weight:bold;width:40%;">PO Number</td><td style="padding:9px;">${po.po_number}</td></tr>
+      <tr><td style="padding:9px;font-weight:bold;">Order Date</td><td style="padding:9px;">${po.order_date}</td></tr>
+      <tr style="background:#f5f5f5;"><td style="padding:9px;font-weight:bold;">Supplier</td><td style="padding:9px;">${po.supplier}</td></tr>
+      <tr><td style="padding:9px;font-weight:bold;">Total Amount</td><td style="padding:9px;color:#6b2e0a;font-weight:bold;">Php ${fmt(po.total_amount)}</td></tr>
+    </table>
+    <p>Please confirm receipt and provide an expected delivery schedule at your earliest convenience.</p>
+    <p>Thank you for your continued partnership.</p>
+    <p style="font-size:0.75rem;color:#999;margin-top:20px;">This is an automated notification from the Inventory Management System.</p>
+  </div>
+</div>`;
+    res.json({
+      po_number:      po.po_number,
+      supplier_name:  po.supplier,
+      supplier_email: supplierEmail,
+      subject:        `Purchase Order Approved – ${po.po_number} | ${po.supplier}`,
+      body_html:      bodyHtml,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Manually notify supplier for an approved PO ───────────────
 router.post('/purchase-orders/:id/notify-supplier', async (req, res) => {
   try {
