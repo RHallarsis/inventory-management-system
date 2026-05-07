@@ -585,10 +585,21 @@ router.post('/purchase-orders/:id/notify-supplier', async (req, res) => {
     if (!recipientEmail) {
       return res.status(400).json({ error: `No email address provided. Please enter one in the To: field.` });
     }
-    // Build absolute path to the PO attachment if it exists
-    const attachmentPath = po.file_path
-      ? path.join(__dirname, '..', po.file_path)
-      : null;
+    // Build absolute path to the PO attachment
+    // Try two locations: backend/uploads (volume mount) and relative to routes dir
+    let attachmentPath = null;
+    if (po.file_path) {
+      const candidates = [
+        path.join(__dirname, '..', po.file_path),                     // /backend/uploads/po/...
+        path.join(__dirname, '../..', po.file_path),                  // /uploads/po/...
+        path.join('/app', po.file_path),                              // /app/uploads/po/...
+        path.join('/app/backend', po.file_path),                      // /app/backend/uploads/po/...
+      ];
+      for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) { attachmentPath = candidate; break; }
+      }
+      console.log(`[PO Notify] file_path="${po.file_path}" resolved="${attachmentPath || 'NOT FOUND'}"`);
+    }
     await sendApprovedPODraft({
       po_number:       po.po_number,
       order_date:      po.order_date,
