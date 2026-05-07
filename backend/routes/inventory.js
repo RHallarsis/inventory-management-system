@@ -517,6 +517,35 @@ router.put('/purchase-orders/:id', poUpload.single('file'), async (req, res) => 
   }
 });
 
+// ── Manually notify supplier for an approved PO ───────────────
+router.post('/purchase-orders/:id/notify-supplier', async (req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const po = await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]);
+    if (!po) return res.status(404).json({ error: 'Purchase order not found' });
+    if (po.status !== 'Approved') {
+      return res.status(400).json({ error: 'PO must be Approved before notifying supplier.' });
+    }
+    const supplierRecord = await db.getOne(
+      'SELECT email FROM suppliers WHERE LOWER(name) = LOWER(?)', [po.supplier]
+    );
+    const supplierEmail = supplierRecord?.email || '';
+    if (!supplierEmail) {
+      return res.status(400).json({ error: `No email address found for supplier "${po.supplier}". Please add it in the Suppliers section first.` });
+    }
+    await sendApprovedPODraft({
+      po_number:     po.po_number,
+      order_date:    po.order_date,
+      supplier_name: po.supplier,
+      supplier_email: supplierEmail,
+      total_amount:  po.total_amount,
+    });
+    res.json({ success: true, message: `Notification sent to ${supplierEmail}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/purchase-orders/:id', async (req, res) => {
   try {
     const { db } = await dbPromise;

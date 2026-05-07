@@ -2926,7 +2926,7 @@ function renderPO(){
   let rows=poData.filter(r=>(!q||(r.po_number||'').toLowerCase().includes(q)||(r.supplier||'').toLowerCase().includes(q))&&(!ft||r.status===ft));
   document.getElementById('po-meta').textContent=`Showing ${rows.length} of ${poData.length}`;
   document.getElementById('po-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.po_number}</strong></td><td>${r.supplier}</td><td>${r.order_date||'—'}</td><td>${badge(r.status)}</td><td>${fmt(r.total_amount)}</td><td>${fileLink(r)}</td>
-    <td><button class="page-act-btn btn-edit" onclick="openPOModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPODelModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="8"><div class="no-results">No purchase orders.</div></td></tr>';
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPOModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPODelModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">Del</button>${r.status==='Approved'?`<button class="page-act-btn" style="background:linear-gradient(135deg,#6b2e0a,#a0522d);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600" onclick="notifyPOSupplier(${r.id})">✉ Notify Supplier</button>`:''}</td></tr>`).join('')||'<tr><td colspan="8"><div class="no-results">No purchase orders.</div></td></tr>';
 }
 function openPOModal(id=null){poEditId=id;const r=id?poData.find(x=>x.id===id):null;document.getElementById('po-modal-title').textContent=id?'Edit PO':'Add Purchase Order';document.getElementById('po-f-no').value=r?r.po_number:'';document.getElementById('po-f-supplier').value=r?r.supplier:'';document.getElementById('po-f-date').value=r?r.order_date:today();document.getElementById('po-f-status').value=r?r.status:'Pending';document.getElementById('po-f-amount').value=r?r.total_amount:'';document.getElementById('po-f-file').value='';document.getElementById('po-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('po-modal').classList.add('open');}
 function closePOModal(){document.getElementById('po-modal').classList.remove('open');}
@@ -2938,6 +2938,15 @@ async function savePO(){
 function openPODelModal(id,name){poDeleteId=id;document.getElementById('po-del-name').textContent=name;document.getElementById('po-del-modal').classList.add('open');}
 function closePODelModal(){document.getElementById('po-del-modal').classList.remove('open');}
 async function confirmDeletePO(){try{await fetch(API+'/purchase-orders/'+poDeleteId,{method:'DELETE'});gToast('Deleted.');closePODelModal();loadPO();}catch{gToast('Delete failed','error');}}
+async function notifyPOSupplier(id){
+  try{
+    gToast('Sending notification to supplier...','info');
+    const res=await fetch(API+'/purchase-orders/'+id+'/notify-supplier',{method:'POST'});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed to send notification');
+    gToast('✉ '+data.message,'success');
+  }catch(err){gToast(err.message,'error');}
+}
 
 // ── SUPPLIERS ────────────────────────────────────────────────
 async function loadSup(){try{const r=await fetch(API+'/suppliers');supData=await r.json();renderSup();}catch{document.getElementById('sup-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
