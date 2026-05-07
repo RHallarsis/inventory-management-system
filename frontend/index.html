@@ -1069,7 +1069,7 @@ body.staff-mode #st-add-btn { display:none !important; }
     <div class="nav-item" data-page="goodsreceived" onclick="showPage(&apos;goodsreceived&apos;)">
       <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg><span>Goods Received</span></div>
     <div class="nav-item" data-page="stocktransfers" onclick="showPage(&apos;stocktransfers&apos;)">
-      <svg viewBox="0 0 24 24"><path d="M17 4l4 4-4 4V9H3V7h14V4zm-4 13H3v-2h10v-3l4 4-4 4v-3z"/></svg><span>Stock Transfers</span></div>
+      <svg viewBox="0 0 24 24"><path d="M17 4l4 4-4 4V9H3V7h14V4zm-4 13H3v-2h10v-3l4 4-4 4v-3z"/></svg><span>Delivery Receipts</span></div>
     <div class="nav-item" data-page="cipl" onclick="showPage(&apos;cipl&apos;)">
       <svg viewBox="0 0 24 24"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v1h12v-1l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11zM9 9h6v2H9zm0 4h6v2H9zm-2-4H6v2h1zm0 4H6v2h1z"/></svg><span>CI / PL</span></div>
     <div class="nav-label">Reports</div>
@@ -1397,7 +1397,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== STOCK TRANSFERS ===== -->
 <div id="page-stocktransfers" class="page-section">
-  <div class="page-hero h-purple"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 4l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z"/></svg></div><div><div class="ph-title">Stock Transfers</div><div class="ph-sub">Track inventory movements and inter-location stock transfers</div></div></div></div>
+  <div class="page-hero h-purple"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 4l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z"/></svg></div><div><div class="ph-title">Delivery Receipts</div><div class="ph-sub">Track inventory movements and inter-location stock transfers</div></div></div></div>
   <div class="page-toolbar">
     <input class="search-input" id="st-search" placeholder="Search transfers..." oninput="renderST()"/>
     <span class="table-meta" id="st-meta"></span>
@@ -2495,7 +2495,7 @@ function applyRoleAccess(role) {
 }
 
 // ── PAGE SWITCHING ───────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Stock Transfers',cipl:'CI / PL — Commercial Invoice & Packing List',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',settings:'Settings'};
+const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Delivery Receipts',cipl:'CI / PL — Commercial Invoice & Packing List',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',settings:'Settings'};
 function showPage(page){
   // ── Role guard: Staff cannot visit admin-only pages ──────────
   if(currentUser && currentUser.role==='Staff' && STAFF_BLOCKED_PAGES.includes(page)){

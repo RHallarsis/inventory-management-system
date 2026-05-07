@@ -402,7 +402,7 @@ body.staff-mode #st-add-btn { display:none !important; }
     <div class="nav-item" data-page="goodsreceived" onclick="showPage(&apos;goodsreceived&apos;)">
       <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg><span>Goods Received</span></div>
     <div class="nav-item" data-page="stocktransfers" onclick="showPage(&apos;stocktransfers&apos;)">
-      <svg viewBox="0 0 24 24"><path d="M17 4l4 4-4 4V9H3V7h14V4zm-4 13H3v-2h10v-3l4 4-4 4v-3z"/></svg><span>Stock Transfers</span></div>
+      <svg viewBox="0 0 24 24"><path d="M17 4l4 4-4 4V9H3V7h14V4zm-4 13H3v-2h10v-3l4 4-4 4v-3z"/></svg><span>Delivery Receipts</span></div>
     <div class="nav-label">Reports</div>
     <div class="nav-item" data-page="inventoryreport" onclick="showPage(&apos;inventoryreport&apos;)">
       <svg viewBox="0 0 24 24"><path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zM20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg><span>Inventory Report</span></div>

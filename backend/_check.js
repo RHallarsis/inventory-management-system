@@ -103,7 +103,7 @@ function applyRoleAccess(role) {
 }
 
 // ── PAGE SWITCHING ───────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Stock Transfers',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',settings:'Settings'};
+const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Delivery Receipts',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',settings:'Settings'};
 function showPage(page){
   // ── Role guard: Staff cannot visit admin-only pages ──────────
   if(currentUser && currentUser.role==='Staff' && STAFF_BLOCKED_PAGES.includes(page)){
