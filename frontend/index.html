@@ -2998,17 +2998,21 @@ async function sendPONotification(){
   if(!poNotifyId)return;
   const toEmail=document.getElementById('po-notify-to').value.trim();
   if(!toEmail){gToast('Please enter a recipient email address.','error');return;}
+  const btn=document.getElementById('po-notify-send-btn');
   try{
-    const btn=document.getElementById('po-notify-send-btn');
     btn.disabled=true; btn.textContent='Sending...';
-    const res=await fetch(API+'/purchase-orders/'+poNotifyId+'/notify-supplier',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:toEmail})});
+    // 30-second client-side timeout so the button doesn't hang forever
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),30000);
+    const res=await fetch(API+'/purchase-orders/'+poNotifyId+'/notify-supplier',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:toEmail}),signal:controller.signal});
+    clearTimeout(timer);
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||'Send failed');
     gToast('✉ '+data.message,'success');
     closePONotifyModal();
   }catch(err){
-    gToast(err.message,'error');
-    document.getElementById('po-notify-send-btn').disabled=false;
+    gToast(err.name==='AbortError'?'Request timed out. Check your Gmail credentials in Railway.':err.message,'error');
+    btn.disabled=false;
     document.getElementById('po-notify-send-btn').textContent='Send Email';
   }
 }
