@@ -2,7 +2,7 @@
 /**
  * db.js — Hybrid database driver
  * • DATABASE_URL set  → PostgreSQL (pg)
- * • DATABASE_URL unset → SQLite (better-sqlite3, stored in backend/data/)
+ * • DATABASE_URL unset → SQLite via sql.js (pure JS, no native compilation)
  *
  * All methods return Promises so existing async/await code works unchanged.
  */
@@ -56,17 +56,31 @@ if (DATABASE_URL) {
   console.log('[db] Mode: PostgreSQL');
 
 } else {
-  /* ─────────────────────── SQLite mode ─────────────────────── */
-  const BetterSQLite = require('better-sqlite3');
+  /* ─────────────────────── SQLite mode (sql.js — pure JS) ─────────────────────── */
   const path = require('path');
   const fs   = require('fs');
 
   const dataDir = path.join(__dirname, 'data');
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-  const sqlite = new BetterSQLite(path.join(dataDir, 'inventory.db'));
-  sqlite.pragma('journal_mode = WAL');
-  sqlite.pragma('foreign_keys = ON');
+  const dbPath = path.join(dataDir, 'inventory.db');
+
+  // sql.js is loaded asynchronously — we keep a reference and a ready promise
+  let sqlite = null;
+  let _saveTimer = null;
+
+  function persistDb() {
+    if (!sqlite) return;
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(() => {
+      try {
+        const data = sqlite.export();
+        fs.writeFileSync(dbPath, Buffer.from(data));
+      } catch (e) {
+        console.error('[sqljs] persist error:', e.message);
+      }
+    }, 200);
+  }
 
   /** Convert PG-flavoured SQL to SQLite-compatible SQL */
   function sqfy(sql) {
@@ -82,40 +96,88 @@ if (DATABASE_URL) {
       .replace(/\bCHECK\s*\([^)]+\)/gi, '');
   }
 
+  // Initialise sql.js synchronously via the ready promise
+  const initSqlJs = require('sql.js');
+  const readyPromise = initSqlJs().then(SQL => {
+    const fileBuffer = fs.existsSync(dbPath) ? fs.readFileSync(dbPath) : null;
+    sqlite = fileBuffer ? new SQL.Database(fileBuffer) : new SQL.Database();
+    sqlite.run("PRAGMA journal_mode = WAL;");
+    sqlite.run("PRAGMA foreign_keys = ON;");
+    console.log('[db] Mode: SQLite/sql.js' + (fileBuffer ? ' (loaded existing db)' : ' (new db)'));
+  }).catch(e => {
+    console.error('[sqljs] init failed:', e.message);
+  });
+
+  function ensureReady() {
+    return readyPromise;
+  }
+
+  function runStmt(sql, params = []) {
+    const stmt = sqlite.prepare(sqfy(sql));
+    stmt.run(params);
+    stmt.free();
+  }
+
+  function allRows(sql, params = []) {
+    const stmt = sqlite.prepare(sqfy(sql));
+    const rows = [];
+    stmt.bind(params);
+    while (stmt.step()) {
+      rows.push(stmt.getAsObject());
+    }
+    stmt.free();
+    return rows;
+  }
+
+  function oneRow(sql, params = []) {
+    const stmt = sqlite.prepare(sqfy(sql));
+    stmt.bind(params);
+    const row = stmt.step() ? stmt.getAsObject() : null;
+    stmt.free();
+    return row;
+  }
+
   db = {
     async getAll(sql, params = []) {
-      try { return sqlite.prepare(sqfy(sql)).all(params); }
-      catch (e) { console.error('[sqlite] getAll:', e.message); return []; }
+      await ensureReady();
+      try { return allRows(sql, params); }
+      catch (e) { console.error('[sqljs] getAll:', e.message); return []; }
     },
     async getOne(sql, params = []) {
-      try { return sqlite.prepare(sqfy(sql)).get(params) || null; }
-      catch (e) { console.error('[sqlite] getOne:', e.message); return null; }
+      await ensureReady();
+      try { return oneRow(sql, params); }
+      catch (e) { console.error('[sqljs] getOne:', e.message); return null; }
     },
     async insert(sql, params = []) {
+      await ensureReady();
       try {
-        const r = sqlite.prepare(sqfy(sql)).run(params);
-        return r.lastInsertRowid;
-      } catch (e) { console.error('[sqlite] insert:', e.message); return null; }
+        runStmt(sql, params);
+        persistDb();
+        const row = oneRow('SELECT last_insert_rowid() as id', []);
+        return row ? row.id : null;
+      } catch (e) { console.error('[sqljs] insert:', e.message); return null; }
     },
     async run(sql, params = []) {
-      try { sqlite.prepare(sqfy(sql)).run(params); }
-      catch (e) {
+      await ensureReady();
+      try {
+        runStmt(sql, params);
+        persistDb();
+      } catch (e) {
         const msg = e.message || '';
         if (!msg.includes('duplicate column') && !msg.includes('no such column'))
-          console.error('[sqlite] run:', msg.slice(0, 120));
+          console.error('[sqljs] run:', msg.slice(0, 120));
       }
     },
     async scalar(sql, params = []) {
+      await ensureReady();
       try {
-        const row = sqlite.prepare(sqfy(sql)).get(params);
+        const row = oneRow(sql, params);
         if (!row) return 0;
         return parseInt(Object.values(row)[0], 10) || 0;
       } catch (e) { return 0; }
     },
-    save() {},
+    save() { persistDb(); },
   };
-
-  console.log('[db] Mode: SQLite (no DATABASE_URL)');
 }
 
 module.exports = { pool: null, db };
