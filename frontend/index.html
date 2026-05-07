@@ -2537,8 +2537,7 @@ function initApp(){
 }
 async function initDashboard(){
   try{
-    const [stats,inv,parts,mm]=await Promise.all([
-      fetch(API+'/stats').then(r=>r.json()),
+    const [inv,parts,mm]=await Promise.all([
       fetch(API+'/inventory').then(r=>r.json()),
       fetch(API+'/spare-parts').then(r=>r.json()),
       fetch(API+'/machine-monitoring').then(r=>r.json())
@@ -2549,8 +2548,11 @@ async function initDashboard(){
     document.getElementById('kpi-total').textContent=(parts||[]).length;
     const machineTotal=(mm||[]).reduce((s,r)=>s+(+r.total||0),0);
     document.getElementById('kpi-value').textContent=machineTotal.toLocaleString();
-    document.getElementById('kpi-low').textContent=stats.lowStockItems||0;
-    document.getElementById('kpi-out').textContent=stats.outOfStock||0;
+    // Compute low/out-of-stock from spare_parts: on_hand vs safety_stock
+    const outOfStock=(parts||[]).filter(r=>(+r.on_hand||0)===0).length;
+    const lowStock  =(parts||[]).filter(r=>(+r.on_hand||0)>0&&(+r.on_hand||0)<=(+r.safety_stock||1)).length;
+    document.getElementById('kpi-low').textContent=lowStock;
+    document.getElementById('kpi-out').textContent=outOfStock;
   }catch(e){
     console.error('[initDashboard] Network error:', e);
     gToast('Could not connect to backend','error');
@@ -3854,94 +3856,4 @@ function blAwbCell(r){
 
 function openPLModal(id){
   plEditId=id||null;
-  document.getElementById('pl-modal-title').textContent=id?'Edit Packing List':'Add Packing List';
-  document.getElementById('pl-modal-id').value=id||'';
-  document.getElementById('pl-current-file').textContent='';
-  if(id){
-    const r=plData.find(x=>x.id===id);
-    if(r){
-      document.getElementById('pl-f-number').value=r.pl_number||'';
-      document.getElementById('pl-f-ci').value=r.ci_number||'';
-      document.getElementById('pl-f-shipper').value=r.shipper||'';
-      document.getElementById('pl-f-consignee').value=r.consignee||'';
-      document.getElementById('pl-f-date').value=r.pl_date||'';
-      document.getElementById('pl-f-status').value=r.status||'Draft';
-      document.getElementById('pl-f-bl').value=r.bl_awb_number||'';
-      document.getElementById('pl-f-bl-details').value=r.bl_awb_details||'';
-      document.getElementById('pl-f-pkgs').value=r.total_packages||'';
-      document.getElementById('pl-f-nw').value=r.total_net_weight||'';
-      document.getElementById('pl-f-gw').value=r.total_gross_weight||'';
-      document.getElementById('pl-f-remarks').value=r.remarks||'';
-      if(r.file_name)document.getElementById('pl-current-file').innerHTML='Current file: <strong>'+esc(r.file_name.replace(/^\d+[-_]/,''))+'</strong>';
-      if(r.bl_awb_file_name)document.getElementById('pl-current-bl-file').innerHTML='Current BL/AWB file: <strong>'+esc(r.bl_awb_file_name.replace(/^\d+[-_]/,''))+'</strong>';
-      else document.getElementById('pl-current-bl-file').textContent='';
-    }
-  } else {
-    ['pl-f-number','pl-f-ci','pl-f-shipper','pl-f-consignee','pl-f-date','pl-f-bl','pl-f-pkgs','pl-f-nw','pl-f-gw','pl-f-remarks'].forEach(i=>document.getElementById(i).value='');
-    document.getElementById('pl-f-bl-details').value='';
-    document.getElementById('pl-current-bl-file').textContent='';
-    document.getElementById('pl-f-status').value='Draft';
-    document.getElementById('pl-f-date').value=new Date().toISOString().slice(0,10);
-    if(ciData.length){const latest=ciData[0];if(latest)document.getElementById('pl-f-ci').value=latest.ci_number;}
-  }
-  document.getElementById('pl-f-file').value='';
-  document.getElementById('pl-f-bl-file').value='';
-  document.getElementById('pl-modal').style.display='flex';
-}
-
-function closePLModal(){document.getElementById('pl-modal').style.display='none';}
-
-async function savePL(){
-  const id=document.getElementById('pl-modal-id').value;
-  const num=document.getElementById('pl-f-number').value.trim();
-  if(!num){gToast('PL Number is required','error');return;}
-  const fd=new FormData();
-  fd.append('pl_number',num);
-  fd.append('ci_number',document.getElementById('pl-f-ci').value.trim());
-  fd.append('shipper',document.getElementById('pl-f-shipper').value.trim());
-  fd.append('consignee',document.getElementById('pl-f-consignee').value.trim());
-  fd.append('pl_date',document.getElementById('pl-f-date').value);
-  fd.append('status',document.getElementById('pl-f-status').value);
-  fd.append('bl_awb_number',document.getElementById('pl-f-bl').value.trim());
-  fd.append('bl_awb_details',document.getElementById('pl-f-bl-details').value.trim());
-  fd.append('total_packages',document.getElementById('pl-f-pkgs').value||0);
-  fd.append('total_net_weight',document.getElementById('pl-f-nw').value||0);
-  fd.append('total_gross_weight',document.getElementById('pl-f-gw').value||0);
-  fd.append('remarks',document.getElementById('pl-f-remarks').value.trim());
-  const file=document.getElementById('pl-f-file').files[0];
-  if(file)fd.append('file',file);
-  const blFile=document.getElementById('pl-f-bl-file').files[0];
-  if(blFile)fd.append('bl_awb_file',blFile);
-  try{
-    const url=id?API+'/cipl/pl/'+id:API+'/cipl/pl';
-    const r=await fetch(url,{method:id?'PUT':'POST',body:fd});
-    const d=await r.json();
-    if(!r.ok)throw new Error(d.error||'Save failed');
-    gToast(id?'Packing list updated!':'Packing list added!');
-    closePLModal();
-    await loadPL();
-  }catch(err){gToast(err.message,'error');}
-}
-
-async function deletePL(id){
-  const r=plData.find(x=>x.id===id);
-  if(!confirm(`Delete PL "${r?r.pl_number:id}"? This cannot be undone.`))return;
-  try{
-    const res=await fetch(API+'/cipl/pl/'+id,{method:'DELETE'});
-    if(!res.ok){const d=await res.json();throw new Error(d.error||'Delete failed');}
-    gToast('Packing list deleted.');
-    await loadPL();
-  }catch(err){gToast(err.message,'error');}
-}
-
-// ════════════════════════════════════════════════════════════════
-// BOOT — runs after DOM is ready
-// ════════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  initApp();
-  loadACEvents();
-  loadLineConfig();
-});
-</script>
-</body>
-</html>
+  document.getElementById('pl-modal-title').textContent=id?'Edit Pac
