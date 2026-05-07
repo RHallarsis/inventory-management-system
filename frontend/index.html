@@ -927,6 +927,90 @@ body.staff-mode #st-add-btn { display:none !important; }
 .kpi-label{font-size:9.5px;margin-bottom:2px;}
 .kpi-value{font-size:26px;margin:2px 0 2px;}
 .kpi-sub{font-size:10.5px;}
+
+/* ═══════════════════════════════════════════════════════
+   PAGE HERO BANNERS  v3
+   ═══════════════════════════════════════════════════════ */
+.page-hero{
+  display:flex;align-items:center;justify-content:space-between;
+  border-radius:20px;padding:24px 30px;margin-bottom:28px;
+  position:relative;overflow:hidden;
+  box-shadow:0 12px 48px rgba(0,0,0,.22);
+}
+.page-hero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(circle,rgba(255,255,255,.055) 1px,transparent 1px);
+  background-size:26px 26px;
+}
+.page-hero::after{
+  content:'';position:absolute;right:-40px;top:-40px;
+  width:220px;height:220px;border-radius:50%;
+  background:rgba(255,255,255,.035);pointer-events:none;
+}
+.ph-left{display:flex;align-items:center;gap:18px;position:relative;z-index:1;}
+.ph-icon{
+  width:56px;height:56px;border-radius:18px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  background:rgba(255,255,255,.13);
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:0 4px 20px rgba(0,0,0,.18);
+  backdrop-filter:blur(6px);
+}
+.ph-icon svg{width:28px;height:28px;fill:#fff;}
+.ph-title{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1.1;}
+.ph-sub{font-size:12px;color:rgba(255,255,255,.62);margin-top:5px;font-weight:500;line-height:1.5;max-width:420px;}
+.ph-right{position:relative;z-index:1;display:flex;gap:10px;flex-shrink:0;}
+.ph-stat{
+  text-align:center;background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.14);border-radius:14px;
+  padding:11px 18px;backdrop-filter:blur(8px);min-width:80px;
+}
+.ph-stat-val{font-size:24px;font-weight:900;color:#fff;line-height:1.05;}
+.ph-stat-lbl{font-size:9.5px;color:rgba(255,255,255,.55);font-weight:700;
+  text-transform:uppercase;letter-spacing:.7px;margin-top:3px;}
+
+/* ── Hero colour variants ── */
+.h-indigo{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 55%,#4338ca 100%);}
+.h-emerald{background:linear-gradient(135deg,#064e3b 0%,#065f46 55%,#059669 100%);}
+.h-violet{background:linear-gradient(135deg,#2e1065 0%,#4c1d95 55%,#6d28d9 100%);}
+.h-sky{background:linear-gradient(135deg,#0c4a6e 0%,#075985 55%,#0284c7 100%);}
+.h-amber{background:linear-gradient(135deg,#451a03 0%,#78350f 55%,#b45309 100%);}
+.h-cyan{background:linear-gradient(135deg,#083344 0%,#164e63 55%,#0891b2 100%);}
+.h-teal{background:linear-gradient(135deg,#042f2e 0%,#134e4a 55%,#0f766e 100%);}
+.h-purple{background:linear-gradient(135deg,#3b0764 0%,#581c87 55%,#7e22ce 100%);}
+.h-rose{background:linear-gradient(135deg,#4c0519 0%,#881337 55%,#be123c 100%);}
+.h-orange{background:linear-gradient(135deg,#431407 0%,#7c2d12 55%,#c2410c 100%);}
+.h-red{background:linear-gradient(135deg,#450a0a 0%,#7f1d1d 55%,#b91c1c 100%);}
+.h-blue{background:linear-gradient(135deg,#0f2d5c 0%,#1e3a8a 55%,#1d4ed8 100%);}
+.h-slate{background:linear-gradient(135deg,#0f172a 0%,#1e293b 55%,#334155 100%);}
+
+/* ── Sidebar logo image ── */
+.sidebar-logo-img{
+  width:34px;height:34px;border-radius:10px;object-fit:cover;flex-shrink:0;
+  box-shadow:0 4px 16px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.12);
+}
+
+/* ── Login box logo image ── */
+.login-logo-img{
+  width:72px;height:72px;border-radius:20px;object-fit:cover;
+  box-shadow:0 8px 32px rgba(0,0,0,.4),0 0 0 2px rgba(255,255,255,.1);
+  margin:0 auto 16px;display:block;
+}
+
+/* ── Topbar clock styling ── */
+#topbar-date{
+  background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.15);
+  border-radius:8px;padding:4px 12px;font-size:12px;font-weight:600;
+  color:#475569;letter-spacing:.2px;
+}
+
+/* ── Content wrapper subtle card feel ── */
+.content{background:#f0f2f8;}
+
+/* ── Refined table zebra ── */
+.page-table tr:nth-child(odd) td{background:#fff;}
+.page-table tr:nth-child(even) td{background:#fafbff;}
+
 </style>
 </head>
 <body>
@@ -934,9 +1018,9 @@ body.staff-mode #st-add-btn { display:none !important; }
 <div class="login-overlay" id="login-overlay">
   <div class="login-box">
     <div class="login-logo">
-      <div class="icon">📦</div>
+      <img src="/images/bg-logo.png" alt="Perception Gaming" class="login-logo-img"/>
       <h1>Inventory System</h1>
-      <p>Management Dashboard</p>
+      <p>Perception Gaming Management Dashboard</p>
     </div>
     <div class="g-form-group"><label>Username or Email</label><input id="l-user" placeholder="Enter username or email" autocomplete="username"/></div>
     <div class="g-form-group"><label>Password</label><input id="l-pass" type="password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key===&apos;Enter&apos;)doLogin()"/></div>
@@ -949,7 +1033,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
-    <div class="brand-icon">📦</div>
+    <img src="/images/bg-logo.png" alt="Logo" class="sidebar-logo-img"/>
     <div class="brand-text"><div class="brand-name">Inventory</div><div class="brand-sub">Management System</div></div>
   </div>
   <nav class="sidebar-nav">
@@ -1034,6 +1118,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== DASHBOARD ===== -->
 <div id="page-dashboard" class="page-section active">
+  <div class="page-hero h-indigo"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></div><div><div class="ph-title">Dashboard</div><div class="ph-sub">Real-time inventory overview, machine deployment KPIs & stock analytics</div></div></div></div>
   <div class="section-label">Key Performance Indicators</div>
   <div class="kpi-grid">
     <div class="kpi-card">
@@ -1107,6 +1192,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== CATEGORIES ===== -->
 <div id="page-categories" class="page-section">
+  <div class="page-hero h-blue"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5S15.01 22 17.5 22s4.5-2.01 4.5-4.5S19.99 13 17.5 13zm0 7a2.5 2.5 0 010-5 2.5 2.5 0 010 5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/></svg></div><div><div class="ph-title">Item Categories</div><div class="ph-sub">Organize and classify inventory items by product category</div></div></div></div>
   <div class="page-toolbar">
     <input class="search-input" id="cat-search" placeholder="Search categories..." oninput="renderCat()"/>
     <span class="table-meta" id="cat-meta"></span>
@@ -1121,6 +1207,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== STOCK MONITORING ===== -->
 <div id="page-stockmonitoring" class="page-section">
+  <div class="page-hero h-emerald"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg></div><div><div class="ph-title">Stock Monitoring</div><div class="ph-sub">Track spare parts inventory, reorder points & safety stock levels in real-time</div></div></div></div>
   <!-- KPI Cards -->
   <div class="kpi-grid" style="margin-bottom:18px">
     <div class="kpi-card sm-kpi-card">
@@ -1204,6 +1291,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== LOCAL PURCHASE MONITORING ===== -->
 <div id="page-localpurchase" class="page-section">
+  <div class="page-hero h-violet"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h11v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H17c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0021.46 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg></div><div><div class="ph-title">Local Purchase Monitoring</div><div class="ph-sub">Track local supplier purchases, delivery status & aggregate costs</div></div></div></div>
   <div class="kpi-grid" style="margin-bottom:18px">
     <div class="kpi-card"><div class="kpi-label">Total Records</div><div class="kpi-value" id="lp-kpi-total">—</div><div class="kpi-sub">All local purchases</div></div>
     <div class="kpi-card"><div class="kpi-label">Pending</div><div class="kpi-value" id="lp-kpi-pending" style="color:#f59e0b">—</div><div class="kpi-sub">Awaiting delivery</div></div>
@@ -1243,6 +1331,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 
 <!-- ===== MACHINE MONITORING ===== -->
 <div id="page-machinemonitoring" class="page-section">
+  <div class="page-hero h-sky"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg></div><div><div class="ph-title">Machine Monitoring</div><div class="ph-sub">Monitor Bingo machine deployment (EZ · BR · EZ2 · EZL · LB · J-ARK) across all sites</div></div></div></div>
   <div class="page-toolbar">
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="log-tab active" id="mm-tab-all" onclick="filterMM(&apos;&apos;,this)">All Areas</button>
@@ -1262,6 +1351,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== PURCHASE ORDERS ===== -->
 <div id="page-purchaseorders" class="page-section">
+  <div class="page-hero h-amber"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div><div><div class="ph-title">Purchase Orders</div><div class="ph-sub">Manage and track supplier purchase orders from approval through receipt</div></div></div></div>
   <div class="page-toolbar">
     <input class="search-input" id="po-search" placeholder="Search purchase orders..." oninput="renderPO()"/>
     <select class="search-input" id="po-filter" onchange="renderPO()" style="min-width:140px"><option value="">All Status</option><option>Pending</option><option>Approved</option><option>Ordered</option><option>Received</option><option>Cancelled</option></select>
@@ -1277,6 +1367,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== SUPPLIERS ===== -->
 <div id="page-suppliers" class="page-section">
+  <div class="page-hero h-cyan"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div><div><div class="ph-title">Suppliers</div><div class="ph-sub">Manage supplier database, contact information & business records</div></div></div></div>
   <div class="page-toolbar">
     <input class="search-input" id="sup-search" placeholder="Search suppliers..." oninput="renderSup()"/>
     <span class="table-meta" id="sup-meta"></span>
@@ -1291,6 +1382,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== GOODS RECEIVED ===== -->
 <div id="page-goodsreceived" class="page-section">
+  <div class="page-hero h-teal"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.07-.44.18-.88.18-1.33C18 2.54 15.96.5 13.5.5c-1.44 0-2.7.71-3.5 1.79C9.2 1.21 7.94.5 6.5.5 4.04.5 2 2.54 2 4.67c0 .45.11.89.18 1.33H0v14c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM2 20V8h9v12H2zm11 0V8h9v12h-9z"/></svg></div><div><div class="ph-title">Goods Received</div><div class="ph-sub">Record and verify incoming goods — link to purchase orders & update stock</div></div></div></div>
   <div class="page-toolbar">
     <input class="search-input" id="gr-search" placeholder="Search goods received..." oninput="renderGR()"/>
     <span class="table-meta" id="gr-meta"></span>
@@ -1305,6 +1397,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== STOCK TRANSFERS ===== -->
 <div id="page-stocktransfers" class="page-section">
+  <div class="page-hero h-purple"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 4l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z"/></svg></div><div><div class="ph-title">Stock Transfers</div><div class="ph-sub">Track inventory movements and inter-location stock transfers</div></div></div></div>
   <div class="page-toolbar">
     <input class="search-input" id="st-search" placeholder="Search transfers..." oninput="renderST()"/>
     <span class="table-meta" id="st-meta"></span>
@@ -1319,6 +1412,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== CI / PL ===== -->
 <div id="page-cipl" class="page-section">
+  <div class="page-hero h-rose"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div><div><div class="ph-title">Commercial Invoice & Packing List</div><div class="ph-sub">Manage import documentation — invoices, packing lists & shipping records</div></div></div></div>
   <!-- Tabs -->
   <div class="log-tabs">
     <button class="log-tab active" onclick="switchCIPLTab('ci',this)">📄 Commercial Invoice (CI)</button>
@@ -1535,6 +1629,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 
 <!-- ===== INVENTORY REPORT ===== -->
 <div id="page-inventoryreport" class="page-section">
+  <div class="page-hero h-indigo"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></div><div><div class="ph-title">Inventory Report</div><div class="ph-sub">Detailed inventory valuation, movement summaries & management reports</div></div></div></div>
   <div class="page-toolbar">
     <input class="search-input" id="ir-search" placeholder="Search parts..." oninput="renderIR()"/>
     <span class="table-meta" id="ir-meta"></span>
@@ -1559,6 +1654,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== PURCHASE REPORT ===== -->
 <div id="page-purchasereport" class="page-section">
+  <div class="page-hero h-amber"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></div><div><div class="ph-title">Purchase Report</div><div class="ph-sub">Purchase order summaries, cost analysis & supplier spending breakdowns</div></div></div></div>
   <div class="page-toolbar">
     <input class="search-input" id="pr-search" placeholder="Filter report..." oninput="renderPR()"/>
     <button class="page-add-btn" onclick="exportPRExcel()" style="background:#10b981">⬇ Excel</button>
@@ -1574,6 +1670,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== ALERTS ===== -->
 <div id="page-alerts" class="page-section">
+  <div class="page-hero h-red"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></div><div><div class="ph-title">Alerts & Notifications</div><div class="ph-sub">Critical inventory alerts — low stock, out-of-stock & reorder triggers</div></div></div></div>
   <div class="alert-section">
     <div class="alert-section-head alert-head-red">🚫 Out of Stock <span class="alert-head-count" id="alert-out-count"></span></div>
     <div id="alert-outofstock"><div class="alert-empty">Loading...</div></div>
@@ -1589,6 +1686,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== LOGISTICS ===== -->
 <div id="page-logistics" class="page-section">
+  <div class="page-hero h-orange"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></div><div><div class="ph-title">Logistics</div><div class="ph-sub">Track deliveries, shipments, job orders & logistical operations</div></div></div></div>
   <div class="log-tabs">
     <button class="log-tab active" onclick="switchLogTab(&apos;trucking&apos;,this)">Trucking Quotations</button>
     <button class="log-tab" onclick="switchLogTab(&apos;manpower&apos;,this)">Manpower Requests</button>
@@ -1647,6 +1745,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== ACTIVITY CALENDAR ===== -->
 <div id="page-activitycalendar" class="page-section">
+  <div class="page-hero h-blue"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13zM8 10h4v4H8z"/></svg></div><div><div class="ph-title">Activity Calendar</div><div class="ph-sub">Schedule and track tasks, maintenance activities & team events</div></div></div></div>
   <div class="section-label">Activity Calendar</div>
 
   <!-- Urgent Task Notifications -->
@@ -1739,6 +1838,7 @@ body.staff-mode #st-add-btn { display:none !important; }
 </div>
 <!-- ===== SETTINGS ===== -->
 <div id="page-settings" class="page-section">
+  <div class="page-hero h-slate"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.04.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></div><div><div class="ph-title">Settings</div><div class="ph-sub">Manage system configuration, user accounts, notifications & integrations</div></div></div></div>
   <div class="section-label">User Profile</div>
   <div class="settings-card">
     <h3>Account Information</h3>
