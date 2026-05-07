@@ -26,6 +26,33 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ── Diagnostic: test email + env check ────────────────────────
+const { dbPromise } = require('./database');
+const { sendApprovedPODraft } = require('./services/outlookDraftService');
+app.get('/api/diag/email', async (req, res) => {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  try {
+    const { db } = await dbPromise;
+    const suppliers = await db.getAll("SELECT name, email FROM suppliers ORDER BY name");
+    if (req.query.send === '1' && gmailUser && gmailPass) {
+      await sendApprovedPODraft({
+        po_number: 'TEST-001', order_date: new Date().toISOString().slice(0,10),
+        supplier_name: 'Test Supplier', supplier_email: gmailUser,
+        total_amount: 1234.56,
+      });
+      return res.json({ status: 'test email sent to ' + gmailUser, suppliers });
+    }
+    res.json({
+      GMAIL_USER: gmailUser ? '✅ set (' + gmailUser + ')' : '❌ NOT SET',
+      GMAIL_APP_PASSWORD: gmailPass ? '✅ set (length=' + gmailPass.length + ')' : '❌ NOT SET',
+      suppliers,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use('/api', inventoryRouter);
 app.use('/api', jobsRouter);
 app.use('/api', logisticsRouter);
