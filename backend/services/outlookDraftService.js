@@ -1,23 +1,23 @@
 // ================================================================
 // emailService.js (outlookDraftService.js)
-// Sends an automated email via Gmail SMTP when a PO is Approved.
+// Sends PO approval emails via Resend (HTTPS API — works on Railway).
 //
 // Railway env vars required:
-//   GMAIL_USER         – your Gmail address (e.g. you@gmail.com)
-//   GMAIL_APP_PASSWORD – 16-char Gmail App Password (not your login password)
-//
-// How to get a Gmail App Password:
-//   1. Go to myaccount.google.com/security
-//   2. Enable 2-Step Verification
-//   3. Go to myaccount.google.com/apppasswords
-//   4. Create one named "Inventory App" — copy the 16-char code
+//   RESEND_API_KEY  – from resend.com → API Keys (starts with re_...)
+//   RESEND_FROM     – (optional) verified sender e.g. "noreply@yourdomain.com"
+//                     Defaults to Resend's shared test address.
+//   GMAIL_USER      – kept as reply-to so suppliers can reply to you
 // ================================================================
 
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
+const fs = require('fs');
 
-const GMAIL_USER         = process.env.GMAIL_USER;
-// Gmail App Passwords are 16 chars — strip any spaces the user may have copied in
-const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s/g, '');
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const GMAIL_USER     = process.env.GMAIL_USER || '';
+// Use a verified FROM domain if set, otherwise Resend's shared test address
+const FROM_ADDRESS   = process.env.RESEND_FROM
+  ? `Inventory Management System <${process.env.RESEND_FROM}>`
+  : 'Inventory Management System <onboarding@resend.dev>';
 
 /** Build the HTML email body for an approved PO */
 function buildEmailBody(po) {
@@ -61,59 +61,55 @@ function buildEmailBody(po) {
 }
 
 /**
- * Sends an approval email to the supplier via Gmail SMTP.
+ * Sends an approval email to the supplier via Resend (HTTPS).
  *
  * @param {object} po {
  *   po_number, order_date, supplier_name,
- *   supplier_email,   // override recipient — editable in the preview modal
+ *   supplier_email,   – recipient (editable in preview modal)
  *   total_amount,
- *   attachment_path,  // optional — absolute path to the PO file on disk
- *   attachment_name,  // optional — filename to show in the email
+ *   attachment_path,  – optional absolute path to PO file
+ *   attachment_name,  – optional filename
  * }
  */
 async function sendApprovedPODraft(po) {
-  if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-    console.warn('[EmailService] GMAIL_USER or GMAIL_APP_PASSWORD not set — skipping email.');
-    return;
+  if (!RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not set. Add it in Railway → your service → Variables.');
   }
 
   if (!po.supplier_email) {
-    console.warn(`[EmailService] No email address for supplier "${po.supplier_name}" — skipping.`);
-    return;
+    throw new Error(`No email address provided for supplier "${po.supplier_name}".`);
   }
 
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,          // STARTTLS — works on Railway (port 465 is often blocked)
-    requireTLS: true,
-    auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
-    connectionTimeout: 15000,
-    greetingTimeout:   15000,
-    socketTimeout:     20000,
-  });
+  const resend = new Resend(RESEND_API_KEY);
 
-  const mailOptions = {
-    from:    `"Inventory Management System" <${GMAIL_USER}>`,
-    to:      po.supplier_email,
-    cc:      GMAIL_USER,
-    subject: `Purchase Order Approved – ${po.po_number} | ${po.supplier_name}`,
-    html:    buildEmailBody(po),
+  const payload = {
+    from:     FROM_ADDRESS,
+    to:       [po.supplier_email],
+    reply_to: GMAIL_USER || undefined,
+    subject:  `Purchase Order Approved – ${po.po_number} | ${po.supplier_name}`,
+    html:     buildEmailBody(po),
   };
 
   // Attach the PO file if one was uploaded
-  if (po.attachment_path && po.attachment_name) {
-    mailOptions.attachments = [{
-      filename: po.attachment_name.replace(/^\d+[-_]/, ''), // strip timestamp prefix
-      path:     po.attachment_path,
+  if (po.attachment_path && po.attachment_name && fs.existsSync(po.attachment_path)) {
+    const cleanName = po.attachment_name.replace(/^\d+[-_]/, '');
+    payload.attachments = [{
+      filename: cleanName,
+      content:  fs.readFileSync(po.attachment_path),
     }];
-    console.log(`[EmailService] Attaching file: ${po.attachment_name}`);
+    console.log(`[EmailService] Attaching file: ${cleanName}`);
   }
 
-  console.log(`[EmailService] Sending approval email for PO ${po.po_number} to ${po.supplier_email}...`);
-  const info = await transporter.sendMail(mailOptions);
-  console.log(`[EmailService] Email sent. Message ID: ${info.messageId}`);
-  return info;
+  console.log(`[EmailService] Sending via Resend: PO ${po.po_number} → ${po.supplier_email}`);
+  const { data, error } = await resend.emails.send(payload);
+
+  if (error) {
+    console.error('[EmailService] Resend error:', error);
+    throw new Error(error.message || JSON.stringify(error));
+  }
+
+  console.log(`[EmailService] Email sent. ID: ${data?.id}`);
+  return data;
 }
 
 module.exports = { sendApprovedPODraft };
