@@ -538,6 +538,24 @@ const dbPromise = (async () => {
     console.log('[db] Seeded machine_monitoring rows.');
   }
 
+  // ── Patch supplier emails (runs every boot, idempotent) ───────
+  const supplierEmailPatches = [
+    { name: 'finebend',              email: 'finebendsales109@gmail.com'          },
+    { name: 'doin furniture trading',email: 'doinfurnituretrading@gmail.com'      },
+    { name: 'pc express',            email: 'pcxglorietta@pcx.com.ph'             },
+    { name: 'asus concept store',    email: 'asusconceptstoreglorietta2@gmail.com'},
+  ];
+  for (const patch of supplierEmailPatches) {
+    const result = await db.run(
+      `UPDATE suppliers SET email = ?, updated_at = NOW()
+       WHERE LOWER(name) = ? AND (email = '' OR email IS NULL)`,
+      [patch.email, patch.name]
+    );
+    if (result && result.rowCount > 0) {
+      console.log(`[db] Patched email for supplier "${patch.name}".`);
+    }
+  }
+
   console.log('[db] PostgreSQL schema ready.');
   return { db, save: () => {} };
 })();
