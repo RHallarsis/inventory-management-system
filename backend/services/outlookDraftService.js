@@ -16,7 +16,8 @@
 const nodemailer = require('nodemailer');
 
 const GMAIL_USER         = process.env.GMAIL_USER;
-const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
+// Gmail App Passwords are 16 chars — strip any spaces the user may have copied in
+const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s/g, '');
 
 /** Build the HTML email body for an approved PO */
 function buildEmailBody(po) {

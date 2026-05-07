@@ -539,22 +539,21 @@ const dbPromise = (async () => {
   }
 
   // ── Patch supplier emails (runs every boot, idempotent) ───────
+  // Uses LIKE so partial/case-insensitive name matches work
   const supplierEmailPatches = [
-    { name: 'finebend',              email: 'finebendsales109@gmail.com'          },
-    { name: 'doin furniture trading',email: 'doinfurnituretrading@gmail.com'      },
-    { name: 'pc express',            email: 'pcxglorietta@pcx.com.ph'             },
-    { name: 'asus concept store',    email: 'asusconceptstoreglorietta2@gmail.com'},
+    { keyword: 'finebend',        email: 'finebendsales109@gmail.com'          },
+    { keyword: 'doin',            email: 'doinfurnituretrading@gmail.com'      },
+    { keyword: 'pc express',      email: 'pcxglorietta@pcx.com.ph'             },
+    { keyword: 'asus',            email: 'asusconceptstoreglorietta2@gmail.com'},
   ];
   for (const patch of supplierEmailPatches) {
-    const result = await db.run(
+    await db.run(
       `UPDATE suppliers SET email = ?, updated_at = NOW()
-       WHERE LOWER(name) = ? AND (email = '' OR email IS NULL)`,
-      [patch.email, patch.name]
+       WHERE LOWER(name) LIKE ? AND (email = '' OR email IS NULL)`,
+      [patch.email, `%${patch.keyword}%`]
     );
-    if (result && result.rowCount > 0) {
-      console.log(`[db] Patched email for supplier "${patch.name}".`);
-    }
   }
+  console.log('[db] Supplier email patch applied.');
 
   console.log('[db] PostgreSQL schema ready.');
   return { db, save: () => {} };
