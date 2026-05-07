@@ -550,11 +550,13 @@ router.get('/purchase-orders/:id/preview-email', async (req, res) => {
   </div>
 </div>`;
     res.json({
-      po_number:      po.po_number,
-      supplier_name:  po.supplier,
-      supplier_email: supplierEmail,
-      subject:        `Purchase Order Approved – ${po.po_number} | ${po.supplier}`,
-      body_html:      bodyHtml,
+      po_number:       po.po_number,
+      supplier_name:   po.supplier,
+      supplier_email:  supplierEmail,
+      subject:         `Purchase Order Approved – ${po.po_number} | ${po.supplier}`,
+      body_html:       bodyHtml,
+      has_attachment:  !!(po.file_name && po.file_path),
+      attachment_name: po.file_name || null,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -562,6 +564,7 @@ router.get('/purchase-orders/:id/preview-email', async (req, res) => {
 });
 
 // ── Manually notify supplier for an approved PO ───────────────
+// Body: { to: 'override@email.com' }  — optional recipient override
 router.post('/purchase-orders/:id/notify-supplier', async (req, res) => {
   try {
     const { db } = await dbPromise;
@@ -570,21 +573,32 @@ router.post('/purchase-orders/:id/notify-supplier', async (req, res) => {
     if (po.status !== 'Approved') {
       return res.status(400).json({ error: 'PO must be Approved before notifying supplier.' });
     }
-    const supplierRecord = await db.getOne(
-      'SELECT email FROM suppliers WHERE LOWER(name) = LOWER(?)', [po.supplier]
-    );
-    const supplierEmail = supplierRecord?.email || '';
-    if (!supplierEmail) {
-      return res.status(400).json({ error: `No email address found for supplier "${po.supplier}". Please add it in the Suppliers section first.` });
+    // Use the email provided in the request body (from the editable To: field),
+    // falling back to the supplier record in the DB.
+    let recipientEmail = (req.body?.to || '').trim();
+    if (!recipientEmail) {
+      const supplierRecord = await db.getOne(
+        'SELECT email FROM suppliers WHERE LOWER(name) = LOWER(?)', [po.supplier]
+      );
+      recipientEmail = supplierRecord?.email || '';
     }
+    if (!recipientEmail) {
+      return res.status(400).json({ error: `No email address provided. Please enter one in the To: field.` });
+    }
+    // Build absolute path to the PO attachment if it exists
+    const attachmentPath = po.file_path
+      ? path.join(__dirname, '..', po.file_path)
+      : null;
     await sendApprovedPODraft({
-      po_number:     po.po_number,
-      order_date:    po.order_date,
-      supplier_name: po.supplier,
-      supplier_email: supplierEmail,
-      total_amount:  po.total_amount,
+      po_number:       po.po_number,
+      order_date:      po.order_date,
+      supplier_name:   po.supplier,
+      supplier_email:  recipientEmail,
+      total_amount:    po.total_amount,
+      attachment_path: attachmentPath,
+      attachment_name: po.file_name || null,
     });
-    res.json({ success: true, message: `Notification sent to ${supplierEmail}` });
+    res.json({ success: true, message: `Notification sent to ${recipientEmail}` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

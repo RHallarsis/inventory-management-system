@@ -61,9 +61,14 @@ function buildEmailBody(po) {
 
 /**
  * Sends an approval email to the supplier via Gmail SMTP.
- * Called automatically when a PO status changes to "Approved".
  *
- * @param {object} po { po_number, order_date, supplier_name, supplier_email, total_amount }
+ * @param {object} po {
+ *   po_number, order_date, supplier_name,
+ *   supplier_email,   // override recipient — editable in the preview modal
+ *   total_amount,
+ *   attachment_path,  // optional — absolute path to the PO file on disk
+ *   attachment_name,  // optional — filename to show in the email
+ * }
  */
 async function sendApprovedPODraft(po) {
   if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
@@ -78,19 +83,25 @@ async function sendApprovedPODraft(po) {
 
   const transporter = nodemailer.createTransport({
     service: 'gmail',
-    auth: {
-      user: GMAIL_USER,
-      pass: GMAIL_APP_PASSWORD,
-    },
+    auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
   });
 
   const mailOptions = {
     from:    `"Inventory Management System" <${GMAIL_USER}>`,
     to:      po.supplier_email,
-    cc:      GMAIL_USER,                          // keeps a copy in your Sent folder
+    cc:      GMAIL_USER,
     subject: `Purchase Order Approved – ${po.po_number} | ${po.supplier_name}`,
     html:    buildEmailBody(po),
   };
+
+  // Attach the PO file if one was uploaded
+  if (po.attachment_path && po.attachment_name) {
+    mailOptions.attachments = [{
+      filename: po.attachment_name.replace(/^\d+[-_]/, ''), // strip timestamp prefix
+      path:     po.attachment_path,
+    }];
+    console.log(`[EmailService] Attaching file: ${po.attachment_name}`);
+  }
 
   console.log(`[EmailService] Sending approval email for PO ${po.po_number} to ${po.supplier_email}...`);
   const info = await transporter.sendMail(mailOptions);

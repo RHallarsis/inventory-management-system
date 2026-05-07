@@ -2127,17 +2127,28 @@ body.staff-mode #st-add-btn { display:none !important; }
       <button class="g-modal-close" style="color:#fff" onclick="closePONotifyModal()">&#215;</button>
     </div>
     <div class="g-modal-body" style="padding:0">
-      <div style="background:#f8f8f8;border-bottom:1px solid #ddd;padding:14px 20px;font-size:0.85rem;display:grid;gap:6px">
-        <div><span style="font-weight:600;color:#666;min-width:60px;display:inline-block">To:</span> <span id="po-notify-to" style="color:#333"></span></div>
-        <div><span style="font-weight:600;color:#666;min-width:60px;display:inline-block">Subject:</span> <span id="po-notify-subject" style="color:#333"></span></div>
+      <div style="background:#f8f8f8;border-bottom:1px solid #ddd;padding:14px 20px;font-size:0.85rem;display:grid;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600;color:#666;min-width:75px">To:</span>
+          <input id="po-notify-to" type="email" multiple placeholder="supplier@email.com"
+            style="flex:1;border:1px solid #ccc;border-radius:6px;padding:6px 10px;font-size:0.85rem;outline:none"/>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600;color:#666;min-width:75px">Subject:</span>
+          <span id="po-notify-subject" style="color:#333;font-size:0.85rem"></span>
+        </div>
+        <div id="po-notify-attachment-row" style="display:none;align-items:center;gap:8px">
+          <span style="font-weight:600;color:#666;min-width:75px">Attachment:</span>
+          <span id="po-notify-attachment-name" style="background:#fff3e0;color:#6b2e0a;border:1px solid #f5c88a;border-radius:12px;padding:2px 10px;font-size:0.8rem;font-weight:600">📎</span>
+        </div>
       </div>
-      <div style="padding:20px;max-height:420px;overflow-y:auto;background:#fff">
+      <div style="padding:20px;max-height:400px;overflow-y:auto;background:#fff">
         <div id="po-notify-body"></div>
       </div>
     </div>
     <div class="g-modal-foot" style="justify-content:flex-end;gap:10px;border-top:2px solid #6b2e0a">
       <button class="g-btn g-btn-cancel" onclick="closePONotifyModal()">Cancel</button>
-      <button id="po-notify-send-btn" class="g-btn g-btn-save" style="background:#6b2e0a;min-width:130px" onclick="sendPONotification()">Send Email</button>
+      <button id="po-notify-send-btn" class="g-btn g-btn-save" style="background:#6b2e0a;min-width:140px" onclick="sendPONotification()">✉ Send Email</button>
     </div>
   </div>
 </div>
@@ -2969,18 +2980,28 @@ async function notifyPOSupplier(id){
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||'Preview failed');
     document.getElementById('po-notify-subject').textContent=data.subject;
-    document.getElementById('po-notify-to').textContent=data.supplier_email||'⚠ No email address on file';
+    document.getElementById('po-notify-to').value=data.supplier_email||'';
     document.getElementById('po-notify-body').innerHTML=data.body_html;
+    // Show attachment badge if PO has a file
+    const attRow=document.getElementById('po-notify-attachment-row');
+    if(data.has_attachment&&data.attachment_name){
+      document.getElementById('po-notify-attachment-name').textContent='📎 '+data.attachment_name.replace(/^\d+[-_]/,'');
+      attRow.style.display='flex';
+    } else { attRow.style.display='none'; }
+    const btn=document.getElementById('po-notify-send-btn');
+    btn.disabled=false; btn.textContent='✉ Send Email';
     document.getElementById('po-notify-modal').classList.add('open');
   }catch(err){gToast(err.message,'error');}
 }
 function closePONotifyModal(){document.getElementById('po-notify-modal').classList.remove('open');poNotifyId=null;}
 async function sendPONotification(){
   if(!poNotifyId)return;
+  const toEmail=document.getElementById('po-notify-to').value.trim();
+  if(!toEmail){gToast('Please enter a recipient email address.','error');return;}
   try{
-    document.getElementById('po-notify-send-btn').disabled=true;
-    document.getElementById('po-notify-send-btn').textContent='Sending...';
-    const res=await fetch(API+'/purchase-orders/'+poNotifyId+'/notify-supplier',{method:'POST'});
+    const btn=document.getElementById('po-notify-send-btn');
+    btn.disabled=true; btn.textContent='Sending...';
+    const res=await fetch(API+'/purchase-orders/'+poNotifyId+'/notify-supplier',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:toEmail})});
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||'Send failed');
     gToast('✉ '+data.message,'success');
