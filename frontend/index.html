@@ -313,31 +313,33 @@ body.staff-mode .ac-task-edit,
 body.staff-mode .ac-task-del,
 body.staff-mode .ac-sum-edit,
 body.staff-mode .ac-sum-del,
-body.staff-mode #sm-search ~ .page-add-btn,
-body.staff-mode #lp-add-btn,
-body.staff-mode #cat-add-btn,
-body.staff-mode #gr-add-btn,
-body.staff-mode #po-add-btn,
-body.staff-mode #sup-add-btn,
-body.staff-mode #st-add-btn { display:none !important; }
+body.staff-mode .line-notify-btn { display:none !important; }
 
-/* ── Staff CRUD exceptions: Delivery Receipts, Logistics, Alerts, Activity Calendar ── */
+/* ── Staff CRUD exceptions: full access pages ── */
+body.staff-mode #page-machinemonitoring .page-add-btn,
+body.staff-mode #page-machinemonitoring .page-act-btn,
+body.staff-mode #page-machinemonitoring .btn-edit,
+body.staff-mode #page-machinemonitoring .btn-del,
+body.staff-mode #page-goodsreceived .page-add-btn,
+body.staff-mode #page-goodsreceived .page-act-btn,
+body.staff-mode #page-goodsreceived .btn-edit,
+body.staff-mode #page-goodsreceived .btn-del,
 body.staff-mode #page-stocktransfers .page-add-btn,
 body.staff-mode #page-stocktransfers .page-act-btn,
 body.staff-mode #page-stocktransfers .btn-edit,
 body.staff-mode #page-stocktransfers .btn-del,
+body.staff-mode #page-inventoryreport .page-add-btn,
+body.staff-mode #page-inventoryreport .page-act-btn,
+body.staff-mode #page-inventoryreport .btn-edit,
+body.staff-mode #page-inventoryreport .btn-del,
+body.staff-mode #page-purchasereport .page-add-btn,
+body.staff-mode #page-purchasereport .page-act-btn,
+body.staff-mode #page-purchasereport .btn-edit,
+body.staff-mode #page-purchasereport .btn-del,
 body.staff-mode #page-logistics .page-add-btn,
 body.staff-mode #page-logistics .page-act-btn,
 body.staff-mode #page-logistics .btn-edit,
-body.staff-mode #page-logistics .btn-del,
-body.staff-mode #page-alerts .page-add-btn,
-body.staff-mode #page-alerts .page-act-btn,
-body.staff-mode #page-activitycalendar .ac-add-btn,
-body.staff-mode #page-activitycalendar .page-add-btn,
-body.staff-mode #page-activitycalendar .ac-task-edit,
-body.staff-mode #page-activitycalendar .ac-task-del,
-body.staff-mode #page-activitycalendar .ac-sum-edit,
-body.staff-mode #page-activitycalendar .ac-sum-del { display:inline-flex !important; }
+body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
 /* Staff topbar badge */
 .staff-viewonly-badge {
   display:none;
@@ -2475,13 +2477,12 @@ function doLogout(){
 }
 
 // ── ROLE-BASED ACCESS CONTROL ────────────────────────────────
-// Pages that Staff users may NOT visit
-// Staff CAN access: logistics, stocktransfers (Delivery Receipts), alerts, activitycalendar
-const STAFF_BLOCKED_PAGES = [
-  'purchaseorders','suppliers','goodsreceived',
-  'inventoryreport','purchasereport','settings',
-  'categories','stockmonitoring','localpurchase','machinemonitoring','cipl'
-];
+// Pages that Staff users may NOT visit — only Settings is blocked
+// View-only pages (no CRUD): categories, stockmonitoring, localpurchase,
+//   purchaseorders, suppliers, cipl, alerts, activitycalendar
+// Full CRUD pages: machinemonitoring, goodsreceived, stocktransfers,
+//   inventoryreport, purchasereport, logistics
+const STAFF_BLOCKED_PAGES = ['settings'];
 
 /**
  * Apply (or reset) role-based UI restrictions.
