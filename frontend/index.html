@@ -2504,15 +2504,9 @@ function applyRoleAccess(role) {
     if (el) el.style.display = isStaff ? 'none' : '';
   });
 
-  // ── Nav labels — hide Reports for Staff, keep Logistics & System visible ──
+  // ── Nav labels — all section labels visible for Staff ──
   document.querySelectorAll('.nav-label').forEach(label => {
-    const t = label.textContent.trim();
-    if (t === 'Reports' || t === 'Inventory' || t === 'Management') {
-      label.style.display = isStaff ? 'none' : '';
-    }
-    if (t === 'Logistics' || t === 'System') {
-      label.style.display = ''; // always visible for staff
-    }
+    label.style.display = ''; // always visible; sections now controlled by nav-item visibility
   });
 }
 
