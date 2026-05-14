@@ -739,6 +739,116 @@ router.delete('/stock-transfers/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── PULLOUT RECEIPTS ─────────────────────────────────────────────
+router.get('/pullout-receipts', async (_req, res) => {
+  try {
+    const { db } = await dbPromise;
+    res.json(await db.getAll('SELECT * FROM pullout_receipts ORDER BY transfer_date DESC'));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/pullout-receipts', async (req, res) => {
+  const { transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by } = req.body;
+  if (!transfer_no || !source_location || !destination_location) {
+    return res.status(400).json({ error: 'transfer_no, source_location, and destination_location are required' });
+  }
+  try {
+    const { db } = await dbPromise;
+    const id = await db.insert(
+      'INSERT INTO pullout_receipts (transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by) VALUES (?,?,?,?,?,?,?)',
+      [transfer_no.trim(), transfer_date || new Date().toISOString().split('T')[0],
+       source_location.trim(), destination_location.trim(),
+       +items_count || 0, status || 'Pending', (transferred_by || '').trim()]
+    );
+    res.status(201).json(await db.getOne('SELECT * FROM pullout_receipts WHERE id = ?', [id]));
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: `Pullout No '${transfer_no}' already exists` });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/pullout-receipts/:id', async (req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const ex = await db.getOne('SELECT * FROM pullout_receipts WHERE id = ?', [+req.params.id]);
+    if (!ex) return res.status(404).json({ error: 'Pullout receipt not found' });
+    const { transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by } = req.body;
+    await db.run(
+      `UPDATE pullout_receipts SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_count=?, status=?, transferred_by=?, updated_at=NOW() WHERE id=?`,
+      [(transfer_no ?? ex.transfer_no).trim(), transfer_date ?? ex.transfer_date,
+       (source_location ?? ex.source_location).trim(), (destination_location ?? ex.destination_location).trim(),
+       items_count != null ? +items_count : ex.items_count, status ?? ex.status,
+       (transferred_by ?? ex.transferred_by).trim(), +req.params.id]
+    );
+    res.json(await db.getOne('SELECT * FROM pullout_receipts WHERE id = ?', [+req.params.id]));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/pullout-receipts/:id', async (req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const ex = await db.getOne('SELECT id FROM pullout_receipts WHERE id = ?', [+req.params.id]);
+    if (!ex) return res.status(404).json({ error: 'Pullout receipt not found' });
+    await db.run('DELETE FROM pullout_receipts WHERE id = ?', [+req.params.id]);
+    res.status(204).end();
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── TRANSMITTAL RECEIPTS ──────────────────────────────────────────
+router.get('/transmittal-receipts', async (_req, res) => {
+  try {
+    const { db } = await dbPromise;
+    res.json(await db.getAll('SELECT * FROM transmittal_receipts ORDER BY transfer_date DESC'));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/transmittal-receipts', async (req, res) => {
+  const { transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by } = req.body;
+  if (!transfer_no || !source_location || !destination_location) {
+    return res.status(400).json({ error: 'transfer_no, source_location, and destination_location are required' });
+  }
+  try {
+    const { db } = await dbPromise;
+    const id = await db.insert(
+      'INSERT INTO transmittal_receipts (transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by) VALUES (?,?,?,?,?,?,?)',
+      [transfer_no.trim(), transfer_date || new Date().toISOString().split('T')[0],
+       source_location.trim(), destination_location.trim(),
+       +items_count || 0, status || 'Pending', (transferred_by || '').trim()]
+    );
+    res.status(201).json(await db.getOne('SELECT * FROM transmittal_receipts WHERE id = ?', [id]));
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: `Transmittal No '${transfer_no}' already exists` });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/transmittal-receipts/:id', async (req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const ex = await db.getOne('SELECT * FROM transmittal_receipts WHERE id = ?', [+req.params.id]);
+    if (!ex) return res.status(404).json({ error: 'Transmittal receipt not found' });
+    const { transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by } = req.body;
+    await db.run(
+      `UPDATE transmittal_receipts SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_count=?, status=?, transferred_by=?, updated_at=NOW() WHERE id=?`,
+      [(transfer_no ?? ex.transfer_no).trim(), transfer_date ?? ex.transfer_date,
+       (source_location ?? ex.source_location).trim(), (destination_location ?? ex.destination_location).trim(),
+       items_count != null ? +items_count : ex.items_count, status ?? ex.status,
+       (transferred_by ?? ex.transferred_by).trim(), +req.params.id]
+    );
+    res.json(await db.getOne('SELECT * FROM transmittal_receipts WHERE id = ?', [+req.params.id]));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/transmittal-receipts/:id', async (req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const ex = await db.getOne('SELECT id FROM transmittal_receipts WHERE id = ?', [+req.params.id]);
+    if (!ex) return res.status(404).json({ error: 'Transmittal receipt not found' });
+    await db.run('DELETE FROM transmittal_receipts WHERE id = ?', [+req.params.id]);
+    res.status(204).end();
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ════════════════════════════════════════════════════════════════
 // MACHINE MONITORING CRUD
 // ════════════════════════════════════════════════════════════════

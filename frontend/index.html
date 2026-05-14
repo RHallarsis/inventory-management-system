@@ -1090,6 +1090,10 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
       <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg><span>Goods Received</span></div>
     <div class="nav-item" data-page="stocktransfers" onclick="showPage(&apos;stocktransfers&apos;)">
       <svg viewBox="0 0 24 24"><path d="M17 4l4 4-4 4V9H3V7h14V4zm-4 13H3v-2h10v-3l4 4-4 4v-3z"/></svg><span>Delivery Receipts</span></div>
+    <div class="nav-item" data-page="pulloutreceipts" onclick="showPage(&apos;pulloutreceipts&apos;)">
+      <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/></svg><span>Pullout Receipts</span></div>
+    <div class="nav-item" data-page="transmittalreceipts" onclick="showPage(&apos;transmittalreceipts&apos;)">
+      <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg><span>Transmittal Receipts</span></div>
     <div class="nav-item" data-page="cipl" onclick="showPage(&apos;cipl&apos;)">
       <svg viewBox="0 0 24 24"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v1h12v-1l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11zM9 9h6v2H9zm0 4h6v2H9zm-2-4H6v2h1zm0 4H6v2h1z"/></svg><span>CI / PL</span></div>
     <div class="nav-label">Reports</div>
@@ -1427,6 +1431,36 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
     <table class="page-table">
       <thead><tr><th>#</th><th>Transfer No.</th><th>From</th><th>To</th><th>Date</th><th>Items</th><th>Status</th><th>Transferred By</th><th>Actions</th></tr></thead>
       <tbody id="st-body"></tbody>
+    </table>
+  </div>
+</div>
+<!-- ===== PULLOUT RECEIPTS ===== -->
+<div id="page-pulloutreceipts" class="page-section">
+  <div class="page-hero h-purple"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/></svg></div><div><div class="ph-title">Pullout Receipts</div><div class="ph-sub">Track and manage pullout of inventory items across locations</div></div></div></div>
+  <div class="page-toolbar">
+    <input class="search-input" id="pull-search" placeholder="Search pullout receipts..." oninput="renderPull()"/>
+    <span class="table-meta" id="pull-meta"></span>
+    <button class="page-add-btn" onclick="openPullModal()">+ Add Pullout</button>
+  </div>
+  <div class="page-tbl-wrap">
+    <table class="page-table">
+      <thead><tr><th>#</th><th>Pullout No.</th><th>From</th><th>To</th><th>Date</th><th>Items</th><th>Status</th><th>Transferred By</th><th>Actions</th></tr></thead>
+      <tbody id="pull-body"></tbody>
+    </table>
+  </div>
+</div>
+<!-- ===== TRANSMITTAL RECEIPTS ===== -->
+<div id="page-transmittalreceipts" class="page-section">
+  <div class="page-hero h-purple"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div><div><div class="ph-title">Transmittal Receipts</div><div class="ph-sub">Track and manage transmittal of documents and inventory between parties</div></div></div></div>
+  <div class="page-toolbar">
+    <input class="search-input" id="trmit-search" placeholder="Search transmittal receipts..." oninput="renderTrmit()"/>
+    <span class="table-meta" id="trmit-meta"></span>
+    <button class="page-add-btn" onclick="openTrmitModal()">+ Add Transmittal</button>
+  </div>
+  <div class="page-tbl-wrap">
+    <table class="page-table">
+      <thead><tr><th>#</th><th>Transmittal No.</th><th>From</th><th>To</th><th>Date</th><th>Items</th><th>Status</th><th>Transferred By</th><th>Actions</th></tr></thead>
+      <tbody id="trmit-body"></tbody>
     </table>
   </div>
 </div>
@@ -2258,6 +2292,56 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
     <div class="g-modal-foot" style="justify-content:center"><button class="g-btn g-btn-cancel" onclick="closeSTDelModal()">Cancel</button><button class="g-btn g-btn-delete" onclick="confirmDeleteST()">Delete</button></div>
   </div>
 </div>
+<!-- PULLOUT RECEIPTS MODALS -->
+<div class="g-modal-overlay" id="pull-modal">
+  <div class="g-modal" style="max-width:580px">
+    <div class="g-modal-head"><span id="pull-modal-title">Add Pullout Receipt</span><button class="g-modal-close" onclick="closePullModal()">&#215;</button></div>
+    <div class="g-modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="g-form-group"><label>Pullout No. *</label><input id="pull-f-no" placeholder="PR-2024-001"/></div>
+        <div class="g-form-group"><label>Date</label><input type="date" id="pull-f-date"/></div>
+        <div class="g-form-group"><label>From Location *</label><input id="pull-f-from" placeholder="Source"/></div>
+        <div class="g-form-group"><label>To Location *</label><input id="pull-f-to" placeholder="Destination"/></div>
+        <div class="g-form-group"><label>Items Count</label><input type="number" id="pull-f-items" min="0" value="0"/></div>
+        <div class="g-form-group"><label>Status</label><select id="pull-f-status"><option>Pending</option><option>In Progress</option><option>Completed</option><option>Cancelled</option></select></div>
+        <div class="g-form-group"><label>Transferred By</label><input id="pull-f-by" placeholder="Name"/></div>
+      </div>
+    </div>
+    <div class="g-modal-foot"><button class="g-btn g-btn-cancel" onclick="closePullModal()">Cancel</button><button class="g-btn g-btn-save" onclick="savePull()">Save</button></div>
+  </div>
+</div>
+<div class="g-modal-overlay" id="pull-del-modal">
+  <div class="g-modal" style="max-width:400px">
+    <div class="g-modal-head"><span>Delete Pullout Receipt</span><button class="g-modal-close" onclick="closePullDelModal()">&#215;</button></div>
+    <div class="g-modal-body" style="text-align:center;padding:24px"><p>Delete <strong id="pull-del-name"></strong>?</p></div>
+    <div class="g-modal-foot" style="justify-content:center"><button class="g-btn g-btn-cancel" onclick="closePullDelModal()">Cancel</button><button class="g-btn g-btn-delete" onclick="confirmDeletePull()">Delete</button></div>
+  </div>
+</div>
+<!-- TRANSMITTAL RECEIPTS MODALS -->
+<div class="g-modal-overlay" id="trmit-modal">
+  <div class="g-modal" style="max-width:580px">
+    <div class="g-modal-head"><span id="trmit-modal-title">Add Transmittal Receipt</span><button class="g-modal-close" onclick="closeTrmitModal()">&#215;</button></div>
+    <div class="g-modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="g-form-group"><label>Transmittal No. *</label><input id="trmit-f-no" placeholder="TR-2024-001"/></div>
+        <div class="g-form-group"><label>Date</label><input type="date" id="trmit-f-date"/></div>
+        <div class="g-form-group"><label>From Location *</label><input id="trmit-f-from" placeholder="Source"/></div>
+        <div class="g-form-group"><label>To Location *</label><input id="trmit-f-to" placeholder="Destination"/></div>
+        <div class="g-form-group"><label>Items Count</label><input type="number" id="trmit-f-items" min="0" value="0"/></div>
+        <div class="g-form-group"><label>Status</label><select id="trmit-f-status"><option>Pending</option><option>In Progress</option><option>Completed</option><option>Cancelled</option></select></div>
+        <div class="g-form-group"><label>Transferred By</label><input id="trmit-f-by" placeholder="Name"/></div>
+      </div>
+    </div>
+    <div class="g-modal-foot"><button class="g-btn g-btn-cancel" onclick="closeTrmitModal()">Cancel</button><button class="g-btn g-btn-save" onclick="saveTrmit()">Save</button></div>
+  </div>
+</div>
+<div class="g-modal-overlay" id="trmit-del-modal">
+  <div class="g-modal" style="max-width:400px">
+    <div class="g-modal-head"><span>Delete Transmittal Receipt</span><button class="g-modal-close" onclick="closeTrmitDelModal()">&#215;</button></div>
+    <div class="g-modal-body" style="text-align:center;padding:24px"><p>Delete <strong id="trmit-del-name"></strong>?</p></div>
+    <div class="g-modal-foot" style="justify-content:center"><button class="g-btn g-btn-cancel" onclick="closeTrmitDelModal()">Cancel</button><button class="g-btn g-btn-delete" onclick="confirmDeleteTrmit()">Delete</button></div>
+  </div>
+</div>
 <!-- LOGISTICS MODALS -->
 <div class="g-modal-overlay" id="tq-modal">
   <div class="g-modal" style="max-width:580px">
@@ -2413,11 +2497,11 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
 <script>
 const API=window.location.origin+'/api';
 let currentUser=null;
-let invData=[],catData=[],smData=[],irData=[],mmData=[],poData=[],supData=[],grData=[],stData=[],tqData=[],mpData=[],saData=[],wbData=[],lpData=[],ciData=[],plData=[];
+let invData=[],catData=[],smData=[],irData=[],mmData=[],poData=[],supData=[],grData=[],stData=[],pullData=[],trmitData=[],tqData=[],mpData=[],saData=[],wbData=[],lpData=[],ciData=[],plData=[];
 let invEditId=null,invDeleteId=null,catEditId=null,catDeleteId=null;
 let smEditId=null,smDeleteId=null,mmEditId=null,mmDeleteId=null,mmAreaFilter='';
 let poEditId=null,poDeleteId=null,supEditId=null,supDeleteId=null;
-let grEditId=null,grDeleteId=null,stEditId=null,stDeleteId=null;
+let grEditId=null,grDeleteId=null,stEditId=null,stDeleteId=null,pullEditId=null,pullDeleteId=null,trmitEditId=null,trmitDeleteId=null;
 let tqEditId=null,tqDeleteId=null,mpEditId=null,mpDeleteId=null;
 let saEditId=null,saDeleteId=null,wbEditId=null,wbDeleteId=null;
 let barChart=null,donutChart=null;
@@ -2511,7 +2595,7 @@ function applyRoleAccess(role) {
 }
 
 // ── PAGE SWITCHING ───────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Delivery Receipts',cipl:'CI / PL — Commercial Invoice & Packing List',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',settings:'Settings'};
+const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Delivery Receipts',pulloutreceipts:'Pullout Receipts',transmittalreceipts:'Transmittal Receipts',cipl:'CI / PL — Commercial Invoice & Packing List',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',settings:'Settings'};
 function showPage(page){
   // ── Role guard: Staff cannot visit admin-only pages ──────────
   if(currentUser && currentUser.role==='Staff' && STAFF_BLOCKED_PAGES.includes(page)){
@@ -2535,6 +2619,8 @@ function showPage(page){
   else if(page==='suppliers')loadSup();
   else if(page==='goodsreceived')loadGR();
   else if(page==='stocktransfers')loadST();
+  else if(page==='pulloutreceipts')loadPull();
+  else if(page==='transmittalreceipts')loadTrmit();
   else if(page==='cipl')loadCIPL();
   else if(page==='inventoryreport')loadIR();
   else if(page==='purchasereport')loadPR();
@@ -3101,6 +3187,46 @@ async function saveST(){
 function openSTDelModal(id,name){stDeleteId=id;document.getElementById('st-del-name').textContent=name;document.getElementById('st-del-modal').classList.add('open');}
 function closeSTDelModal(){document.getElementById('st-del-modal').classList.remove('open');}
 async function confirmDeleteST(){try{await fetch(API+'/stock-transfers/'+stDeleteId,{method:'DELETE'});gToast('Deleted.');closeSTDelModal();loadST();}catch{gToast('Delete failed','error');}}
+
+// ── PULLOUT RECEIPTS ─────────────────────────────────────────
+async function loadPull(){try{const r=await fetch(API+'/pullout-receipts');pullData=await r.json();renderPull();}catch{document.getElementById('pull-body').innerHTML='<tr><td colspan="9"><div class="no-results">Backend offline.</div></td></tr>';}}
+function renderPull(){
+  const q=(document.getElementById('pull-search').value||'').toLowerCase();
+  const rows=q?pullData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)):pullData;
+  document.getElementById('pull-meta').textContent=`Showing ${rows.length} of ${pullData.length}`;
+  document.getElementById('pull-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||0}</td><td>${badge(r.status)}</td><td>${r.transferred_by||'—'}</td>
+    <td><button class="page-act-btn btn-edit" onclick="openPullModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPullDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="9"><div class="no-results">No pullout receipts.</div></td></tr>';
+}
+function openPullModal(id=null){pullEditId=id;const r=id?pullData.find(x=>x.id===id):null;document.getElementById('pull-modal-title').textContent=id?'Edit Pullout Receipt':'Add Pullout Receipt';document.getElementById('pull-f-no').value=r?r.transfer_no:'';document.getElementById('pull-f-date').value=r?r.transfer_date:today();document.getElementById('pull-f-from').value=r?r.source_location:'';document.getElementById('pull-f-to').value=r?r.destination_location:'';document.getElementById('pull-f-items').value=r?r.items_count:0;document.getElementById('pull-f-status').value=r?r.status:'Pending';document.getElementById('pull-f-by').value=r?r.transferred_by:'';document.getElementById('pull-modal').classList.add('open');}
+function closePullModal(){document.getElementById('pull-modal').classList.remove('open');}
+async function savePull(){
+  const body={transfer_no:document.getElementById('pull-f-no').value.trim(),transfer_date:document.getElementById('pull-f-date').value,source_location:document.getElementById('pull-f-from').value.trim(),destination_location:document.getElementById('pull-f-to').value.trim(),items_count:+document.getElementById('pull-f-items').value||0,status:document.getElementById('pull-f-status').value,transferred_by:document.getElementById('pull-f-by').value.trim()};
+  if(!body.transfer_no||!body.source_location||!body.destination_location){gToast('Pullout No, From, and To are required.','error');return;}
+  try{const url=pullEditId?API+'/pullout-receipts/'+pullEditId:API+'/pullout-receipts';const res=await fetch(url,{method:pullEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(pullEditId?'Updated!':'Added!');closePullModal();loadPull();}catch(err){gToast(err.message,'error');}
+}
+function openPullDelModal(id,name){pullDeleteId=id;document.getElementById('pull-del-name').textContent=name;document.getElementById('pull-del-modal').classList.add('open');}
+function closePullDelModal(){document.getElementById('pull-del-modal').classList.remove('open');}
+async function confirmDeletePull(){try{await fetch(API+'/pullout-receipts/'+pullDeleteId,{method:'DELETE'});gToast('Deleted.');closePullDelModal();loadPull();}catch{gToast('Delete failed','error');}}
+
+// ── TRANSMITTAL RECEIPTS ──────────────────────────────────────
+async function loadTrmit(){try{const r=await fetch(API+'/transmittal-receipts');trmitData=await r.json();renderTrmit();}catch{document.getElementById('trmit-body').innerHTML='<tr><td colspan="9"><div class="no-results">Backend offline.</div></td></tr>';}}
+function renderTrmit(){
+  const q=(document.getElementById('trmit-search').value||'').toLowerCase();
+  const rows=q?trmitData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)):trmitData;
+  document.getElementById('trmit-meta').textContent=`Showing ${rows.length} of ${trmitData.length}`;
+  document.getElementById('trmit-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||0}</td><td>${badge(r.status)}</td><td>${r.transferred_by||'—'}</td>
+    <td><button class="page-act-btn btn-edit" onclick="openTrmitModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openTrmitDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="9"><div class="no-results">No transmittal receipts.</div></td></tr>';
+}
+function openTrmitModal(id=null){trmitEditId=id;const r=id?trmitData.find(x=>x.id===id):null;document.getElementById('trmit-modal-title').textContent=id?'Edit Transmittal Receipt':'Add Transmittal Receipt';document.getElementById('trmit-f-no').value=r?r.transfer_no:'';document.getElementById('trmit-f-date').value=r?r.transfer_date:today();document.getElementById('trmit-f-from').value=r?r.source_location:'';document.getElementById('trmit-f-to').value=r?r.destination_location:'';document.getElementById('trmit-f-items').value=r?r.items_count:0;document.getElementById('trmit-f-status').value=r?r.status:'Pending';document.getElementById('trmit-f-by').value=r?r.transferred_by:'';document.getElementById('trmit-modal').classList.add('open');}
+function closeTrmitModal(){document.getElementById('trmit-modal').classList.remove('open');}
+async function saveTrmit(){
+  const body={transfer_no:document.getElementById('trmit-f-no').value.trim(),transfer_date:document.getElementById('trmit-f-date').value,source_location:document.getElementById('trmit-f-from').value.trim(),destination_location:document.getElementById('trmit-f-to').value.trim(),items_count:+document.getElementById('trmit-f-items').value||0,status:document.getElementById('trmit-f-status').value,transferred_by:document.getElementById('trmit-f-by').value.trim()};
+  if(!body.transfer_no||!body.source_location||!body.destination_location){gToast('Transmittal No, From, and To are required.','error');return;}
+  try{const url=trmitEditId?API+'/transmittal-receipts/'+trmitEditId:API+'/transmittal-receipts';const res=await fetch(url,{method:trmitEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(trmitEditId?'Updated!':'Added!');closeTrmitModal();loadTrmit();}catch(err){gToast(err.message,'error');}
+}
+function openTrmitDelModal(id,name){trmitDeleteId=id;document.getElementById('trmit-del-name').textContent=name;document.getElementById('trmit-del-modal').classList.add('open');}
+function closeTrmitDelModal(){document.getElementById('trmit-del-modal').classList.remove('open');}
+async function confirmDeleteTrmit(){try{await fetch(API+'/transmittal-receipts/'+trmitDeleteId,{method:'DELETE'});gToast('Deleted.');closeTrmitDelModal();loadTrmit();}catch{gToast('Delete failed','error');}}
 
 // ── REPORTS ──────────────────────────────────────────────────
 async function loadIR(){

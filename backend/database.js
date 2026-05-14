@@ -183,6 +183,36 @@ const dbPromise = (async () => {
   `);
 
   await db.run(`
+    CREATE TABLE IF NOT EXISTS pullout_receipts (
+      id                   SERIAL      PRIMARY KEY,
+      transfer_no          TEXT        NOT NULL UNIQUE,
+      transfer_date        TEXT        NOT NULL DEFAULT '',
+      source_location      TEXT        NOT NULL DEFAULT '',
+      destination_location TEXT        NOT NULL DEFAULT '',
+      items_count          INTEGER     NOT NULL DEFAULT 0,
+      status               TEXT        NOT NULL DEFAULT 'Pending',
+      transferred_by       TEXT        NOT NULL DEFAULT '',
+      created_at           TIMESTAMPTZ DEFAULT NOW(),
+      updated_at           TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS transmittal_receipts (
+      id                   SERIAL      PRIMARY KEY,
+      transfer_no          TEXT        NOT NULL UNIQUE,
+      transfer_date        TEXT        NOT NULL DEFAULT '',
+      source_location      TEXT        NOT NULL DEFAULT '',
+      destination_location TEXT        NOT NULL DEFAULT '',
+      items_count          INTEGER     NOT NULL DEFAULT 0,
+      status               TEXT        NOT NULL DEFAULT 'Pending',
+      transferred_by       TEXT        NOT NULL DEFAULT '',
+      created_at           TIMESTAMPTZ DEFAULT NOW(),
+      updated_at           TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await db.run(`
     CREATE TABLE IF NOT EXISTS trucking_quotations (
       id               SERIAL      PRIMARY KEY,
       quote_number     TEXT        NOT NULL UNIQUE,
