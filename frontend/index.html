@@ -320,6 +320,24 @@ body.staff-mode #gr-add-btn,
 body.staff-mode #po-add-btn,
 body.staff-mode #sup-add-btn,
 body.staff-mode #st-add-btn { display:none !important; }
+
+/* ── Staff CRUD exceptions: Delivery Receipts, Logistics, Alerts, Activity Calendar ── */
+body.staff-mode #page-stocktransfers .page-add-btn,
+body.staff-mode #page-stocktransfers .page-act-btn,
+body.staff-mode #page-stocktransfers .btn-edit,
+body.staff-mode #page-stocktransfers .btn-del,
+body.staff-mode #page-logistics .page-add-btn,
+body.staff-mode #page-logistics .page-act-btn,
+body.staff-mode #page-logistics .btn-edit,
+body.staff-mode #page-logistics .btn-del,
+body.staff-mode #page-alerts .page-add-btn,
+body.staff-mode #page-alerts .page-act-btn,
+body.staff-mode #page-activitycalendar .ac-add-btn,
+body.staff-mode #page-activitycalendar .page-add-btn,
+body.staff-mode #page-activitycalendar .ac-task-edit,
+body.staff-mode #page-activitycalendar .ac-task-del,
+body.staff-mode #page-activitycalendar .ac-sum-edit,
+body.staff-mode #page-activitycalendar .ac-sum-del { display:inline-flex !important; }
 /* Staff topbar badge */
 .staff-viewonly-badge {
   display:none;
@@ -1112,7 +1130,7 @@ body.staff-mode #st-add-btn { display:none !important; }
   <div class="staff-blocked-notice active">
     <div class="staff-blocked-icon">🔒</div>
     <div class="staff-blocked-title">Access Restricted</div>
-    <div class="staff-blocked-sub">This section is only available to Administrators. Your account has <strong>Staff (View Only)</strong> privileges. Please contact your administrator if you need access.</div>
+    <div class="staff-blocked-sub">This section is only available to Administrators. Your Staff account has access to <strong>Delivery Receipts, Logistics, Alerts</strong> and <strong>Activity Calendar</strong>. Please contact your administrator for additional access.</div>
     <button class="g-btn g-btn-save" style="margin-top:8px" onclick="showPage('dashboard')">← Back to Dashboard</button>
   </div>
 </div>
@@ -2458,9 +2476,11 @@ function doLogout(){
 
 // ── ROLE-BASED ACCESS CONTROL ────────────────────────────────
 // Pages that Staff users may NOT visit
+// Staff CAN access: logistics, stocktransfers (Delivery Receipts), alerts, activitycalendar
 const STAFF_BLOCKED_PAGES = [
-  'purchaseorders','suppliers','goodsreceived','stocktransfers',
-  'inventoryreport','purchasereport','logistics','settings'
+  'purchaseorders','suppliers','goodsreceived',
+  'inventoryreport','purchasereport','settings',
+  'categories','stockmonitoring','localpurchase','machinemonitoring','cipl'
 ];
 
 /**
@@ -2483,15 +2503,16 @@ function applyRoleAccess(role) {
     if (el) el.style.display = isStaff ? 'none' : '';
   });
 
-  // ── "Reports" nav label — hide entirely for Staff ──
+  // ── Nav labels — hide Reports for Staff, keep Logistics & System visible ──
   document.querySelectorAll('.nav-label').forEach(label => {
-    if (label.textContent.trim() === 'Reports') {
+    const t = label.textContent.trim();
+    if (t === 'Reports' || t === 'Inventory' || t === 'Management') {
       label.style.display = isStaff ? 'none' : '';
     }
+    if (t === 'Logistics' || t === 'System') {
+      label.style.display = ''; // always visible for staff
+    }
   });
-
-  // ── "System" nav label — keep visible (Alerts + Calendar remain accessible) ──
-  // (no change needed here)
 }
 
 // ── PAGE SWITCHING ───────────────────────────────────────────
