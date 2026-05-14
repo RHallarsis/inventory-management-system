@@ -191,7 +191,10 @@ const dbPromise = (async () => {
       destination_location TEXT        NOT NULL DEFAULT '',
       items_count          INTEGER     NOT NULL DEFAULT 0,
       status               TEXT        NOT NULL DEFAULT 'Pending',
-      transferred_by       TEXT        NOT NULL DEFAULT '',
+      pulled_out_by        TEXT        NOT NULL DEFAULT '',
+      prepared_by          TEXT        NOT NULL DEFAULT '',
+      returned_by          TEXT        NOT NULL DEFAULT '',
+      witnessed_by         TEXT        NOT NULL DEFAULT '',
       created_at           TIMESTAMPTZ DEFAULT NOW(),
       updated_at           TIMESTAMPTZ DEFAULT NOW()
     )
@@ -379,6 +382,17 @@ const dbPromise = (async () => {
     )
   `);
 
+
+  // ── Migrate pullout_receipts: rename transferred_by → pulled_out_by, add new columns ──
+  try {
+    await db.run(`ALTER TABLE pullout_receipts RENAME COLUMN transferred_by TO pulled_out_by`);
+  } catch (_) { /* already renamed or column doesn't exist */ }
+  try {
+    await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS pulled_out_by TEXT NOT NULL DEFAULT ''`);
+    await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS prepared_by TEXT NOT NULL DEFAULT ''`);
+    await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS returned_by TEXT NOT NULL DEFAULT ''`);
+    await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS witnessed_by TEXT NOT NULL DEFAULT ''`);
+  } catch (_) {}
 
   // ── Drop removed CI columns from existing databases ──────────────────────
   try {

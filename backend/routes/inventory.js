@@ -748,17 +748,19 @@ router.get('/pullout-receipts', async (_req, res) => {
 });
 
 router.post('/pullout-receipts', async (req, res) => {
-  const { transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by } = req.body;
+  const { transfer_no, transfer_date, source_location, destination_location, items_count, status, pulled_out_by, prepared_by, returned_by, witnessed_by } = req.body;
   if (!transfer_no || !source_location || !destination_location) {
     return res.status(400).json({ error: 'transfer_no, source_location, and destination_location are required' });
   }
   try {
     const { db } = await dbPromise;
     const id = await db.insert(
-      'INSERT INTO pullout_receipts (transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by) VALUES (?,?,?,?,?,?,?)',
+      'INSERT INTO pullout_receipts (transfer_no, transfer_date, source_location, destination_location, items_count, status, pulled_out_by, prepared_by, returned_by, witnessed_by) VALUES (?,?,?,?,?,?,?,?,?,?)',
       [transfer_no.trim(), transfer_date || new Date().toISOString().split('T')[0],
        source_location.trim(), destination_location.trim(),
-       +items_count || 0, status || 'Pending', (transferred_by || '').trim()]
+       +items_count || 0, status || 'Pending',
+       (pulled_out_by || '').trim(), (prepared_by || '').trim(),
+       (returned_by || '').trim(), (witnessed_by || '').trim()]
     );
     res.status(201).json(await db.getOne('SELECT * FROM pullout_receipts WHERE id = ?', [id]));
   } catch (err) {
@@ -772,13 +774,15 @@ router.put('/pullout-receipts/:id', async (req, res) => {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM pullout_receipts WHERE id = ?', [+req.params.id]);
     if (!ex) return res.status(404).json({ error: 'Pullout receipt not found' });
-    const { transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by } = req.body;
+    const { transfer_no, transfer_date, source_location, destination_location, items_count, status, pulled_out_by, prepared_by, returned_by, witnessed_by } = req.body;
     await db.run(
-      `UPDATE pullout_receipts SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_count=?, status=?, transferred_by=?, updated_at=NOW() WHERE id=?`,
+      `UPDATE pullout_receipts SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_count=?, status=?, pulled_out_by=?, prepared_by=?, returned_by=?, witnessed_by=?, updated_at=NOW() WHERE id=?`,
       [(transfer_no ?? ex.transfer_no).trim(), transfer_date ?? ex.transfer_date,
        (source_location ?? ex.source_location).trim(), (destination_location ?? ex.destination_location).trim(),
        items_count != null ? +items_count : ex.items_count, status ?? ex.status,
-       (transferred_by ?? ex.transferred_by).trim(), +req.params.id]
+       (pulled_out_by ?? ex.pulled_out_by ?? '').trim(), (prepared_by ?? ex.prepared_by ?? '').trim(),
+       (returned_by ?? ex.returned_by ?? '').trim(), (witnessed_by ?? ex.witnessed_by ?? '').trim(),
+       +req.params.id]
     );
     res.json(await db.getOne('SELECT * FROM pullout_receipts WHERE id = ?', [+req.params.id]));
   } catch (err) { res.status(500).json({ error: err.message }); }

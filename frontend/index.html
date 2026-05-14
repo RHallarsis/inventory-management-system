@@ -1444,7 +1444,7 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
   </div>
   <div class="page-tbl-wrap">
     <table class="page-table">
-      <thead><tr><th>#</th><th>Pullout No.</th><th>From</th><th>To</th><th>Date</th><th>Items</th><th>Status</th><th>Transferred By</th><th>Actions</th></tr></thead>
+      <thead><tr><th>#</th><th>Pullout No.</th><th>From</th><th>To</th><th>Date</th><th>Items</th><th>Status</th><th>Pulled Out By</th><th>Prepared By</th><th>Returned By</th><th>Witnessed By</th><th>Actions</th></tr></thead>
       <tbody id="pull-body"></tbody>
     </table>
   </div>
@@ -2294,7 +2294,7 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
 </div>
 <!-- PULLOUT RECEIPTS MODALS -->
 <div class="g-modal-overlay" id="pull-modal">
-  <div class="g-modal" style="max-width:580px">
+  <div class="g-modal" style="max-width:640px">
     <div class="g-modal-head"><span id="pull-modal-title">Add Pullout Receipt</span><button class="g-modal-close" onclick="closePullModal()">&#215;</button></div>
     <div class="g-modal-body">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -2304,7 +2304,10 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
         <div class="g-form-group"><label>To Location *</label><input id="pull-f-to" placeholder="Destination"/></div>
         <div class="g-form-group"><label>Items Count</label><input type="number" id="pull-f-items" min="0" value="0"/></div>
         <div class="g-form-group"><label>Status</label><select id="pull-f-status"><option>Pending</option><option>In Progress</option><option>Completed</option><option>Cancelled</option></select></div>
-        <div class="g-form-group"><label>Transferred By</label><input id="pull-f-by" placeholder="Name"/></div>
+        <div class="g-form-group"><label>Pulled Out By</label><input id="pull-f-pulled-out-by" placeholder="Name"/></div>
+        <div class="g-form-group"><label>Prepared By</label><input id="pull-f-prepared-by" placeholder="Name"/></div>
+        <div class="g-form-group"><label>Returned By</label><input id="pull-f-returned-by" placeholder="Name"/></div>
+        <div class="g-form-group"><label>Witnessed By</label><input id="pull-f-witnessed-by" placeholder="Name"/></div>
       </div>
     </div>
     <div class="g-modal-foot"><button class="g-btn g-btn-cancel" onclick="closePullModal()">Cancel</button><button class="g-btn g-btn-save" onclick="savePull()">Save</button></div>
@@ -3189,18 +3192,18 @@ function closeSTDelModal(){document.getElementById('st-del-modal').classList.rem
 async function confirmDeleteST(){try{await fetch(API+'/stock-transfers/'+stDeleteId,{method:'DELETE'});gToast('Deleted.');closeSTDelModal();loadST();}catch{gToast('Delete failed','error');}}
 
 // ── PULLOUT RECEIPTS ─────────────────────────────────────────
-async function loadPull(){try{const r=await fetch(API+'/pullout-receipts');pullData=await r.json();renderPull();}catch{document.getElementById('pull-body').innerHTML='<tr><td colspan="9"><div class="no-results">Backend offline.</div></td></tr>';}}
+async function loadPull(){try{const r=await fetch(API+'/pullout-receipts');pullData=await r.json();renderPull();}catch{document.getElementById('pull-body').innerHTML='<tr><td colspan="12"><div class="no-results">Backend offline.</div></td></tr>';}}
 function renderPull(){
   const q=(document.getElementById('pull-search').value||'').toLowerCase();
-  const rows=q?pullData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)):pullData;
+  const rows=q?pullData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)||(r.pulled_out_by||'').toLowerCase().includes(q)||(r.prepared_by||'').toLowerCase().includes(q)||(r.returned_by||'').toLowerCase().includes(q)||(r.witnessed_by||'').toLowerCase().includes(q)):pullData;
   document.getElementById('pull-meta').textContent=`Showing ${rows.length} of ${pullData.length}`;
-  document.getElementById('pull-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||0}</td><td>${badge(r.status)}</td><td>${r.transferred_by||'—'}</td>
-    <td><button class="page-act-btn btn-edit" onclick="openPullModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPullDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="9"><div class="no-results">No pullout receipts.</div></td></tr>';
+  document.getElementById('pull-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||0}</td><td>${badge(r.status)}</td><td>${r.pulled_out_by||'—'}</td><td>${r.prepared_by||'—'}</td><td>${r.returned_by||'—'}</td><td>${r.witnessed_by||'—'}</td>
+    <td><button class="page-act-btn btn-edit" onclick="openPullModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPullDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="12"><div class="no-results">No pullout receipts.</div></td></tr>';
 }
-function openPullModal(id=null){pullEditId=id;const r=id?pullData.find(x=>x.id===id):null;document.getElementById('pull-modal-title').textContent=id?'Edit Pullout Receipt':'Add Pullout Receipt';document.getElementById('pull-f-no').value=r?r.transfer_no:'';document.getElementById('pull-f-date').value=r?r.transfer_date:today();document.getElementById('pull-f-from').value=r?r.source_location:'';document.getElementById('pull-f-to').value=r?r.destination_location:'';document.getElementById('pull-f-items').value=r?r.items_count:0;document.getElementById('pull-f-status').value=r?r.status:'Pending';document.getElementById('pull-f-by').value=r?r.transferred_by:'';document.getElementById('pull-modal').classList.add('open');}
+function openPullModal(id=null){pullEditId=id;const r=id?pullData.find(x=>x.id===id):null;document.getElementById('pull-modal-title').textContent=id?'Edit Pullout Receipt':'Add Pullout Receipt';document.getElementById('pull-f-no').value=r?r.transfer_no:'';document.getElementById('pull-f-date').value=r?r.transfer_date:today();document.getElementById('pull-f-from').value=r?r.source_location:'';document.getElementById('pull-f-to').value=r?r.destination_location:'';document.getElementById('pull-f-items').value=r?r.items_count:0;document.getElementById('pull-f-status').value=r?r.status:'Pending';document.getElementById('pull-f-pulled-out-by').value=r?r.pulled_out_by||'':'';document.getElementById('pull-f-prepared-by').value=r?r.prepared_by||'':'';document.getElementById('pull-f-returned-by').value=r?r.returned_by||'':'';document.getElementById('pull-f-witnessed-by').value=r?r.witnessed_by||'':'';document.getElementById('pull-modal').classList.add('open');}
 function closePullModal(){document.getElementById('pull-modal').classList.remove('open');}
 async function savePull(){
-  const body={transfer_no:document.getElementById('pull-f-no').value.trim(),transfer_date:document.getElementById('pull-f-date').value,source_location:document.getElementById('pull-f-from').value.trim(),destination_location:document.getElementById('pull-f-to').value.trim(),items_count:+document.getElementById('pull-f-items').value||0,status:document.getElementById('pull-f-status').value,transferred_by:document.getElementById('pull-f-by').value.trim()};
+  const body={transfer_no:document.getElementById('pull-f-no').value.trim(),transfer_date:document.getElementById('pull-f-date').value,source_location:document.getElementById('pull-f-from').value.trim(),destination_location:document.getElementById('pull-f-to').value.trim(),items_count:+document.getElementById('pull-f-items').value||0,status:document.getElementById('pull-f-status').value,pulled_out_by:document.getElementById('pull-f-pulled-out-by').value.trim(),prepared_by:document.getElementById('pull-f-prepared-by').value.trim(),returned_by:document.getElementById('pull-f-returned-by').value.trim(),witnessed_by:document.getElementById('pull-f-witnessed-by').value.trim()};
   if(!body.transfer_no||!body.source_location||!body.destination_location){gToast('Pullout No, From, and To are required.','error');return;}
   try{const url=pullEditId?API+'/pullout-receipts/'+pullEditId:API+'/pullout-receipts';const res=await fetch(url,{method:pullEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(pullEditId?'Updated!':'Added!');closePullModal();loadPull();}catch(err){gToast(err.message,'error');}
 }
