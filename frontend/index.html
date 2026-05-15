@@ -1225,11 +1225,11 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
   <div class="charts-row" style="margin-bottom:22px">
     <div class="chart-card">
       <div class="chart-title">Monthly Purchase Spending (₱)</div>
-      <canvas id="chart-monthly-purchases" height="160"></canvas>
+      <div id="chart-monthly-purchases" style="min-height:180px"></div>
     </div>
     <div class="chart-card">
       <div class="chart-title">Spare Parts Stock Status</div>
-      <canvas id="chart-parts-status" height="160"></canvas>
+      <div id="chart-parts-status" style="min-height:180px"></div>
     </div>
   </div>
   <div class="chart-card" style="margin-bottom:22px">
@@ -2756,6 +2756,8 @@ async function initDashboard(){
   // Render outside try-catch: a render crash won't be mislabelled as network error
   try{ renderDashTable(); }catch(e){ console.error('[renderDashTable]',e); }
   try{ renderMMChart(mmData); }catch(e){ console.error('[renderMMChart]',e); }
+  try{ renderPartsStatusChart(parts||[]); }catch(e){ console.error('[renderPartsStatusChart]',e); }
+  try{ loadDashboardCharts(); }catch(e){ console.error('[loadDashboardCharts]',e); }
 }
 function renderDashTable(){
   const q=(document.getElementById('dash-search').value||'').toLowerCase();
@@ -4178,31 +4180,83 @@ async function deletePL(id){
 }
 
 // ── DASHBOARD CHARTS ────────────────────────────────────────────
-let chartMonthly=null,chartParts=null;
 async function loadDashboardCharts(){
   try{
-    const [monthly,partsStatus,lowItems]=await Promise.all([
-      fetch(API+'/stats/monthly-purchases').then(r=>r.json()).catch(()=>[]),
-      fetch(API+'/stats/spare-parts-status').then(r=>r.json()).catch(()=>({})),
-      fetch(API+'/alerts/low-stock').then(r=>r.json()).catch(()=>[]),
-    ]);
-    const cnt=Array.isArray(lowItems)?lowItems.length:0;
-    const badge=document.getElementById('dash-low-count');
-    if(badge)badge.textContent=cnt;
-    const mCtx=document.getElementById('chart-monthly-purchases');
-    if(mCtx&&typeof Chart!=='undefined'){
-      if(chartMonthly){chartMonthly.destroy();chartMonthly=null;}
-      const labels=(monthly||[]).map(r=>r.month);
-      const data=(monthly||[]).map(r=>parseFloat(r.total)||0);
-      chartMonthly=new Chart(mCtx,{type:'bar',data:{labels,datasets:[{label:'Spending',data,backgroundColor:'rgba(99,102,241,.7)',borderColor:'#6366f1',borderWidth:1,borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>''+v.toLocaleString()}}}}});
-    }
-    const pCtx=document.getElementById('chart-parts-status');
-    if(pCtx&&typeof Chart!=='undefined'){
-      if(chartParts){chartParts.destroy();chartParts=null;}
-      const {outOfStock=0,lowStock=0,ok=0}=partsStatus||{};
-      chartParts=new Chart(pCtx,{type:'doughnut',data:{labels:['OK','Low Stock','Out of Stock'],datasets:[{data:[ok,lowStock,outOfStock],backgroundColor:['#10b981','#f59e0b','#ef4444'],borderWidth:2}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
-    }
-  }catch(e){console.error('[charts]',e.message);}
+    const monthly=await fetch(API+'/stats/monthly-purchases').then(r=>r.json()).catch(()=>[]);
+    renderMonthlyChart(monthly||[]);
+  }catch(e){console.error('[loadDashboardCharts]',e.message);}
+}
+
+function renderMonthlyChart(monthly){
+  const el=document.getElementById('chart-monthly-purchases');
+  if(!el)return;
+  if(!monthly.length){
+    el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:160px;color:#94a3b8;font-size:13px">No purchase order data yet</div>';
+    return;
+  }
+  const data=monthly.map(r=>({label:r.month,val:parseFloat(r.total)||0}));
+  const max=Math.max(...data.map(d=>d.val),1);
+  const CHART_H=130;
+  const bars=data.map(d=>{
+    const pct=Math.round((d.val/max)*CHART_H);
+    const valLabel=d.val>0?'₱'+Math.round(d.val).toLocaleString():'';
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:0">
+      <div style="font-size:9px;color:#6366f1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52px;text-align:center">${valLabel}</div>
+      <div style="width:100%;height:${CHART_H}px;display:flex;align-items:flex-end">
+        <div style="width:100%;height:${pct}px;min-height:${d.val>0?3:0}px;background:linear-gradient(180deg,#6366f1,#818cf8);border-radius:5px 5px 0 0;box-shadow:0 2px 8px rgba(99,102,241,.25)"></div>
+      </div>
+      <div style="font-size:9px;color:#94a3b8;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52px">${d.label}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div style="display:flex;align-items:flex-end;gap:5px;padding:8px 4px 4px">${bars}</div>`;
+}
+
+function renderPartsStatusChart(parts){
+  const el=document.getElementById('chart-parts-status');
+  if(!el)return;
+  const outOfStock=parts.filter(r=>(+r.on_hand||0)===0).length;
+  const lowStock=parts.filter(r=>(+r.on_hand||0)>0&&(+r.on_hand||0)<=(+r.safety_stock||1)).length;
+  const ok=parts.length-outOfStock-lowStock;
+  const total=parts.length;
+  if(!total){
+    el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:160px;color:#94a3b8;font-size:13px">No spare parts data</div>';
+    return;
+  }
+  // SVG donut
+  const R=56,ri=36,cx=75,cy=75;
+  const segs=[{val:ok,color:'#10b981'},{val:lowStock,color:'#f59e0b'},{val:outOfStock,color:'#ef4444'}].filter(s=>s.val>0);
+  let ang=-Math.PI/2;
+  const paths=segs.map(s=>{
+    const sweep=(s.val/total)*2*Math.PI;
+    const ea=ang+sweep;
+    const x1=cx+R*Math.cos(ang),y1=cy+R*Math.sin(ang);
+    const x2=cx+R*Math.cos(ea),y2=cy+R*Math.sin(ea);
+    const xi1=cx+ri*Math.cos(ang),yi1=cy+ri*Math.sin(ang);
+    const xi2=cx+ri*Math.cos(ea),yi2=cy+ri*Math.sin(ea);
+    const lg=sweep>Math.PI?1:0;
+    const d=`M${x1} ${y1} A${R} ${R} 0 ${lg} 1 ${x2} ${y2} L${xi2} ${yi2} A${ri} ${ri} 0 ${lg} 0 ${xi1} ${yi1}Z`;
+    ang=ea;
+    return `<path d="${d}" fill="${s.color}" stroke="white" stroke-width="2"/>`;
+  }).join('');
+  const legend=[
+    {val:ok,color:'#10b981',label:'OK'},
+    {val:lowStock,color:'#f59e0b',label:'Low Stock'},
+    {val:outOfStock,color:'#ef4444',label:'Out of Stock'}
+  ].map(s=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;padding:5px 0;border-bottom:1px solid #f1f5f9">
+    <div style="width:10px;height:10px;border-radius:50%;background:${s.color};flex-shrink:0"></div>
+    <span style="flex:1">${s.label}</span>
+    <span style="font-weight:800;color:#0f172a">${s.val}</span>
+    <span style="color:#94a3b8;font-size:11px">${Math.round(s.val/total*100)}%</span>
+  </div>`).join('');
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:18px;padding:8px 0">
+    <svg width="150" height="150" viewBox="0 0 150 150" style="flex-shrink:0">
+      ${paths}
+      <circle cx="${cx}" cy="${cy}" r="${ri-2}" fill="white"/>
+      <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="20" font-weight="900" fill="#0f172a" font-family="system-ui">${total}</text>
+      <text x="${cx}" y="${cy+13}" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="system-ui" letter-spacing="1">TOTAL</text>
+    </svg>
+    <div style="flex:1;min-width:0">${legend}</div>
+  </div>`;
 }
 
 // ── LOW-STOCK EMAIL ALERT ────────────────────────────────────────
