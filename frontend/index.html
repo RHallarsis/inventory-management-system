@@ -182,7 +182,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .ac-dow-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);}
 .ac-dow{text-align:center;padding:7px 0;font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;}
 .ac-grid{display:grid;grid-template-columns:repeat(7,1fr);}
-.ac-cell{min-height:72px;padding:5px 7px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;position:relative;}
+.ac-cell{min-height:110px;padding:5px 7px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;position:relative;}
 .ac-cell:nth-child(7n){border-right:none;}
 .ac-cell:hover{background:#f8fafc;}
 .ac-cell.ac-today .ac-day-num{background:var(--sidebar-bg);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
@@ -3572,8 +3572,15 @@ function renderACCalendar(){
     const holStyle=hasHoliday?'border-top:2px solid #dc2626;':'';
     const holBadge=hasHoliday?`<div style="font-size:9px;color:#dc2626;font-weight:700;line-height:1.2;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${holEntry.title}">🇵🇭 ${holEntry.title}</div>`:'';
     const nonHolEvs=evs.filter(e=>!e.holiday);
-    const dots=nonHolEvs.slice(0,4).map(e=>`<div class="ac-dot" style="background:${e.color||AC_CAT_COLOR[e.category]||'#6366f1'}" title="${e.title}"></div>`).join('');
-    cells+=`<div class="ac-cell${isToday?' ac-today':''}${isSel?' ac-selected':''}" style="${holStyle}" onclick="acSelectDay('${iso}')"><div class="ac-day-num" style="${hasHoliday&&!isToday&&!isSel?'color:#dc2626;':''}">${d}</div>${holBadge}<div class="ac-dots">${dots}${nonHolEvs.length>4?`<span style="font-size:10px;color:var(--text-2)">+${nonHolEvs.length-4}</span>`:''}</div></div>`;
+    const visEvs=nonHolEvs.slice(0,3);
+    const moreCount=nonHolEvs.length-visEvs.length;
+    const taskLabels=visEvs.map(e=>{
+      const bg=e.color||AC_CAT_COLOR[e.category]||'#6366f1';
+      const timeStr=e.task_time?`<span style="opacity:0.8;margin-right:2px">${e.task_time}</span>`:'';
+      return`<div style="display:flex;align-items:center;gap:3px;background:${bg}18;border-left:3px solid ${bg};border-radius:3px;padding:1px 4px;margin-bottom:2px;font-size:10px;font-weight:600;color:${bg};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:pointer" title="${e.title}${e.task_time?' · '+e.task_time:''}">${timeStr}<span style="overflow:hidden;text-overflow:ellipsis">${e.title}</span></div>`;
+    }).join('');
+    const morePill=moreCount>0?`<div style="font-size:10px;color:var(--text-2);font-weight:600;padding:1px 2px">+${moreCount} more</div>`:'';
+    cells+=`<div class="ac-cell${isToday?' ac-today':''}${isSel?' ac-selected':''}" style="${holStyle}" onclick="acSelectDay('${iso}')"><div class="ac-day-num" style="${hasHoliday&&!isToday&&!isSel?'color:#dc2626;':''}">${d}</div>${holBadge}${taskLabels}${morePill}</div>`;
   }
   const rem=(firstDay+daysInMonth)%7;if(rem)for(let d=1;d<=7-rem;d++)cells+=`<div class="ac-cell ac-other-month"><div class="ac-day-num">${d}</div></div>`;
   document.getElementById('ac-grid').innerHTML=cells;
