@@ -291,6 +291,9 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .login-btn{width:100%;padding:11px;background:var(--sidebar-bg);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;}
 .login-btn:hover{background:#1e1a4a;}
 .login-err{color:var(--danger);font-size:12px;text-align:center;margin-top:8px;min-height:18px;}
+.login-cp-link{display:block;text-align:center;margin-top:12px;font-size:12.5px;color:#6366f1;cursor:pointer;font-weight:600;text-decoration:underline;}
+.login-cp-link:hover{color:#4338ca;}
+.cp-success{color:#16a34a;font-size:12px;text-align:center;margin-top:8px;min-height:18px;}
 /* REPORT TOTALS */
 .report-total-row td{background:var(--sidebar-bg);color:#fff;font-weight:700;}
 /* SUPPLIER AVATAR */
@@ -1064,6 +1067,23 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
     <div class="g-form-group"><label>Password</label><input id="l-pass" type="password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key===&apos;Enter&apos;)doLogin()"/></div>
     <button class="login-btn" onclick="doLogin()">Sign In</button>
     <div class="login-err" id="login-err"></div>
+    <span class="login-cp-link" onclick="toggleCPForm(true)">&#128274; Change Password</span>
+  </div>
+
+  <!-- Change-password panel (hidden by default) -->
+  <div class="login-box" id="cp-box" style="display:none">
+    <div class="login-logo">
+      <img src="/images/bg-logo.png" alt="Perception Gaming" class="login-logo-img"/>
+      <h1>Change Password</h1>
+      <p>Enter your email and choose a new password</p>
+    </div>
+    <div class="g-form-group"><label>Your Email</label><input id="cp-email" type="email" placeholder="Enter your account email"/></div>
+    <div class="g-form-group"><label>New Password</label><input id="cp-new" type="password" placeholder="Enter new password"/></div>
+    <div class="g-form-group"><label>Confirm New Password</label><input id="cp-confirm" type="password" placeholder="Re-enter new password" onkeydown="if(event.key===&apos;Enter&apos;)doChangePassword()"/></div>
+    <button class="login-btn" onclick="doChangePassword()">Update Password</button>
+    <div class="login-err" id="cp-err"></div>
+    <div class="cp-success" id="cp-ok"></div>
+    <span class="login-cp-link" onclick="toggleCPForm(false)">&#8592; Back to Sign In</span>
   </div>
 </div>
 <!-- TOAST -->
@@ -1970,6 +1990,19 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
       <div class="g-form-group"><label>Role</label><input id="set-role" readonly/></div>
     </div>
   </div>
+  <div class="settings-card">
+    <h3>&#128274; Change Password</h3>
+    <p style="font-size:12px;color:var(--text-2);margin-bottom:14px">Update your account password. You must enter your current password to confirm.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+      <div class="g-form-group"><label>Current Password</label><input id="sp-current" type="password" placeholder="Current password"/></div>
+      <div class="g-form-group"><label>New Password</label><input id="sp-new" type="password" placeholder="New password"/></div>
+      <div class="g-form-group"><label>Confirm New Password</label><input id="sp-confirm" type="password" placeholder="Re-enter new password"/></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+      <button class="g-btn g-btn-save" onclick="doSettingsChangePassword()">Update Password</button>
+      <span id="sp-msg" style="font-size:12.5px;font-weight:600"></span>
+    </div>
+  </div>
   <div class="section-label">Application</div>
   <div class="settings-card">
     <h3>System Information</h3>
@@ -2619,15 +2652,63 @@ async function doLogin(){
     document.getElementById('user-avatar').textContent=ini(currentUser.name);
     // Apply role-based UI restrictions (Staff = view-only, Admin = full access)
     applyRoleAccess(currentUser.role);
-    // Settings page data is only relevant for Admin users
-    if(currentUser.role==='Admin'){
-      loadLineConfig();loadUsers();
-      document.getElementById('set-name').value=currentUser.name||'';
-      document.getElementById('set-email').value=currentUser.email||'';
-      document.getElementById('set-role').value=currentUser.role||'';
-    }
+    // Populate profile fields for all users
+    document.getElementById('set-name').value=currentUser.name||'';
+    document.getElementById('set-email').value=currentUser.email||'';
+    document.getElementById('set-role').value=currentUser.role||'';
+    // Admin-only settings
+    if(currentUser.role==='Admin'){loadLineConfig();loadUsers();}
     initApp();
   }catch(e){document.getElementById('login-err').textContent='Cannot connect to server.';}
+}
+// ── Change Password (from login page) ────────────────────────────────────
+function toggleCPForm(show){
+  document.querySelector('.login-box').style.display=show?'none':'';
+  document.getElementById('cp-box').style.display=show?'':'none';
+  if(!show){document.getElementById('cp-err').textContent='';document.getElementById('cp-ok').textContent='';}
+}
+async function doChangePassword(){
+  const email=document.getElementById('cp-email').value.trim();
+  const np=document.getElementById('cp-new').value;
+  const cp=document.getElementById('cp-confirm').value;
+  const errEl=document.getElementById('cp-err');
+  const okEl=document.getElementById('cp-ok');
+  errEl.textContent=''; okEl.textContent='';
+  if(!email||!np||!cp){errEl.textContent='All fields are required.';return;}
+  if(np!==cp){errEl.textContent='New passwords do not match.';return;}
+  if(np.length<4){errEl.textContent='Password must be at least 4 characters.';return;}
+  try{
+    const r=await fetch(API+'/auth/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,newPassword:np})});
+    const d=await r.json();
+    if(!r.ok){errEl.textContent=d.error||'Failed to update password.';return;}
+    okEl.textContent='✓ Password updated! You can now sign in.';
+    document.getElementById('cp-email').value='';
+    document.getElementById('cp-new').value='';
+    document.getElementById('cp-confirm').value='';
+    setTimeout(()=>toggleCPForm(false),2500);
+  }catch(e){errEl.textContent='Cannot connect to server.';}
+}
+// ── Change Password (from Settings page) ─────────────────────────────────
+async function doSettingsChangePassword(){
+  const cur=document.getElementById('sp-current').value;
+  const np=document.getElementById('sp-new').value;
+  const cp=document.getElementById('sp-confirm').value;
+  const msg=document.getElementById('sp-msg');
+  msg.style.color='var(--danger)'; msg.textContent='';
+  if(!cur||!np||!cp){msg.textContent='All three fields are required.';return;}
+  if(np!==cp){msg.textContent='New passwords do not match.';return;}
+  if(np.length<4){msg.textContent='Password must be at least 4 characters.';return;}
+  if(!currentUser){msg.textContent='Not logged in.';return;}
+  try{
+    const r=await fetch(API+'/auth/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:currentUser.email,currentPassword:cur,newPassword:np})});
+    const d=await r.json();
+    if(!r.ok){msg.textContent=d.error||'Failed to update password.';return;}
+    msg.style.color='#16a34a'; msg.textContent='✓ Password updated successfully!';
+    document.getElementById('sp-current').value='';
+    document.getElementById('sp-new').value='';
+    document.getElementById('sp-confirm').value='';
+    showToast('Password updated successfully','success');
+  }catch(e){msg.textContent='Cannot connect to server.';}
 }
 function doLogout(){
   currentUser=null;
@@ -4240,152 +4321,4 @@ ${showLabel(i)?`<text x="${cx}" y="${labelY}" text-anchor="${anchor}" font-size=
       <stop offset="75%" stop-color="#6366f1" stop-opacity="0.04"/>
       <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
     </linearGradient>
-    <filter id="dotShadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#6366f1" flood-opacity="0.25"/>
-    </filter>
-  </defs>
-  ${totalBadge}
-  ${yTicks}
-  <line x1="${PAD.left}" y1="${PAD.top}" x2="${PAD.left}" y2="${PAD.top+cH}" stroke="#e2e8f0" stroke-width="1"/>
-  <line x1="${PAD.left}" y1="${PAD.top+cH}" x2="${PAD.left+cW}" y2="${PAD.top+cH}" stroke="#e2e8f0" stroke-width="1"/>
-  ${singleRef}
-  ${areaPath?`<path d="${areaPath}" fill="url(#areaFill)" />` :''}
-  ${linePath?`<path d="${linePath}" fill="none" stroke="url(#lineGrad)" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>`:''}
-  <defs><linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#6366f1"/></linearGradient></defs>
-  ${xLabels}
-  ${dots}
-</svg>`;
-}
-
-function renderPartsStatusChart(parts){
-  const el=document.getElementById('chart-parts-status');
-  if(!el)return;
-  const outOfStock=parts.filter(r=>(+r.on_hand||0)===0).length;
-  const lowStock=parts.filter(r=>(+r.on_hand||0)>0&&(+r.on_hand||0)<=(+r.safety_stock||1)).length;
-  const ok=parts.length-outOfStock-lowStock;
-  const total=parts.length;
-  if(!total){
-    el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:160px;color:#94a3b8;font-size:13px">No spare parts data</div>';
-    return;
-  }
-  // SVG donut
-  const R=56,ri=36,cx=75,cy=75;
-  const segs=[{val:ok,color:'#10b981'},{val:lowStock,color:'#f59e0b'},{val:outOfStock,color:'#ef4444'}].filter(s=>s.val>0);
-  let ang=-Math.PI/2;
-  const paths=segs.map(s=>{
-    const sweep=(s.val/total)*2*Math.PI;
-    const ea=ang+sweep;
-    const x1=cx+R*Math.cos(ang),y1=cy+R*Math.sin(ang);
-    const x2=cx+R*Math.cos(ea),y2=cy+R*Math.sin(ea);
-    const xi1=cx+ri*Math.cos(ang),yi1=cy+ri*Math.sin(ang);
-    const xi2=cx+ri*Math.cos(ea),yi2=cy+ri*Math.sin(ea);
-    const lg=sweep>Math.PI?1:0;
-    const d=`M${x1} ${y1} A${R} ${R} 0 ${lg} 1 ${x2} ${y2} L${xi2} ${yi2} A${ri} ${ri} 0 ${lg} 0 ${xi1} ${yi1}Z`;
-    ang=ea;
-    return `<path d="${d}" fill="${s.color}" stroke="white" stroke-width="2"/>`;
-  }).join('');
-  const legend=[
-    {val:ok,color:'#10b981',label:'OK'},
-    {val:lowStock,color:'#f59e0b',label:'Low Stock'},
-    {val:outOfStock,color:'#ef4444',label:'Out of Stock'}
-  ].map(s=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;padding:5px 0;border-bottom:1px solid #f1f5f9">
-    <div style="width:10px;height:10px;border-radius:50%;background:${s.color};flex-shrink:0"></div>
-    <span style="flex:1">${s.label}</span>
-    <span style="font-weight:800;color:#0f172a">${s.val}</span>
-    <span style="color:#94a3b8;font-size:11px">${Math.round(s.val/total*100)}%</span>
-  </div>`).join('');
-  el.innerHTML=`<div style="display:flex;align-items:center;gap:18px;padding:8px 0">
-    <svg width="150" height="150" viewBox="0 0 150 150" style="flex-shrink:0">
-      ${paths}
-      <circle cx="${cx}" cy="${cy}" r="${ri-2}" fill="white"/>
-      <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="20" font-weight="900" fill="#0f172a" font-family="system-ui">${total}</text>
-      <text x="${cx}" y="${cy+13}" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="system-ui" letter-spacing="1">TOTAL</text>
-    </svg>
-    <div style="flex:1;min-width:0">${legend}</div>
-  </div>`;
-}
-
-// ── LOW-STOCK EMAIL ALERT ────────────────────────────────────────
-async function sendLowStockAlert(){
-  const btn=document.getElementById('dash-alert-btn');
-  try{
-    if(btn){btn.disabled=true;btn.textContent='Sending...';}
-    const r=await fetch(API+'/alerts/low-stock/send',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}' });
-    const d=await r.json();
-    if(!r.ok)throw new Error(d.error||'Failed');
-    gToast('✉ '+d.message,'success');
-  }catch(e){
-    gToast(e.message.includes('No email provider')?'No email provider configured in Railway environment variables':e.message,'error');
-  }finally{
-    if(btn){btn.disabled=false;btn.innerHTML='⚠️ Send Low-Stock Alert <span id="dash-low-count" style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 7px;margin-left:4px">...</span>';}
-    setTimeout(loadDashboardCharts,500);
-  }
-}
-
-// ── AUDIT LOG ────────────────────────────────────────────────────
-let auditData=[],auditOffset=0;
-async function loadAuditLog(reset){
-  if(reset===undefined||reset)auditOffset=0,auditData=[];
-  try{
-    const r=await fetch(API+'/audit-log?limit=100&offset='+auditOffset);
-    const d=await r.json();
-    auditData=[...auditData,...(d.rows||[])];
-    auditOffset=auditData.length;
-    const mb=document.getElementById('al-load-more');
-    if(mb)mb.style.display=(auditData.length<(d.total||0))?'inline-flex':'none';
-    renderAuditLog();
-  }catch(e){const b=document.getElementById('al-body');if(b)b.innerHTML='<tr><td colspan="6"><div class="no-results">Could not load audit log.</div></td></tr>';}
-}
-function loadMoreAudit(){loadAuditLog(false);}
-function renderAuditLog(){
-  const q=(document.getElementById('al-search')||{}).value||'';
-  const ql=q.toLowerCase();
-  const rows=auditData.filter(r=>!ql||(r.user_name||'').toLowerCase().includes(ql)||(r.action||'').toLowerCase().includes(ql)||(r.entity||'').toLowerCase().includes(ql)||(r.details||'').toLowerCase().includes(ql));
-  const meta=document.getElementById('al-meta');
-  if(meta)meta.textContent='Showing '+rows.length+' of '+auditData.length+' entries';
-  const AC={CREATE:'#10b981',UPDATE:'#f59e0b',DELETE:'#ef4444',SEND_ALERT:'#6366f1'};
-  const b=document.getElementById('al-body');
-  if(!b)return;
-  b.innerHTML=rows.length?rows.map((r,i)=>{
-    const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
-    const col=AC[r.action]||'#64748b';
-    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.user_name||'—')+'</strong><br><span style="font-size:11px;color:#94a3b8">'+esc(r.user_email||'')+'</span></td><td><span style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">'+(r.action||'—')+'</span></td><td>'+esc(r.entity||'—')+(r.entity_id?' #'+r.entity_id:'')+'</td><td style="font-size:12px;max-width:300px">'+esc(r.details||'—')+'</td></tr>';
-  }).join(''):'<tr><td colspan="6"><div class="no-results">No audit entries found.</div></td></tr>';
-}
-
-// ── STOCK MOVEMENTS ──────────────────────────────────────────────
-let smovData=[];
-async function loadStockMovements(){
-  try{
-    const r=await fetch(API+'/stock-movements?limit=200');
-    smovData=await r.json();
-    renderStockMovements();
-  }catch(e){const b=document.getElementById('sm2-body');if(b)b.innerHTML='<tr><td colspan="9"><div class="no-results">Could not load stock movements.</div></td></tr>';}
-}
-function renderStockMovements(){
-  const q=((document.getElementById('sm2-search')||{}).value||'').toLowerCase();
-  const rows=(smovData||[]).filter(r=>!q||(r.product_name||'').toLowerCase().includes(q)||(r.reason||'').toLowerCase().includes(q));
-  const meta=document.getElementById('sm2-meta');
-  if(meta)meta.textContent=rows.length+' movements';
-  const b=document.getElementById('sm2-body');
-  if(!b)return;
-  b.innerHTML=rows.length?rows.map((r,i)=>{
-    const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
-    const chg=+r.change_qty||0;
-    const chgHtml=chg>0?'<span style="color:#10b981;font-weight:700">+'+chg+'</span>':'<span style="color:#ef4444;font-weight:700">'+chg+'</span>';
-    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.product_name||'—')+'</strong></td><td style="font-size:12px;color:#64748b">'+esc(r.product_code||'')+'</td><td style="text-align:center">'+(r.prev_qty!=null?r.prev_qty:'—')+'</td><td style="text-align:center">'+chgHtml+'</td><td style="text-align:center;font-weight:700">'+(r.new_qty!=null?r.new_qty:'—')+'</td><td style="font-size:12px">'+esc(r.reason||'—')+'</td><td style="font-size:12px;color:#64748b">'+esc(r.user_name||'System')+'</td></tr>';
-  }).join(''):'<tr><td colspan="9"><div class="no-results">No stock movements yet.</div></td></tr>';
-}
-
-// ════════════════════════════════════════════════════════════════
-// BOOT — runs after DOM is ready
-// ════════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  initApp();
-  loadACEvents();
-  loadLineConfig();
-  setTimeout(loadDashboardCharts, 1500);
-});
-</script>
-</body>
-</html>
+    <filter id="d
