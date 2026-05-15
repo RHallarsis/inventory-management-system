@@ -1222,15 +1222,9 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
       ⚠️ Send Low-Stock Alert <span id="dash-low-count" style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 7px;margin-left:4px">0</span>
     </button>
   </div>
-  <div class="charts-row" style="margin-bottom:22px">
-    <div class="chart-card">
-      <div class="chart-title">Monthly Purchase Spending (₱)</div>
-      <div id="chart-monthly-purchases" style="min-height:180px"></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">Spare Parts Stock Status</div>
-      <div id="chart-parts-status" style="min-height:180px"></div>
-    </div>
+  <div class="chart-card" style="margin-bottom:22px">
+    <div class="chart-title">Monthly Purchase Spending (₱)</div>
+    <div id="chart-monthly-purchases" style="min-height:180px"></div>
   </div>
   <div class="chart-card" style="margin-bottom:22px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
@@ -2756,7 +2750,6 @@ async function initDashboard(){
   // Render outside try-catch: a render crash won't be mislabelled as network error
   try{ renderDashTable(); }catch(e){ console.error('[renderDashTable]',e); }
   try{ renderMMChart(mmData); }catch(e){ console.error('[renderMMChart]',e); }
-  try{ renderPartsStatusChart(parts||[]); }catch(e){ console.error('[renderPartsStatusChart]',e); }
   try{ loadDashboardCharts(); }catch(e){ console.error('[loadDashboardCharts]',e); }
 }
 function renderDashTable(){
