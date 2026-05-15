@@ -618,12 +618,17 @@ const dbPromise = (async () => {
     { keyword: 'pc express',      email: 'pcxglorietta@pcx.com.ph'             },
     { keyword: 'asus',            email: 'asusconceptstoreglorietta2@gmail.com'},
   ];
+  try {
+    // Ensure updated_at column exists (may be missing on older deployed DBs)
+    await db.run(`ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()`);
+  } catch (_) {}
   for (const patch of supplierEmailPatches) {
-    await db.run(
-      `UPDATE suppliers SET email = ?, updated_at = NOW()
-       WHERE LOWER(name) LIKE ? AND (email = '' OR email IS NULL)`,
-      [patch.email, `%${patch.keyword}%`]
-    );
+    try {
+      await db.run(
+        `UPDATE suppliers SET email = ? WHERE LOWER(name) LIKE ? AND (email = '' OR email IS NULL)`,
+        [patch.email, `%${patch.keyword}%`]
+      );
+    } catch (_) {}
   }
   console.log('[db] Supplier email patch applied.');
 
@@ -660,5 +665,10 @@ const dbPromise = (async () => {
   console.log('[db] PostgreSQL schema ready.');
   return { db, save: () => {} };
 })();
+
+// Prevent unhandled-rejection crash — log the error but keep the process alive
+dbPromise.catch(err => {
+  console.error('[db] FATAL init error:', err.message);
+});
 
 module.exports = { dbPromise, calcStatus };
