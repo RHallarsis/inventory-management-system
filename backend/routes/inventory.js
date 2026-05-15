@@ -739,6 +739,24 @@ router.delete('/stock-transfers/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Multer setup for Pullout Receipts ────────────────────────────
+const PULL_UPLOAD_DIR = path.join(__dirname, '../uploads/pullout');
+if (!fs.existsSync(PULL_UPLOAD_DIR)) fs.mkdirSync(PULL_UPLOAD_DIR, { recursive: true });
+const pullStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, PULL_UPLOAD_DIR),
+  filename:    (_req, file, cb) => { const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_'); cb(null, `${Date.now()}-${safe}`); }
+});
+const pullUpload = multer({ storage: pullStorage, limits: { fileSize: 20 * 1024 * 1024 } });
+
+// ── Multer setup for Transmittal Receipts ─────────────────────────
+const TRMIT_UPLOAD_DIR = path.join(__dirname, '../uploads/transmittal');
+if (!fs.existsSync(TRMIT_UPLOAD_DIR)) fs.mkdirSync(TRMIT_UPLOAD_DIR, { recursive: true });
+const trmitStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, TRMIT_UPLOAD_DIR),
+  filename:    (_req, file, cb) => { const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_'); cb(null, `${Date.now()}-${safe}`); }
+});
+const trmitUpload = multer({ storage: trmitStorage, limits: { fileSize: 20 * 1024 * 1024 } });
+
 // ── PULLOUT RECEIPTS ─────────────────────────────────────────────
 router.get('/pullout-receipts', async (_req, res) => {
   try {
@@ -747,20 +765,23 @@ router.get('/pullout-receipts', async (_req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/pullout-receipts', async (req, res) => {
+router.post('/pullout-receipts', pullUpload.single('file'), async (req, res) => {
   const { transfer_no, transfer_date, source_location, destination_location, items_count, status, pulled_out_by, prepared_by, returned_by, witnessed_by } = req.body;
   if (!transfer_no || !source_location || !destination_location) {
     return res.status(400).json({ error: 'transfer_no, source_location, and destination_location are required' });
   }
   try {
     const { db } = await dbPromise;
+    const file_name = req.file ? req.file.originalname : '';
+    const file_path = req.file ? '/uploads/pullout/' + req.file.filename : '';
     const id = await db.insert(
-      'INSERT INTO pullout_receipts (transfer_no, transfer_date, source_location, destination_location, items_count, status, pulled_out_by, prepared_by, returned_by, witnessed_by) VALUES (?,?,?,?,?,?,?,?,?,?)',
+      'INSERT INTO pullout_receipts (transfer_no, transfer_date, source_location, destination_location, items_count, status, pulled_out_by, prepared_by, returned_by, witnessed_by, file_name, file_path) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
       [transfer_no.trim(), transfer_date || new Date().toISOString().split('T')[0],
        source_location.trim(), destination_location.trim(),
        +items_count || 0, status || 'Pending',
        (pulled_out_by || '').trim(), (prepared_by || '').trim(),
-       (returned_by || '').trim(), (witnessed_by || '').trim()]
+       (returned_by || '').trim(), (witnessed_by || '').trim(),
+       file_name, file_path]
     );
     res.status(201).json(await db.getOne('SELECT * FROM pullout_receipts WHERE id = ?', [id]));
   } catch (err) {
@@ -769,20 +790,27 @@ router.post('/pullout-receipts', async (req, res) => {
   }
 });
 
-router.put('/pullout-receipts/:id', async (req, res) => {
+router.put('/pullout-receipts/:id', pullUpload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM pullout_receipts WHERE id = ?', [+req.params.id]);
     if (!ex) return res.status(404).json({ error: 'Pullout receipt not found' });
     const { transfer_no, transfer_date, source_location, destination_location, items_count, status, pulled_out_by, prepared_by, returned_by, witnessed_by } = req.body;
+    let file_name = ex.file_name || '';
+    let file_path = ex.file_path || '';
+    if (req.file) {
+      if (ex.file_name) { try { fs.unlinkSync(path.join(PULL_UPLOAD_DIR, ex.file_name)); } catch {} }
+      file_name = req.file.originalname;
+      file_path = '/uploads/pullout/' + req.file.filename;
+    }
     await db.run(
-      `UPDATE pullout_receipts SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_count=?, status=?, pulled_out_by=?, prepared_by=?, returned_by=?, witnessed_by=?, updated_at=NOW() WHERE id=?`,
+      `UPDATE pullout_receipts SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_count=?, status=?, pulled_out_by=?, prepared_by=?, returned_by=?, witnessed_by=?, file_name=?, file_path=?, updated_at=NOW() WHERE id=?`,
       [(transfer_no ?? ex.transfer_no).trim(), transfer_date ?? ex.transfer_date,
        (source_location ?? ex.source_location).trim(), (destination_location ?? ex.destination_location).trim(),
        items_count != null ? +items_count : ex.items_count, status ?? ex.status,
        (pulled_out_by ?? ex.pulled_out_by ?? '').trim(), (prepared_by ?? ex.prepared_by ?? '').trim(),
        (returned_by ?? ex.returned_by ?? '').trim(), (witnessed_by ?? ex.witnessed_by ?? '').trim(),
-       +req.params.id]
+       file_name, file_path, +req.params.id]
     );
     res.json(await db.getOne('SELECT * FROM pullout_receipts WHERE id = ?', [+req.params.id]));
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -806,20 +834,23 @@ router.get('/transmittal-receipts', async (_req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/transmittal-receipts', async (req, res) => {
+router.post('/transmittal-receipts', trmitUpload.single('file'), async (req, res) => {
   const { transfer_no, transfer_date, source_location, destination_location, items_count, status, turned_over_by, received_by, witnessed_by, noted_by } = req.body;
   if (!transfer_no || !source_location || !destination_location) {
     return res.status(400).json({ error: 'transfer_no, source_location, and destination_location are required' });
   }
   try {
     const { db } = await dbPromise;
+    const file_name = req.file ? req.file.originalname : '';
+    const file_path = req.file ? '/uploads/transmittal/' + req.file.filename : '';
     const id = await db.insert(
-      'INSERT INTO transmittal_receipts (transfer_no, transfer_date, source_location, destination_location, items_count, status, turned_over_by, received_by, witnessed_by, noted_by) VALUES (?,?,?,?,?,?,?,?,?,?)',
+      'INSERT INTO transmittal_receipts (transfer_no, transfer_date, source_location, destination_location, items_count, status, turned_over_by, received_by, witnessed_by, noted_by, file_name, file_path) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
       [transfer_no.trim(), transfer_date || new Date().toISOString().split('T')[0],
        source_location.trim(), destination_location.trim(),
        +items_count || 0, status || 'Pending',
        (turned_over_by || '').trim(), (received_by || '').trim(),
-       (witnessed_by || '').trim(), (noted_by || '').trim()]
+       (witnessed_by || '').trim(), (noted_by || '').trim(),
+       file_name, file_path]
     );
     res.status(201).json(await db.getOne('SELECT * FROM transmittal_receipts WHERE id = ?', [id]));
   } catch (err) {
@@ -828,20 +859,27 @@ router.post('/transmittal-receipts', async (req, res) => {
   }
 });
 
-router.put('/transmittal-receipts/:id', async (req, res) => {
+router.put('/transmittal-receipts/:id', trmitUpload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM transmittal_receipts WHERE id = ?', [+req.params.id]);
     if (!ex) return res.status(404).json({ error: 'Transmittal receipt not found' });
     const { transfer_no, transfer_date, source_location, destination_location, items_count, status, turned_over_by, received_by, witnessed_by, noted_by } = req.body;
+    let file_name = ex.file_name || '';
+    let file_path = ex.file_path || '';
+    if (req.file) {
+      if (ex.file_name) { try { fs.unlinkSync(path.join(TRMIT_UPLOAD_DIR, ex.file_name)); } catch {} }
+      file_name = req.file.originalname;
+      file_path = '/uploads/transmittal/' + req.file.filename;
+    }
     await db.run(
-      `UPDATE transmittal_receipts SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_count=?, status=?, turned_over_by=?, received_by=?, witnessed_by=?, noted_by=?, updated_at=NOW() WHERE id=?`,
+      `UPDATE transmittal_receipts SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_count=?, status=?, turned_over_by=?, received_by=?, witnessed_by=?, noted_by=?, file_name=?, file_path=?, updated_at=NOW() WHERE id=?`,
       [(transfer_no ?? ex.transfer_no).trim(), transfer_date ?? ex.transfer_date,
        (source_location ?? ex.source_location).trim(), (destination_location ?? ex.destination_location).trim(),
        items_count != null ? +items_count : ex.items_count, status ?? ex.status,
        (turned_over_by ?? ex.turned_over_by ?? '').trim(), (received_by ?? ex.received_by ?? '').trim(),
        (witnessed_by ?? ex.witnessed_by ?? '').trim(), (noted_by ?? ex.noted_by ?? '').trim(),
-       +req.params.id]
+       file_name, file_path, +req.params.id]
     );
     res.json(await db.getOne('SELECT * FROM transmittal_receipts WHERE id = ?', [+req.params.id]));
   } catch (err) { res.status(500).json({ error: err.message }); }
