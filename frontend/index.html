@@ -4184,60 +4184,76 @@ function renderMonthlyChart(monthly){
   const el=document.getElementById('chart-monthly-purchases');
   if(!el)return;
   if(!monthly.length){
-    el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:200px;color:#94a3b8;font-size:13px">No purchase order data yet</div>';
+    el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:220px;color:#94a3b8;font-size:13px">No purchase order data yet</div>';
     return;
   }
   const data=monthly.map(r=>({label:r.month,val:parseFloat(r.total)||0}));
-  // Fixed viewBox — SVG scales to container width without distortion
-  const VW=800,VH=220;
-  const PAD={top:40,right:30,bottom:44,left:76};
+  const VW=860,VH=240;
+  const PAD={top:30,right:24,bottom:50,left:80};
   const cW=VW-PAD.left-PAD.right, cH=VH-PAD.top-PAD.bottom;
+  const n=data.length;
   const maxVal=Math.max(...data.map(d=>d.val),1);
   // Nice Y scale
   const tickCount=4;
-  const mag=Math.pow(10,Math.floor(Math.log10(maxVal/tickCount)));
-  const niceStep=Math.ceil((maxVal/tickCount)/mag)*mag;
+  const mag=Math.pow(10,Math.floor(Math.log10(maxVal/tickCount||1)));
+  const niceStep=Math.ceil((maxVal/tickCount)/mag)*mag||1;
   const yMax=niceStep*tickCount;
-  const n=data.length;
-  const xPos=i=>PAD.left+(n>1?i/(n-1):0.5)*cW;
-  const yPos=v=>PAD.top+cH*(1-v/yMax);
-  // Y grid & labels
+  // For single point: spread it across the full width with a horizontal reference line
+  const xPos=i=>PAD.left+(n>1?(i/(n-1))*cW:cW/2);
+  const yPos=v=>PAD.top+cH*(1-(Math.min(v,yMax)/yMax));
+  // Y grid lines + labels
   const yTicks=Array.from({length:tickCount+1},(_,i)=>i*niceStep).map(v=>{
-    const y=yPos(v);
-    const label=v>=1000?'₱'+(v/1000).toFixed(0)+'k':'₱'+v;
-    return `<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+cW}" y2="${y}" stroke="#f0f3fa" stroke-width="1.2"/>
-<text x="${PAD.left-10}" y="${y}" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#94a3b8" font-family="system-ui">${label}</text>`;
+    const y=yPos(v).toFixed(1);
+    const lbl=v===0?'₱0':v>=1000000?'₱'+(v/1000000).toFixed(1)+'M':v>=1000?'₱'+(v/1000).toFixed(0)+'k':'₱'+v;
+    return `<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+cW}" y2="${y}" stroke="#eef0f8" stroke-width="1.5" stroke-dasharray="${v===0?'none':'4,3'}"/>
+<text x="${PAD.left-10}" y="${y}" text-anchor="end" dominant-baseline="middle" font-size="11.5" fill="#b0bec5" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">${lbl}</text>`;
   }).join('');
-  // X labels (limit to avoid crowding)
-  const skip=Math.max(1,Math.ceil(n/10));
-  const xLabels=data.map((d,i)=>(i%skip===0||i===n-1)?
-    `<text x="${xPos(i)}" y="${PAD.top+cH+20}" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="system-ui">${d.label}</text>`:''
+  // X labels — skip to avoid crowding, always show first+last
+  const skip=Math.max(1,Math.ceil(n/8));
+  const xLabels=data.map((d,i)=>(n===1||i%skip===0||i===n-1)?
+    `<text x="${xPos(i).toFixed(1)}" y="${PAD.top+cH+26}" text-anchor="middle" font-size="11.5" fill="#b0bec5" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">${d.label}</text>`:''
   ).join('');
-  // Area & line paths
-  const linePoints=data.map((d,i)=>`${xPos(i)},${yPos(d.val)}`);
-  const linePath='M '+linePoints.join(' L ');
-  const areaPath=`M ${xPos(0)},${PAD.top+cH} L ${linePoints.join(' L ')} L ${xPos(n-1)},${PAD.top+cH} Z`;
-  // Dots + value labels (only on skip intervals or endpoints)
-  const dotsAndLabels=data.map((d,i)=>{
-    const cx=xPos(i),cy=yPos(d.val);
-    const showLabel=(i%skip===0||i===n-1);
-    const labelY=cy-14;
-    return `<circle cx="${cx}" cy="${cy}" r="5" fill="#6366f1" stroke="white" stroke-width="2.5"/>
-${showLabel?`<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="11" font-weight="700" fill="#4f46e5" font-family="system-ui">₱${Math.round(d.val).toLocaleString()}</text>`:''}`;
+  // For single point: draw a dashed horizontal line at value level
+  const singleRef=n===1?`<line x1="${PAD.left}" y1="${yPos(data[0].val).toFixed(1)}" x2="${PAD.left+cW}" y2="${yPos(data[0].val).toFixed(1)}" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="6,4" stroke-opacity="0.4"/>`:'' ;
+  // Line + area paths
+  const pts=data.map((d,i)=>`${xPos(i).toFixed(1)},${yPos(d.val).toFixed(1)}`);
+  const linePath=n>1?'M '+pts.join(' L '):'';
+  const areaPath=n>1?`M ${xPos(0).toFixed(1)},${(PAD.top+cH).toFixed(1)} L ${pts.join(' L ')} L ${xPos(n-1).toFixed(1)},${(PAD.top+cH).toFixed(1)} Z`:'';
+  // Dots + floating value callouts
+  const showLabel=i=>(n<=6)||(i%skip===0)||(i===n-1);
+  const dots=data.map((d,i)=>{
+    const cx=xPos(i).toFixed(1), cy=yPos(d.val).toFixed(1);
+    const labelY=(+cy-16).toFixed(1);
+    const anchor=n>1&&i===n-1?'end':n>1&&i===0?'start':'middle';
+    return `
+<circle cx="${cx}" cy="${cy}" r="6" fill="white" stroke="#6366f1" stroke-width="2.5" filter="url(#dotShadow)"/>
+<circle cx="${cx}" cy="${cy}" r="3" fill="#6366f1"/>
+${showLabel(i)?`<text x="${cx}" y="${labelY}" text-anchor="${anchor}" font-size="11" font-weight="700" fill="#4f46e5" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">₱${Math.round(d.val).toLocaleString()}</text>`:''}`;
   }).join('');
-  el.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" width="100%" height="220" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">
+  // Total badge top-right
+  const grandTotal=data.reduce((s,d)=>s+d.val,0);
+  const totalBadge=`<text x="${PAD.left+cW}" y="${PAD.top-10}" text-anchor="end" font-size="11" fill="#94a3b8" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">Total: <tspan font-weight="700" fill="#4f46e5">₱${Math.round(grandTotal).toLocaleString()}</tspan></text>`;
+  el.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">
   <defs>
-    <linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.15"/>
+    <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.18"/>
+      <stop offset="75%" stop-color="#6366f1" stop-opacity="0.04"/>
       <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
     </linearGradient>
+    <filter id="dotShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#6366f1" flood-opacity="0.25"/>
+    </filter>
   </defs>
+  ${totalBadge}
   ${yTicks}
   <line x1="${PAD.left}" y1="${PAD.top}" x2="${PAD.left}" y2="${PAD.top+cH}" stroke="#e2e8f0" stroke-width="1"/>
-  <path d="${areaPath}" fill="url(#lg1)"/>
-  <path d="${linePath}" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <line x1="${PAD.left}" y1="${PAD.top+cH}" x2="${PAD.left+cW}" y2="${PAD.top+cH}" stroke="#e2e8f0" stroke-width="1"/>
+  ${singleRef}
+  ${areaPath?`<path d="${areaPath}" fill="url(#areaFill)" />` :''}
+  ${linePath?`<path d="${linePath}" fill="none" stroke="url(#lineGrad)" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>`:''}
+  <defs><linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#6366f1"/></linearGradient></defs>
   ${xLabels}
-  ${dotsAndLabels}
+  ${dots}
 </svg>`;
 }
 
