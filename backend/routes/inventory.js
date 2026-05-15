@@ -76,7 +76,24 @@ router.post('/inventory', async (req, res) => {
       'INSERT INTO products (product_code, name, category, quantity, unit_price, status) VALUES (?,?,?,?,?,?)',
       [product_code.trim(), name.trim(), category.trim(), qty, price, calcStatus(qty)]
     );
-    res.status(201).json(await db.getOne('SELECT * FROM products WHERE id = ?', [id]));
+    const created = await db.getOne('SELECT * FROM products WHERE id = ?', [id]);
+    // Audit log — product created
+    try {
+      await db.run(
+        `INSERT INTO audit_logs (user_name, user_email, action, entity, entity_id, details) VALUES (?,?,?,?,?,?)`,
+        ['System', '', 'CREATE', 'product', id, `Added ${name.trim()} (${product_code.trim()}) qty=${qty}`]
+      );
+    } catch (_) {}
+    // Stock movement — initial stock
+    if (qty > 0) {
+      try {
+        await db.run(
+          `INSERT INTO stock_movements (product_id, product_name, product_code, prev_qty, new_qty, change_qty, reason, user_name) VALUES (?,?,?,?,?,?,?,?)`,
+          [id, name.trim(), product_code.trim(), 0, qty, qty, 'Initial stock', 'System']
+        );
+      } catch (_) {}
+    }
+    res.status(201).json(created);
   } catch (err) {
     if (err.code === '23505') {
       return res.status(409).json({ error: `product_code '${product_code}' already exists` });
@@ -99,20 +116,42 @@ router.put('/inventory/:id', async (req, res) => {
     if (isNaN(qty)   || qty   < 0) return res.status(400).json({ error: 'quantity must be a non-negative integer' });
     if (isNaN(price) || price < 0) return res.status(400).json({ error: 'unit_price must be a non-negative number' });
 
+    const newCode = (product_code ?? existing.product_code).trim();
+    const newName = (name         ?? existing.name).trim();
+    const newCat  = (category     ?? existing.category).trim();
+
     await db.run(
       `UPDATE products
           SET product_code = ?, name = ?, category = ?,
               quantity = ?, unit_price = ?, status = ?,
               updated_at = NOW()
         WHERE id = ?`,
-      [
-        (product_code ?? existing.product_code).trim(),
-        (name         ?? existing.name).trim(),
-        (category     ?? existing.category).trim(),
-        qty, price, calcStatus(qty),
-        +req.params.id,
-      ]
+      [newCode, newName, newCat, qty, price, calcStatus(qty), +req.params.id]
     );
+
+    // Stock movement — if quantity changed
+    if (qty !== existing.quantity) {
+      try {
+        await db.run(
+          `INSERT INTO stock_movements (product_id, product_name, product_code, prev_qty, new_qty, change_qty, reason, user_name) VALUES (?,?,?,?,?,?,?,?)`,
+          [+req.params.id, newName, newCode, existing.quantity, qty, qty - existing.quantity, 'Manual update', 'System']
+        );
+      } catch (_) {}
+    }
+    // Audit log — product updated
+    try {
+      const changes = [];
+      if (qty !== existing.quantity) changes.push(`qty: ${existing.quantity} -> ${qty}`);
+      if (price !== existing.unit_price) changes.push(`price: ${existing.unit_price} -> ${price}`);
+      if (newCode !== existing.product_code) changes.push(`code: ${existing.product_code} -> ${newCode}`);
+      if (newName !== existing.name) changes.push(`name: ${existing.name} -> ${newName}`);
+      if (newCat  !== existing.category) changes.push(`category: ${existing.category} -> ${newCat}`);
+      await db.run(
+        `INSERT INTO audit_logs (user_name, user_email, action, entity, entity_id, details) VALUES (?,?,?,?,?,?)`,
+        ['System', '', 'UPDATE', 'product', +req.params.id, changes.length ? changes.join('; ') : 'No field changes']
+      );
+    } catch (_) {}
+
     res.json(await db.getOne('SELECT * FROM products WHERE id = ?', [+req.params.id]));
   } catch (err) {
     if (err.code === '23505') {

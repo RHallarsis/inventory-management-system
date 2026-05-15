@@ -1056,6 +1056,39 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
     <div class="login-err" id="login-err"></div>
   </div>
 </div>
+<!-- ===== AUDIT LOG ===== -->
+<div id="page-auditlog" class="page-section">
+  <div class="page-hero h-slate"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8zm0-4h5v2H8z"/></svg></div><div><div class="ph-title">Audit Log</div><div class="ph-sub">Complete history of all actions performed in the system by users</div></div></div></div>
+  <div class="page-toolbar">
+    <input class="search-input" id="al-search" placeholder="Filter by user, action or entity..." oninput="renderAuditLog()"/>
+    <button class="page-add-btn" onclick="loadAuditLog()" style="background:#6366f1">&#8635; Refresh</button>
+    <span class="table-meta" id="al-meta"></span>
+  </div>
+  <div class="page-tbl-wrap">
+    <table class="page-table">
+      <thead><tr><th>#</th><th>Date &amp; Time</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
+      <tbody id="al-body"></tbody>
+    </table>
+  </div>
+  <div style="text-align:center;margin-top:12px">
+    <button class="page-add-btn" id="al-load-more" onclick="loadMoreAudit()" style="background:#64748b;display:none">Load More</button>
+  </div>
+</div>
+<!-- ===== STOCK MOVEMENTS ===== -->
+<div id="page-stockmovements" class="page-section">
+  <div class="page-hero h-teal"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M7 16l-4-4 4-4 1.41 1.41L6.83 11H21v2H6.83l1.58 1.59L7 16zm10-8l4 4-4 4-1.41-1.41L17.17 13H3v-2h14.17l-1.58-1.59L17 8z"/></svg></div><div><div class="ph-title">Stock Movements</div><div class="ph-sub">Track every inventory quantity change — additions, deductions &amp; adjustments</div></div></div></div>
+  <div class="page-toolbar">
+    <input class="search-input" id="sm2-search" placeholder="Filter by part name or reason..." oninput="renderStockMovements()"/>
+    <button class="page-add-btn" onclick="loadStockMovements()" style="background:#0d9488">&#8635; Refresh</button>
+    <span class="table-meta" id="sm2-meta"></span>
+  </div>
+  <div class="page-tbl-wrap">
+    <table class="page-table">
+      <thead><tr><th>#</th><th>Date &amp; Time</th><th>Product</th><th>Code</th><th>Prev Qty</th><th>Change</th><th>New Qty</th><th>Reason</th><th>By</th></tr></thead>
+      <tbody id="sm2-body"></tbody>
+    </table>
+  </div>
+</div>
 <!-- TOAST -->
 <div class="toast-container" id="toast-container"></div>
 <!-- SIDEBAR -->
@@ -1117,6 +1150,10 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
       <span>Alerts</span><span class="nav-badge" id="alert-badge">0</span></div>
     <div class="nav-item" data-page="activitycalendar" onclick="showPage(&apos;activitycalendar&apos;)">
       <svg viewBox="0 0 24 24"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg><span>Activity Calendar</span><span class="nav-badge" id="ac-urgent-badge" style="display:none">0</span></div>
+    <div class="nav-item" data-page="auditlog" onclick="showPage(&apos;auditlog&apos;)">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8zm0-4h5v2H8z"/></svg><span>Audit Log</span></div>
+    <div class="nav-item" data-page="stockmovements" onclick="showPage(&apos;stockmovements&apos;)">
+      <svg viewBox="0 0 24 24"><path d="M7 16l-4-4 4-4 1.41 1.41L6.83 11H21v2H6.83l1.58 1.59L7 16zm10-8l4 4-4 4-1.41-1.41L17.17 13H3v-2h14.17l-1.58-1.59L17 8z"/></svg><span>Stock Movements</span></div>
     <div class="nav-item" data-page="settings" onclick="showPage(&apos;settings&apos;)">
       <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.04.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span>Settings</span></div>
   </nav>
@@ -1202,7 +1239,22 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
       </div>
     </div>
   </div>
-  <div class="section-label">Inventory Analytics</div>
+  <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
+    <span>Inventory Analytics</span>
+    <button class="page-add-btn" id="dash-alert-btn" onclick="sendLowStockAlert()" style="background:linear-gradient(135deg,#dc2626,#b91c1c);font-size:12px;padding:6px 14px">
+      ⚠️ Send Low-Stock Alert <span id="dash-low-count" style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 7px;margin-left:4px">0</span>
+    </button>
+  </div>
+  <div class="charts-row" style="margin-bottom:22px">
+    <div class="chart-card">
+      <div class="chart-title">Monthly Purchase Spending (₱)</div>
+      <canvas id="chart-monthly-purchases" height="160"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Spare Parts Stock Status</div>
+      <canvas id="chart-parts-status" height="160"></canvas>
+    </div>
+  </div>
   <div class="chart-card" style="margin-bottom:22px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <div class="chart-title" style="margin:0">Machine Monitoring — Units Deployed per Site</div>
@@ -1733,6 +1785,10 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
 <!-- ===== ALERTS ===== -->
 <div id="page-alerts" class="page-section">
   <div class="page-hero h-red"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></div><div><div class="ph-title">Alerts & Notifications</div><div class="ph-sub">Critical inventory alerts — low stock, out-of-stock & reorder triggers</div></div></div></div>
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="page-add-btn" onclick="sendLowStockAlert()" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">✉ Email Low-Stock Alert to Management</button>
+    <button class="page-add-btn" onclick="showPage('auditlog')" style="background:#6366f1">📋 View Audit Log</button>
+  </div>
   <div class="alert-section">
     <div class="alert-section-head alert-head-red">🚫 Out of Stock <span class="alert-head-count" id="alert-out-count"></span></div>
     <div id="alert-outofstock"><div class="alert-empty">Loading...</div></div>
@@ -4094,6 +4150,114 @@ async function deletePL(id){
   }catch(err){gToast(err.message,'error');}
 }
 
+// ── DASHBOARD CHARTS ────────────────────────────────────────────
+let chartMonthly=null,chartParts=null;
+async function loadDashboardCharts(){
+  try{
+    const [monthly,partsStatus,lowItems]=await Promise.all([
+      fetch(API+'/stats/monthly-purchases').then(r=>r.json()).catch(()=>[]),
+      fetch(API+'/stats/spare-parts-status').then(r=>r.json()).catch(()=>({})),
+      fetch(API+'/alerts/low-stock').then(r=>r.json()).catch(()=>[]),
+    ]);
+    const cnt=Array.isArray(lowItems)?lowItems.length:0;
+    const badge=document.getElementById('dash-low-count');
+    if(badge)badge.textContent=cnt;
+    const mCtx=document.getElementById('chart-monthly-purchases');
+    if(mCtx&&typeof Chart!=='undefined'){
+      if(chartMonthly){chartMonthly.destroy();chartMonthly=null;}
+      const labels=(monthly||[]).map(r=>r.month);
+      const data=(monthly||[]).map(r=>parseFloat(r.total)||0);
+      chartMonthly=new Chart(mCtx,{type:'bar',data:{labels,datasets:[{label:'Spending',data,backgroundColor:'rgba(99,102,241,.7)',borderColor:'#6366f1',borderWidth:1,borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>''+v.toLocaleString()}}}}});
+    }
+    const pCtx=document.getElementById('chart-parts-status');
+    if(pCtx&&typeof Chart!=='undefined'){
+      if(chartParts){chartParts.destroy();chartParts=null;}
+      const {outOfStock=0,lowStock=0,ok=0}=partsStatus||{};
+      chartParts=new Chart(pCtx,{type:'doughnut',data:{labels:['OK','Low Stock','Out of Stock'],datasets:[{data:[ok,lowStock,outOfStock],backgroundColor:['#10b981','#f59e0b','#ef4444'],borderWidth:2}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
+    }
+  }catch(e){console.error('[charts]',e.message);}
+}
+
+// ── LOW-STOCK EMAIL ALERT ────────────────────────────────────────
+async function sendLowStockAlert(){
+  const btn=document.getElementById('dash-alert-btn');
+  try{
+    if(btn){btn.disabled=true;btn.textContent='Sending...';}
+    const r=await fetch(API+'/alerts/low-stock/send',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}' });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Failed');
+    gToast('✉ '+d.message,'success');
+  }catch(e){
+    gToast(e.message.includes('No email provider')?'No email provider configured in Railway environment variables':e.message,'error');
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML='⚠️ Send Low-Stock Alert <span id="dash-low-count" style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 7px;margin-left:4px">...</span>';}
+    setTimeout(loadDashboardCharts,500);
+  }
+}
+
+// ── AUDIT LOG ────────────────────────────────────────────────────
+let auditData=[],auditOffset=0;
+async function loadAuditLog(reset){
+  if(reset===undefined||reset)auditOffset=0,auditData=[];
+  try{
+    const r=await fetch(API+'/audit-log?limit=100&offset='+auditOffset);
+    const d=await r.json();
+    auditData=[...auditData,...(d.rows||[])];
+    auditOffset=auditData.length;
+    const mb=document.getElementById('al-load-more');
+    if(mb)mb.style.display=(auditData.length<(d.total||0))?'inline-flex':'none';
+    renderAuditLog();
+  }catch(e){const b=document.getElementById('al-body');if(b)b.innerHTML='<tr><td colspan="6"><div class="no-results">Could not load audit log.</div></td></tr>';}
+}
+function loadMoreAudit(){loadAuditLog(false);}
+function renderAuditLog(){
+  const q=(document.getElementById('al-search')||{}).value||'';
+  const ql=q.toLowerCase();
+  const rows=auditData.filter(r=>!ql||(r.user_name||'').toLowerCase().includes(ql)||(r.action||'').toLowerCase().includes(ql)||(r.entity||'').toLowerCase().includes(ql)||(r.details||'').toLowerCase().includes(ql));
+  const meta=document.getElementById('al-meta');
+  if(meta)meta.textContent='Showing '+rows.length+' of '+auditData.length+' entries';
+  const AC={CREATE:'#10b981',UPDATE:'#f59e0b',DELETE:'#ef4444',SEND_ALERT:'#6366f1'};
+  const b=document.getElementById('al-body');
+  if(!b)return;
+  b.innerHTML=rows.length?rows.map((r,i)=>{
+    const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
+    const col=AC[r.action]||'#64748b';
+    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.user_name||'—')+'</strong><br><span style="font-size:11px;color:#94a3b8">'+esc(r.user_email||'')+'</span></td><td><span style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">'+(r.action||'—')+'</span></td><td>'+esc(r.entity||'—')+(r.entity_id?' #'+r.entity_id:'')+'</td><td style="font-size:12px;max-width:300px">'+esc(r.details||'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6"><div class="no-results">No audit entries found.</div></td></tr>';
+}
+
+// ── STOCK MOVEMENTS ──────────────────────────────────────────────
+let smovData=[];
+async function loadStockMovements(){
+  try{
+    const r=await fetch(API+'/stock-movements?limit=200');
+    smovData=await r.json();
+    renderStockMovements();
+  }catch(e){const b=document.getElementById('sm2-body');if(b)b.innerHTML='<tr><td colspan="9"><div class="no-results">Could not load stock movements.</div></td></tr>';}
+}
+function renderStockMovements(){
+  const q=((document.getElementById('sm2-search')||{}).value||'').toLowerCase();
+  const rows=(smovData||[]).filter(r=>!q||(r.product_name||'').toLowerCase().includes(q)||(r.reason||'').toLowerCase().includes(q));
+  const meta=document.getElementById('sm2-meta');
+  if(meta)meta.textContent=rows.length+' movements';
+  const b=document.getElementById('sm2-body');
+  if(!b)return;
+  b.innerHTML=rows.length?rows.map((r,i)=>{
+    const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
+    const chg=+r.change_qty||0;
+    const chgHtml=chg>0?'<span style="color:#10b981;font-weight:700">+'+chg+'</span>':'<span style="color:#ef4444;font-weight:700">'+chg+'</span>';
+    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.product_name||'—')+'</strong></td><td style="font-size:12px;color:#64748b">'+esc(r.product_code||'')+'</td><td style="text-align:center">'+(r.prev_qty!=null?r.prev_qty:'—')+'</td><td style="text-align:center">'+chgHtml+'</td><td style="text-align:center;font-weight:700">'+(r.new_qty!=null?r.new_qty:'—')+'</td><td style="font-size:12px">'+esc(r.reason||'—')+'</td><td style="font-size:12px;color:#64748b">'+esc(r.user_name||'System')+'</td></tr>';
+  }).join(''):'<tr><td colspan="9"><div class="no-results">No stock movements yet.</div></td></tr>';
+}
+
+// ── PATCH showPage to lazy-load new sections ─────────────────────
+const _origShowPage=showPage;
+function showPage(id){
+  _origShowPage(id);
+  if(id==='auditlog')loadAuditLog();
+  if(id==='stockmovements')loadStockMovements();
+}
+
 // ════════════════════════════════════════════════════════════════
 // BOOT — runs after DOM is ready
 // ════════════════════════════════════════════════════════════════
@@ -4101,6 +4265,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initApp();
   loadACEvents();
   loadLineConfig();
+  setTimeout(loadDashboardCharts, 1500);
 });
 </script>
 </body>

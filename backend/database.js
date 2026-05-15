@@ -627,6 +627,36 @@ const dbPromise = (async () => {
   }
   console.log('[db] Supplier email patch applied.');
 
+  // ── Audit log table ────────────────────────────────────────────
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id         SERIAL      PRIMARY KEY,
+      user_name  TEXT        NOT NULL DEFAULT 'System',
+      user_email TEXT        NOT NULL DEFAULT '',
+      action     TEXT        NOT NULL DEFAULT '',
+      entity     TEXT        NOT NULL DEFAULT '',
+      entity_id  INTEGER,
+      details    TEXT        NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  // ── Stock movements table ──────────────────────────────────────
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS stock_movements (
+      id           SERIAL      PRIMARY KEY,
+      product_id   INTEGER     NOT NULL,
+      product_name TEXT        NOT NULL,
+      product_code TEXT        NOT NULL DEFAULT '',
+      prev_qty     INTEGER     NOT NULL DEFAULT 0,
+      new_qty      INTEGER     NOT NULL DEFAULT 0,
+      change_qty   INTEGER     NOT NULL DEFAULT 0,
+      reason       TEXT        NOT NULL DEFAULT 'Manual update',
+      user_name    TEXT        NOT NULL DEFAULT 'System',
+      created_at   TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
   console.log('[db] PostgreSQL schema ready.');
   return { db, save: () => {} };
 })();
