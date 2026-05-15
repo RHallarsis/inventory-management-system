@@ -3,7 +3,7 @@ buildCommand = "cd backend && npm install"
 
 [deploy]
 startCommand = "node backend/server.js"
-healthcheckPath = "/"
-healthcheckTimeout = 30
+healthcheckPath = "/health"
+healthcheckTimeout = 60
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3

@@ -23,6 +23,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// ── Health check — responds immediately, before DB init completes ──
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
 // Serve frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
 
@@ -75,4 +78,12 @@ app.get('/', (_req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[server] Running at http://0.0.0.0:${PORT}`);
+});
+
+// ── Global safety net — log errors instead of crashing ──────────
+process.on('unhandledRejection', (reason) => {
+  console.error('[server] Unhandled rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[server] Uncaught exception:', err.message);
 });
