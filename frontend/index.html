@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -1459,7 +1459,7 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
   </div>
   <div class="page-tbl-wrap">
     <table class="page-table">
-      <thead><tr><th>#</th><th>Transmittal No.</th><th>From</th><th>To</th><th>Date</th><th>Items</th><th>Status</th><th>Transferred By</th><th>Actions</th></tr></thead>
+      <thead><tr><th>#</th><th>Transmittal No.</th><th>From</th><th>To</th><th>Date</th><th>Items</th><th>Status</th><th>Turned over By</th><th>Received By</th><th>Witnessed By</th><th>Noted By</th><th>Actions</th></tr></thead>
       <tbody id="trmit-body"></tbody>
     </table>
   </div>
@@ -2332,7 +2332,10 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
         <div class="g-form-group"><label>To Location *</label><input id="trmit-f-to" placeholder="Destination"/></div>
         <div class="g-form-group"><label>Items Count</label><input type="number" id="trmit-f-items" min="0" value="0"/></div>
         <div class="g-form-group"><label>Status</label><select id="trmit-f-status"><option>Pending</option><option>In Progress</option><option>Completed</option><option>Cancelled</option></select></div>
-        <div class="g-form-group"><label>Transferred By</label><input id="trmit-f-by" placeholder="Name"/></div>
+        <div class="g-form-group"><label>Turned over By</label><input id="trmit-f-by" placeholder="Name"/></div>
+        <div class="g-form-group"><label>Received By</label><input id="trmit-f-received-by" placeholder="Name"/></div>
+        <div class="g-form-group"><label>Witnessed By</label><input id="trmit-f-witnessed-by" placeholder="Name"/></div>
+        <div class="g-form-group"><label>Noted By</label><input id="trmit-f-noted-by" placeholder="Name"/></div>
       </div>
     </div>
     <div class="g-modal-foot"><button class="g-btn g-btn-cancel" onclick="closeTrmitModal()">Cancel</button><button class="g-btn g-btn-save" onclick="saveTrmit()">Save</button></div>
@@ -2923,7 +2926,7 @@ async function confirmDeleteSM(){try{await fetch(API+'/spare-parts/'+smDeleteId,
 // ── MACHINE MONITORING ──────────────────────────────────────
 async function loadMM(){
   try{const r=await fetch(API+'/machine-monitoring');mmData=await r.json();renderMM();}
-  catch{document.getElementById('mm-body').innerHTML='<tr><td colspan="9"><div class="no-results">Backend offline.</div></td></tr>';}
+  catch{document.getElementById('mm-body').innerHTML='<tr><td colspan="12"><div class="no-results">Backend offline.</div></td></tr>';}
 }
 function filterMM(area,btn){mmAreaFilter=area;document.querySelectorAll('.log-tab').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderMM();}
 function renderMM(){
@@ -3212,18 +3215,18 @@ function closePullDelModal(){document.getElementById('pull-del-modal').classList
 async function confirmDeletePull(){try{await fetch(API+'/pullout-receipts/'+pullDeleteId,{method:'DELETE'});gToast('Deleted.');closePullDelModal();loadPull();}catch{gToast('Delete failed','error');}}
 
 // ── TRANSMITTAL RECEIPTS ──────────────────────────────────────
-async function loadTrmit(){try{const r=await fetch(API+'/transmittal-receipts');trmitData=await r.json();renderTrmit();}catch{document.getElementById('trmit-body').innerHTML='<tr><td colspan="9"><div class="no-results">Backend offline.</div></td></tr>';}}
+async function loadTrmit(){try{const r=await fetch(API+'/transmittal-receipts');trmitData=await r.json();renderTrmit();}catch{document.getElementById('trmit-body').innerHTML='<tr><td colspan="12"><div class="no-results">Backend offline.</div></td></tr>';}}
 function renderTrmit(){
   const q=(document.getElementById('trmit-search').value||'').toLowerCase();
   const rows=q?trmitData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)):trmitData;
   document.getElementById('trmit-meta').textContent=`Showing ${rows.length} of ${trmitData.length}`;
-  document.getElementById('trmit-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||0}</td><td>${badge(r.status)}</td><td>${r.transferred_by||'—'}</td>
-    <td><button class="page-act-btn btn-edit" onclick="openTrmitModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openTrmitDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="9"><div class="no-results">No transmittal receipts.</div></td></tr>';
+  document.getElementById('trmit-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||0}</td><td>${badge(r.status)}</td><td>${r.turned_over_by||'—'}</td><td>${r.received_by||'—'}</td><td>${r.witnessed_by||'—'}</td><td>${r.noted_by||'—'}</td>
+    <td><button class="page-act-btn btn-edit" onclick="openTrmitModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openTrmitDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="12"><div class="no-results">No transmittal receipts.</div></td></tr>';
 }
-function openTrmitModal(id=null){trmitEditId=id;const r=id?trmitData.find(x=>x.id===id):null;document.getElementById('trmit-modal-title').textContent=id?'Edit Transmittal Receipt':'Add Transmittal Receipt';document.getElementById('trmit-f-no').value=r?r.transfer_no:'';document.getElementById('trmit-f-date').value=r?r.transfer_date:today();document.getElementById('trmit-f-from').value=r?r.source_location:'';document.getElementById('trmit-f-to').value=r?r.destination_location:'';document.getElementById('trmit-f-items').value=r?r.items_count:0;document.getElementById('trmit-f-status').value=r?r.status:'Pending';document.getElementById('trmit-f-by').value=r?r.transferred_by:'';document.getElementById('trmit-modal').classList.add('open');}
+function openTrmitModal(id=null){trmitEditId=id;const r=id?trmitData.find(x=>x.id===id):null;document.getElementById('trmit-modal-title').textContent=id?'Edit Transmittal Receipt':'Add Transmittal Receipt';document.getElementById('trmit-f-no').value=r?r.transfer_no:'';document.getElementById('trmit-f-date').value=r?r.transfer_date:today();document.getElementById('trmit-f-from').value=r?r.source_location:'';document.getElementById('trmit-f-to').value=r?r.destination_location:'';document.getElementById('trmit-f-items').value=r?r.items_count:0;document.getElementById('trmit-f-status').value=r?r.status:'Pending';document.getElementById('trmit-f-by').value=r?r.turned_over_by:'';document.getElementById('trmit-f-received-by').value=r?r.received_by:'';document.getElementById('trmit-f-witnessed-by').value=r?r.witnessed_by:'';document.getElementById('trmit-f-noted-by').value=r?r.noted_by:'';document.getElementById('trmit-modal').classList.add('open');}
 function closeTrmitModal(){document.getElementById('trmit-modal').classList.remove('open');}
 async function saveTrmit(){
-  const body={transfer_no:document.getElementById('trmit-f-no').value.trim(),transfer_date:document.getElementById('trmit-f-date').value,source_location:document.getElementById('trmit-f-from').value.trim(),destination_location:document.getElementById('trmit-f-to').value.trim(),items_count:+document.getElementById('trmit-f-items').value||0,status:document.getElementById('trmit-f-status').value,transferred_by:document.getElementById('trmit-f-by').value.trim()};
+  const body={transfer_no:document.getElementById('trmit-f-no').value.trim(),transfer_date:document.getElementById('trmit-f-date').value,source_location:document.getElementById('trmit-f-from').value.trim(),destination_location:document.getElementById('trmit-f-to').value.trim(),items_count:+document.getElementById('trmit-f-items').value||0,status:document.getElementById('trmit-f-status').value,turned_over_by:document.getElementById('trmit-f-by').value.trim(),received_by:document.getElementById('trmit-f-received-by').value.trim(),witnessed_by:document.getElementById('trmit-f-witnessed-by').value.trim(),noted_by:document.getElementById('trmit-f-noted-by').value.trim()};
   if(!body.transfer_no||!body.source_location||!body.destination_location){gToast('Transmittal No, From, and To are required.','error');return;}
   try{const url=trmitEditId?API+'/transmittal-receipts/'+trmitEditId:API+'/transmittal-receipts';const res=await fetch(url,{method:trmitEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(trmitEditId?'Updated!':'Added!');closeTrmitModal();loadTrmit();}catch(err){gToast(err.message,'error');}
 }

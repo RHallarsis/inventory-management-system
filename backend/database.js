@@ -209,7 +209,10 @@ const dbPromise = (async () => {
       destination_location TEXT        NOT NULL DEFAULT '',
       items_count          INTEGER     NOT NULL DEFAULT 0,
       status               TEXT        NOT NULL DEFAULT 'Pending',
-      transferred_by       TEXT        NOT NULL DEFAULT '',
+      turned_over_by       TEXT        NOT NULL DEFAULT '',
+      received_by          TEXT        NOT NULL DEFAULT '',
+      witnessed_by         TEXT        NOT NULL DEFAULT '',
+      noted_by             TEXT        NOT NULL DEFAULT '',
       created_at           TIMESTAMPTZ DEFAULT NOW(),
       updated_at           TIMESTAMPTZ DEFAULT NOW()
     )
@@ -392,6 +395,17 @@ const dbPromise = (async () => {
     await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS prepared_by TEXT NOT NULL DEFAULT ''`);
     await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS returned_by TEXT NOT NULL DEFAULT ''`);
     await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS witnessed_by TEXT NOT NULL DEFAULT ''`);
+  } catch (_) {}
+
+  // 🔧 Migrate transmittal_receipts: rename transferred_by → turned_over_by, add new columns
+  try {
+    await db.run(`ALTER TABLE transmittal_receipts RENAME COLUMN transferred_by TO turned_over_by`);
+  } catch (_) { /* already renamed or column doesn't exist */ }
+  try {
+    await db.run(`ALTER TABLE transmittal_receipts ADD COLUMN IF NOT EXISTS turned_over_by TEXT NOT NULL DEFAULT ''`);
+    await db.run(`ALTER TABLE transmittal_receipts ADD COLUMN IF NOT EXISTS received_by TEXT NOT NULL DEFAULT ''`);
+    await db.run(`ALTER TABLE transmittal_receipts ADD COLUMN IF NOT EXISTS witnessed_by TEXT NOT NULL DEFAULT ''`);
+    await db.run(`ALTER TABLE transmittal_receipts ADD COLUMN IF NOT EXISTS noted_by TEXT NOT NULL DEFAULT ''`);
   } catch (_) {}
 
   // ── Drop removed CI columns from existing databases ──────────────────────
