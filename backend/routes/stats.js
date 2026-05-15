@@ -9,7 +9,6 @@ router.get('/stats/monthly-purchases', async (req, res) => {
     const { db } = await dbPromise;
     let rows;
     try {
-      // PostgreSQL — all purchase orders grouped by month
       rows = await db.getAll(
         `SELECT TO_CHAR(DATE_TRUNC('month', order_date::date), 'Mon YYYY') AS month,
                 TO_CHAR(DATE_TRUNC('month', order_date::date), 'YYYY-MM')  AS sort_key,
@@ -20,7 +19,6 @@ router.get('/stats/monthly-purchases', async (req, res) => {
          ORDER BY DATE_TRUNC('month', order_date::date) ASC`
       );
     } catch {
-      // SQLite fallback
       rows = await db.getAll(
         `SELECT strftime('%b %Y', order_date) AS month,
                 strftime('%Y-%m', order_date)  AS sort_key,
