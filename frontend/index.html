@@ -4278,4 +4278,10 @@ function renderStockMovements(){
 // ════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
-  l
+  loadACEvents();
+  loadLineConfig();
+  setTimeout(loadDashboardCharts, 1500);
+});
+</script>
+</body>
+</html>
