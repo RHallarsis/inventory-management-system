@@ -4188,60 +4188,57 @@ function renderMonthlyChart(monthly){
     return;
   }
   const data=monthly.map(r=>({label:r.month,val:parseFloat(r.total)||0}));
-  const W=el.clientWidth||800, H=200;
-  const PAD={top:36,right:20,bottom:40,left:70};
-  const cW=W-PAD.left-PAD.right, cH=H-PAD.top-PAD.bottom;
+  // Fixed viewBox — SVG scales to container width without distortion
+  const VW=800,VH=220;
+  const PAD={top:40,right:30,bottom:44,left:76};
+  const cW=VW-PAD.left-PAD.right, cH=VH-PAD.top-PAD.bottom;
   const maxVal=Math.max(...data.map(d=>d.val),1);
-  // Nice Y ticks
+  // Nice Y scale
   const tickCount=4;
-  const rawStep=maxVal/tickCount;
-  const mag=Math.pow(10,Math.floor(Math.log10(rawStep)));
-  const niceStep=Math.ceil(rawStep/mag)*mag;
+  const mag=Math.pow(10,Math.floor(Math.log10(maxVal/tickCount)));
+  const niceStep=Math.ceil((maxVal/tickCount)/mag)*mag;
   const yMax=niceStep*tickCount;
-  const xStep=data.length>1?cW/(data.length-1):cW;
-  const xPos=i=>data.length>1?PAD.left+i*xStep:PAD.left+cW/2;
-  const yPos=v=>PAD.top+cH-(v/yMax)*cH;
-  // Line & area path
-  const pts=data.map((d,i)=>`${xPos(i).toFixed(1)},${yPos(d.val).toFixed(1)}`).join(' ');
-  const linePath='M '+pts.split(' ').join(' L ');
-  const areaPath=`M ${xPos(0).toFixed(1)},${(PAD.top+cH).toFixed(1)} L `+
-    data.map((d,i)=>`${xPos(i).toFixed(1)},${yPos(d.val).toFixed(1)}`).join(' L ')+
-    ` L ${xPos(data.length-1).toFixed(1)},${(PAD.top+cH).toFixed(1)} Z`;
-  // Y axis ticks
+  const n=data.length;
+  const xPos=i=>PAD.left+(n>1?i/(n-1):0.5)*cW;
+  const yPos=v=>PAD.top+cH*(1-v/yMax);
+  // Y grid & labels
   const yTicks=Array.from({length:tickCount+1},(_,i)=>i*niceStep).map(v=>{
-    const y=yPos(v).toFixed(1);
-    return `<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+cW}" y2="${y}" stroke="#f1f5f9" stroke-width="1"/>
-    <text x="${(PAD.left-8).toFixed(1)}" y="${y}" text-anchor="end" dominant-baseline="middle" font-size="10" fill="#94a3b8">₱${(v/1000).toFixed(v>=1000?0:-1)}${v>=1000?'k':''}</text>`;
+    const y=yPos(v);
+    const label=v>=1000?'₱'+(v/1000).toFixed(0)+'k':'₱'+v;
+    return `<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+cW}" y2="${y}" stroke="#f0f3fa" stroke-width="1.2"/>
+<text x="${PAD.left-10}" y="${y}" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#94a3b8" font-family="system-ui">${label}</text>`;
   }).join('');
-  // X labels & dots
-  const maxLabels=Math.min(data.length,12);
-  const labelStep=Math.max(1,Math.floor(data.length/maxLabels));
-  const xLabels=data.map((d,i)=>i%labelStep===0||i===data.length-1?
-    `<text x="${xPos(i).toFixed(1)}" y="${(PAD.top+cH+18).toFixed(1)}" text-anchor="middle" font-size="10" fill="#94a3b8">${d.label}</text>`:''
+  // X labels (limit to avoid crowding)
+  const skip=Math.max(1,Math.ceil(n/10));
+  const xLabels=data.map((d,i)=>(i%skip===0||i===n-1)?
+    `<text x="${xPos(i)}" y="${PAD.top+cH+20}" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="system-ui">${d.label}</text>`:''
   ).join('');
-  const dots=data.map((d,i)=>`
-    <circle cx="${xPos(i).toFixed(1)}" cy="${yPos(d.val).toFixed(1)}" r="4" fill="#6366f1" stroke="white" stroke-width="2"/>
-    <title>₱${Math.round(d.val).toLocaleString()}</title>`
-  ).join('');
-  // Value labels for visible points
-  const valLabels=data.map((d,i)=>i%labelStep===0||i===data.length-1?
-    `<text x="${xPos(i).toFixed(1)}" y="${(yPos(d.val)-12).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#6366f1">₱${Math.round(d.val).toLocaleString()}</text>`:''
-  ).join('');
-  el.innerHTML=`<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
-    <defs>
-      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#6366f1" stop-opacity="0.18"/>
-        <stop offset="100%" stop-color="#6366f1" stop-opacity="0.01"/>
-      </linearGradient>
-    </defs>
-    ${yTicks}
-    <line x1="${PAD.left}" y1="${PAD.top}" x2="${PAD.left}" y2="${PAD.top+cH}" stroke="#e2e8f0" stroke-width="1"/>
-    <path d="${areaPath}" fill="url(#areaGrad)"/>
-    <path d="${linePath}" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    ${xLabels}
-    ${valLabels}
-    ${dots}
-  </svg>`;
+  // Area & line paths
+  const linePoints=data.map((d,i)=>`${xPos(i)},${yPos(d.val)}`);
+  const linePath='M '+linePoints.join(' L ');
+  const areaPath=`M ${xPos(0)},${PAD.top+cH} L ${linePoints.join(' L ')} L ${xPos(n-1)},${PAD.top+cH} Z`;
+  // Dots + value labels (only on skip intervals or endpoints)
+  const dotsAndLabels=data.map((d,i)=>{
+    const cx=xPos(i),cy=yPos(d.val);
+    const showLabel=(i%skip===0||i===n-1);
+    const labelY=cy-14;
+    return `<circle cx="${cx}" cy="${cy}" r="5" fill="#6366f1" stroke="white" stroke-width="2.5"/>
+${showLabel?`<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="11" font-weight="700" fill="#4f46e5" font-family="system-ui">₱${Math.round(d.val).toLocaleString()}</text>`:''}`;
+  }).join('');
+  el.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" width="100%" height="220" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">
+  <defs>
+    <linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  ${yTicks}
+  <line x1="${PAD.left}" y1="${PAD.top}" x2="${PAD.left}" y2="${PAD.top+cH}" stroke="#e2e8f0" stroke-width="1"/>
+  <path d="${areaPath}" fill="url(#lg1)"/>
+  <path d="${linePath}" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  ${xLabels}
+  ${dotsAndLabels}
+</svg>`;
 }
 
 function renderPartsStatusChart(parts){
