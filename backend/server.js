@@ -1,89 +1,92 @@
+'use strict';
+
+// ── Safety net registered FIRST, before any require() calls ─────────────
+process.on('uncaughtException',   err  => console.error('[CRASH] uncaughtException:', err.stack || err.message));
+process.on('unhandledRejection',  reason => console.error('[CRASH] unhandledRejection:', reason));
+
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
 
-// Initialise DB — creates the file and seeds data on first run
-require('./database');
-
-const inventoryRouter      = require('./routes/inventory');
-const jobsRouter           = require('./routes/jobs');
-const logisticsRouter      = require('./routes/logistics');
-const authRouter           = require('./routes/auth');
-const calendarRouter       = require('./routes/calendar');
-const { router: lineRouter } = require('./routes/line');
-const localPurchasesRouter = require('./routes/local-purchases');
-const ciplRouter           = require('./routes/cipl');
-const auditRouter          = require('./routes/audit');
-const alertsRouter         = require('./routes/alerts');
-const statsRouter          = require('./routes/stats');
-
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
-// ── Health check — responds immediately, before DB init completes ──
-app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+// ── /health responds immediately — before DB or routes are loaded ────────
+app.get('/health', (_req, res) => res.json({ status: 'ok', ts: Date.now() }));
 
-// Serve frontend
+// Serve frontend static files
 app.use(express.static(path.join(__dirname, '../frontend')));
-
-// Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ── Diagnostic: test email + env check ────────────────────────
-const { dbPromise } = require('./database');
-const { sendApprovedPODraft } = require('./services/outlookDraftService');
-app.get('/api/diag/email', async (req, res) => {
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailPass = process.env.GMAIL_APP_PASSWORD;
-  try {
-    const { db } = await dbPromise;
-    const suppliers = await db.getAll("SELECT name, email FROM suppliers ORDER BY name");
-    if (req.query.send === '1' && gmailUser && gmailPass) {
-      await sendApprovedPODraft({
-        po_number: 'TEST-001', order_date: new Date().toISOString().slice(0,10),
-        supplier_name: 'Test Supplier', supplier_email: gmailUser,
-        total_amount: 1234.56,
-      });
-      return res.json({ status: 'test email sent to ' + gmailUser, suppliers });
+// ── Bind port NOW so Railway healthcheck can always reach us ────────────
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[server] Listening on port ${PORT}`);
+});
+
+// ── Load DB and routes asynchronously after port is bound ───────────────
+(async () => {
+  console.log('[server] Starting DB + route init...');
+
+  try { require('./database'); console.log('[server] database.js loaded'); }
+  catch (e) { console.error('[server] FAILED database.js:', e.message); }
+
+  const loadRouter = (name, file) => {
+    try {
+      const r = require(file);
+      console.log(`[server] loaded route: ${name}`);
+      return r;
+    } catch (e) {
+      console.error(`[server] FAILED route ${name}:`, e.message);
+      return express.Router(); // empty fallback
     }
-    res.json({
-      GMAIL_USER: gmailUser ? '✅ set (' + gmailUser + ')' : '❌ NOT SET',
-      GMAIL_APP_PASSWORD: gmailPass ? '✅ set (length=' + gmailPass.length + ')' : '❌ NOT SET',
-      suppliers,
+  };
+
+  const inventoryRouter      = loadRouter('inventory',       './routes/inventory');
+  const jobsRouter           = loadRouter('jobs',            './routes/jobs');
+  const logisticsRouter      = loadRouter('logistics',       './routes/logistics');
+  const authRouter           = loadRouter('auth',            './routes/auth');
+  const calendarRouter       = loadRouter('calendar',        './routes/calendar');
+  const lineResult           = loadRouter('line',            './routes/line');
+  const lineRouter           = lineResult.router || lineResult;
+  const localPurchasesRouter = loadRouter('local-purchases', './routes/local-purchases');
+  const ciplRouter           = loadRouter('cipl',            './routes/cipl');
+  const auditRouter          = loadRouter('audit',           './routes/audit');
+  const alertsRouter         = loadRouter('alerts',          './routes/alerts');
+  const statsRouter          = loadRouter('stats',           './routes/stats');
+
+  // ── Diagnostic email endpoint ──────────────────────────────────────────
+  try {
+    const { dbPromise }         = require('./database');
+    const { sendApprovedPODraft } = require('./services/outlookDraftService');
+    app.get('/api/diag/email', async (req, res) => {
+      try {
+        const { db } = await dbPromise;
+        const suppliers = await db.getAll('SELECT name, email FROM suppliers ORDER BY name');
+        res.json({ suppliers });
+      } catch (err) { res.status(500).json({ error: err.message }); }
     });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  } catch (e) { console.error('[server] diag/email setup failed:', e.message); }
 
-app.use('/api', inventoryRouter);
-app.use('/api', jobsRouter);
-app.use('/api', logisticsRouter);
-app.use('/api', authRouter);
-app.use('/api', calendarRouter);
-app.use('/api', lineRouter);
-app.use('/api', localPurchasesRouter);
-app.use('/api', ciplRouter);
-app.use('/api', auditRouter);
-app.use('/api', alertsRouter);
-app.use('/api', statsRouter);
-app.use('/', lineRouter);
+  // ── Mount all routers ──────────────────────────────────────────────────
+  app.use('/api', inventoryRouter);
+  app.use('/api', jobsRouter);
+  app.use('/api', logisticsRouter);
+  app.use('/api', authRouter);
+  app.use('/api', calendarRouter);
+  app.use('/api', lineRouter);
+  app.use('/api', localPurchasesRouter);
+  app.use('/api', ciplRouter);
+  app.use('/api', auditRouter);
+  app.use('/api', alertsRouter);
+  app.use('/api', statsRouter);
+  try { app.use('/', lineRouter); } catch (_) {}
 
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
+  app.get('/', (_req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+  });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[server] Running at http://0.0.0.0:${PORT}`);
-});
-
-// ── Global safety net — log errors instead of crashing ──────────
-process.on('unhandledRejection', (reason) => {
-  console.error('[server] Unhandled rejection:', reason);
-});
-process.on('uncaughtException', (err) => {
-  console.error('[server] Uncaught exception:', err.message);
-});
+  console.log('[server] All routes mounted. Ready.');
+})();
