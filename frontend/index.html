@@ -1056,39 +1056,6 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
     <div class="login-err" id="login-err"></div>
   </div>
 </div>
-<!-- ===== AUDIT LOG ===== -->
-<div id="page-auditlog" class="page-section">
-  <div class="page-hero h-slate"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8zm0-4h5v2H8z"/></svg></div><div><div class="ph-title">Audit Log</div><div class="ph-sub">Complete history of all actions performed in the system by users</div></div></div></div>
-  <div class="page-toolbar">
-    <input class="search-input" id="al-search" placeholder="Filter by user, action or entity..." oninput="renderAuditLog()"/>
-    <button class="page-add-btn" onclick="loadAuditLog()" style="background:#6366f1">&#8635; Refresh</button>
-    <span class="table-meta" id="al-meta"></span>
-  </div>
-  <div class="page-tbl-wrap">
-    <table class="page-table">
-      <thead><tr><th>#</th><th>Date &amp; Time</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
-      <tbody id="al-body"></tbody>
-    </table>
-  </div>
-  <div style="text-align:center;margin-top:12px">
-    <button class="page-add-btn" id="al-load-more" onclick="loadMoreAudit()" style="background:#64748b;display:none">Load More</button>
-  </div>
-</div>
-<!-- ===== STOCK MOVEMENTS ===== -->
-<div id="page-stockmovements" class="page-section">
-  <div class="page-hero h-teal"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M7 16l-4-4 4-4 1.41 1.41L6.83 11H21v2H6.83l1.58 1.59L7 16zm10-8l4 4-4 4-1.41-1.41L17.17 13H3v-2h14.17l-1.58-1.59L17 8z"/></svg></div><div><div class="ph-title">Stock Movements</div><div class="ph-sub">Track every inventory quantity change — additions, deductions &amp; adjustments</div></div></div></div>
-  <div class="page-toolbar">
-    <input class="search-input" id="sm2-search" placeholder="Filter by part name or reason..." oninput="renderStockMovements()"/>
-    <button class="page-add-btn" onclick="loadStockMovements()" style="background:#0d9488">&#8635; Refresh</button>
-    <span class="table-meta" id="sm2-meta"></span>
-  </div>
-  <div class="page-tbl-wrap">
-    <table class="page-table">
-      <thead><tr><th>#</th><th>Date &amp; Time</th><th>Product</th><th>Code</th><th>Prev Qty</th><th>Change</th><th>New Qty</th><th>Reason</th><th>By</th></tr></thead>
-      <tbody id="sm2-body"></tbody>
-    </table>
-  </div>
-</div>
 <!-- TOAST -->
 <div class="toast-container" id="toast-container"></div>
 <!-- SIDEBAR -->
@@ -1952,6 +1919,39 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
         <tbody id="acs-body"><tr><td colspan="9" class="ac-sum-empty">No tasks yet.</td></tr></tbody>
       </table>
     </div>
+  </div>
+</div>
+<!-- ===== AUDIT LOG ===== -->
+<div id="page-auditlog" class="page-section">
+  <div class="page-hero h-slate"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8zm0-4h5v2H8z"/></svg></div><div><div class="ph-title">Audit Log</div><div class="ph-sub">Complete history of all actions performed in the system by users</div></div></div></div>
+  <div class="page-toolbar">
+    <input class="search-input" id="al-search" placeholder="Filter by user, action or entity..." oninput="renderAuditLog()"/>
+    <button class="page-add-btn" onclick="loadAuditLog()" style="background:#6366f1">&#8635; Refresh</button>
+    <span class="table-meta" id="al-meta"></span>
+  </div>
+  <div class="page-tbl-wrap">
+    <table class="page-table">
+      <thead><tr><th>#</th><th>Date &amp; Time</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
+      <tbody id="al-body"></tbody>
+    </table>
+  </div>
+  <div style="text-align:center;margin-top:12px">
+    <button class="page-add-btn" id="al-load-more" onclick="loadMoreAudit()" style="background:#64748b;display:none">Load More</button>
+  </div>
+</div>
+<!-- ===== STOCK MOVEMENTS ===== -->
+<div id="page-stockmovements" class="page-section">
+  <div class="page-hero h-teal"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M7 16l-4-4 4-4 1.41 1.41L6.83 11H21v2H6.83l1.58 1.59L7 16zm10-8l4 4-4 4-1.41-1.41L17.17 13H3v-2h14.17l-1.58-1.59L17 8z"/></svg></div><div><div class="ph-title">Stock Movements</div><div class="ph-sub">Track every inventory quantity change — additions, deductions &amp; adjustments</div></div></div></div>
+  <div class="page-toolbar">
+    <input class="search-input" id="sm2-search" placeholder="Filter by part name or reason..." oninput="renderStockMovements()"/>
+    <button class="page-add-btn" onclick="loadStockMovements()" style="background:#0d9488">&#8635; Refresh</button>
+    <span class="table-meta" id="sm2-meta"></span>
+  </div>
+  <div class="page-tbl-wrap">
+    <table class="page-table">
+      <thead><tr><th>#</th><th>Date &amp; Time</th><th>Product</th><th>Code</th><th>Prev Qty</th><th>Change</th><th>New Qty</th><th>Reason</th><th>By</th></tr></thead>
+      <tbody id="sm2-body"></tbody>
+    </table>
   </div>
 </div>
 <!-- ===== SETTINGS ===== -->
