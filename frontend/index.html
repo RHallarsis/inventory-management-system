@@ -1429,7 +1429,7 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
   </div>
   <div class="page-tbl-wrap">
     <table class="page-table">
-      <thead><tr><th>#</th><th>Transfer No.</th><th>From</th><th>To</th><th>Date</th><th>Items</th><th>Status</th><th>Transferred By</th><th>Actions</th></tr></thead>
+      <thead><tr><th>#</th><th>Transfer No.</th><th>From</th><th>To</th><th>Date</th><th>Items</th><th>Status</th><th>Transferred By</th><th>File</th><th>Actions</th></tr></thead>
       <tbody id="st-body"></tbody>
     </table>
   </div>
@@ -2281,6 +2281,7 @@ body.staff-mode #page-logistics .btn-del { display:inline-flex !important; }
         <div class="g-form-group"><label>Status</label><select id="st-f-status"><option>Pending</option><option>In Progress</option><option>Completed</option><option>Cancelled</option></select></div>
         <div class="g-form-group"><label>Transferred By</label><input id="st-f-by" placeholder="Name"/></div>
       </div>
+      <div class="g-form-group"><label>Attach File</label><input type="file" id="st-f-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg"/><div id="st-cur-file" style="font-size:11px;color:var(--text-2);margin-top:4px"></div></div>
     </div>
     <div class="g-modal-foot"><button class="g-btn g-btn-cancel" onclick="closeSTModal()">Cancel</button><button class="g-btn g-btn-save" onclick="saveST()">Save</button></div>
   </div>
@@ -3177,20 +3178,20 @@ function closeGRDelModal(){document.getElementById('gr-del-modal').classList.rem
 async function confirmDeleteGR(){try{await fetch(API+'/goods-received/'+grDeleteId,{method:'DELETE'});gToast('Deleted.');closeGRDelModal();loadGR();}catch{gToast('Delete failed','error');}}
 
 // ── STOCK TRANSFERS ─────────────────────────────────────────
-async function loadST(){try{const r=await fetch(API+'/stock-transfers');stData=await r.json();renderST();}catch{document.getElementById('st-body').innerHTML='<tr><td colspan="9"><div class="no-results">Backend offline.</div></td></tr>';}}
+async function loadST(){try{const r=await fetch(API+'/stock-transfers');stData=await r.json();renderST();}catch{document.getElementById('st-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
 function renderST(){
   const q=(document.getElementById('st-search').value||'').toLowerCase();
   const rows=q?stData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)):stData;
   document.getElementById('st-meta').textContent=`Showing ${rows.length} of ${stData.length}`;
-  document.getElementById('st-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||0}</td><td>${badge(r.status)}</td><td>${r.transferred_by||'—'}</td>
-    <td><button class="page-act-btn btn-edit" onclick="openSTModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSTDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="9"><div class="no-results">No transfers.</div></td></tr>';
+  document.getElementById('st-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||0}</td><td>${badge(r.status)}</td><td>${r.transferred_by||'—'}</td><td>${fileLink(r)}</td>
+    <td><button class="page-act-btn btn-edit" onclick="openSTModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSTDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="10"><div class="no-results">No transfers.</div></td></tr>';
 }
-function openSTModal(id=null){stEditId=id;const r=id?stData.find(x=>x.id===id):null;document.getElementById('st-modal-title').textContent=id?'Edit Transfer':'Add Stock Transfer';document.getElementById('st-f-no').value=r?r.transfer_no:'';document.getElementById('st-f-date').value=r?r.transfer_date:today();document.getElementById('st-f-from').value=r?r.source_location:'';document.getElementById('st-f-to').value=r?r.destination_location:'';document.getElementById('st-f-items').value=r?r.items_count:0;document.getElementById('st-f-status').value=r?r.status:'Pending';document.getElementById('st-f-by').value=r?r.transferred_by:'';document.getElementById('st-modal').classList.add('open');}
+function openSTModal(id=null){stEditId=id;const r=id?stData.find(x=>x.id===id):null;document.getElementById('st-modal-title').textContent=id?'Edit Transfer':'Add Delivery Receipt';document.getElementById('st-f-no').value=r?r.transfer_no:'';document.getElementById('st-f-date').value=r?r.transfer_date:today();document.getElementById('st-f-from').value=r?r.source_location:'';document.getElementById('st-f-to').value=r?r.destination_location:'';document.getElementById('st-f-items').value=r?r.items_count:0;document.getElementById('st-f-status').value=r?r.status:'Pending';document.getElementById('st-f-by').value=r?r.transferred_by:'';document.getElementById('st-f-file').value='';document.getElementById('st-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('st-modal').classList.add('open');}
 function closeSTModal(){document.getElementById('st-modal').classList.remove('open');}
 async function saveST(){
-  const body={transfer_no:document.getElementById('st-f-no').value.trim(),transfer_date:document.getElementById('st-f-date').value,source_location:document.getElementById('st-f-from').value.trim(),destination_location:document.getElementById('st-f-to').value.trim(),items_count:+document.getElementById('st-f-items').value||0,status:document.getElementById('st-f-status').value,transferred_by:document.getElementById('st-f-by').value.trim()};
-  if(!body.transfer_no||!body.source_location||!body.destination_location){gToast('Transfer No, From, and To are required.','error');return;}
-  try{const url=stEditId?API+'/stock-transfers/'+stEditId:API+'/stock-transfers';const res=await fetch(url,{method:stEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(stEditId?'Updated!':'Added!');closeSTModal();loadST();}catch(err){gToast(err.message,'error');}
+  const fd=new FormData();fd.append('transfer_no',document.getElementById('st-f-no').value.trim());fd.append('transfer_date',document.getElementById('st-f-date').value);fd.append('source_location',document.getElementById('st-f-from').value.trim());fd.append('destination_location',document.getElementById('st-f-to').value.trim());fd.append('items_count',document.getElementById('st-f-items').value||0);fd.append('status',document.getElementById('st-f-status').value);fd.append('transferred_by',document.getElementById('st-f-by').value.trim());const fi=document.getElementById('st-f-file');if(fi.files[0])fd.append('file',fi.files[0]);
+  if(!fd.get('transfer_no')||!fd.get('source_location')||!fd.get('destination_location')){gToast('Transfer No, From, and To are required.','error');return;}
+  try{const url=stEditId?API+'/stock-transfers/'+stEditId:API+'/stock-transfers';const res=await fetch(url,{method:stEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(stEditId?'Updated!':'Added!');closeSTModal();loadST();}catch(err){gToast(err.message,'error');}
 }
 function openSTDelModal(id,name){stDeleteId=id;document.getElementById('st-del-name').textContent=name;document.getElementById('st-del-modal').classList.add('open');}
 function closeSTDelModal(){document.getElementById('st-del-modal').classList.remove('open');}

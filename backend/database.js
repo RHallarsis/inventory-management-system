@@ -408,6 +408,12 @@ const dbPromise = (async () => {
     await db.run(`ALTER TABLE transmittal_receipts ADD COLUMN IF NOT EXISTS noted_by TEXT NOT NULL DEFAULT ''`);
   } catch (_) {}
 
+  // ── Add file upload columns to stock_transfers (Delivery Receipts) ──────
+  try {
+    await db.run(`ALTER TABLE stock_transfers ADD COLUMN IF NOT EXISTS file_name TEXT NOT NULL DEFAULT ''`);
+    await db.run(`ALTER TABLE stock_transfers ADD COLUMN IF NOT EXISTS file_path TEXT NOT NULL DEFAULT ''`);
+  } catch (_) {}
+
   // ── Add file upload columns to pullout & transmittal receipts ───────────
   try {
     await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS file_name TEXT NOT NULL DEFAULT ''`);

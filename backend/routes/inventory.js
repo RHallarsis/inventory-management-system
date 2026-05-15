@@ -685,6 +685,15 @@ router.delete('/goods-received/:id', async (req, res) => {
 // STOCK TRANSFERS CRUD
 // ════════════════════════════════════════════════════════════════
 
+// ── Multer setup for Delivery Receipts (stock_transfers) ─────────
+const ST_UPLOAD_DIR = path.join(__dirname, '../uploads/stock-transfers');
+if (!fs.existsSync(ST_UPLOAD_DIR)) fs.mkdirSync(ST_UPLOAD_DIR, { recursive: true });
+const stStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, ST_UPLOAD_DIR),
+  filename:    (_req, file, cb) => { const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_'); cb(null, `${Date.now()}-${safe}`); }
+});
+const stUpload = multer({ storage: stStorage, limits: { fileSize: 20 * 1024 * 1024 } });
+
 router.get('/stock-transfers', async (_req, res) => {
   try {
     const { db } = await dbPromise;
@@ -692,18 +701,21 @@ router.get('/stock-transfers', async (_req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/stock-transfers', async (req, res) => {
+router.post('/stock-transfers', stUpload.single('file'), async (req, res) => {
   const { transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by } = req.body;
   if (!transfer_no || !source_location || !destination_location) {
     return res.status(400).json({ error: 'transfer_no, source_location, and destination_location are required' });
   }
   try {
     const { db } = await dbPromise;
+    const file_name = req.file ? req.file.originalname : '';
+    const file_path = req.file ? '/uploads/stock-transfers/' + req.file.filename : '';
     const id = await db.insert(
-      'INSERT INTO stock_transfers (transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by) VALUES (?,?,?,?,?,?,?)',
+      'INSERT INTO stock_transfers (transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by, file_name, file_path) VALUES (?,?,?,?,?,?,?,?,?)',
       [transfer_no.trim(), transfer_date || new Date().toISOString().split('T')[0],
        source_location.trim(), destination_location.trim(),
-       +items_count || 0, status || 'Pending', (transferred_by || '').trim()]
+       +items_count || 0, status || 'Pending', (transferred_by || '').trim(),
+       file_name, file_path]
     );
     res.status(201).json(await db.getOne('SELECT * FROM stock_transfers WHERE id = ?', [id]));
   } catch (err) {
@@ -712,18 +724,25 @@ router.post('/stock-transfers', async (req, res) => {
   }
 });
 
-router.put('/stock-transfers/:id', async (req, res) => {
+router.put('/stock-transfers/:id', stUpload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM stock_transfers WHERE id = ?', [+req.params.id]);
     if (!ex) return res.status(404).json({ error: 'Stock transfer not found' });
     const { transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by } = req.body;
+    let file_name = ex.file_name || '';
+    let file_path = ex.file_path || '';
+    if (req.file) {
+      if (ex.file_name) { try { fs.unlinkSync(path.join(ST_UPLOAD_DIR, ex.file_name)); } catch {} }
+      file_name = req.file.originalname;
+      file_path = '/uploads/stock-transfers/' + req.file.filename;
+    }
     await db.run(
-      `UPDATE stock_transfers SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_count=?, status=?, transferred_by=?, updated_at=NOW() WHERE id=?`,
+      `UPDATE stock_transfers SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_count=?, status=?, transferred_by=?, file_name=?, file_path=?, updated_at=NOW() WHERE id=?`,
       [(transfer_no ?? ex.transfer_no).trim(), transfer_date ?? ex.transfer_date,
        (source_location ?? ex.source_location).trim(), (destination_location ?? ex.destination_location).trim(),
        items_count != null ? +items_count : ex.items_count, status ?? ex.status,
-       (transferred_by ?? ex.transferred_by).trim(), +req.params.id]
+       (transferred_by ?? ex.transferred_by).trim(), file_name, file_path, +req.params.id]
     );
     res.json(await db.getOne('SELECT * FROM stock_transfers WHERE id = ?', [+req.params.id]));
   } catch (err) { res.status(500).json({ error: err.message }); }
