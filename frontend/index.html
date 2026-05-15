@@ -2668,7 +2668,7 @@ function applyRoleAccess(role) {
 }
 
 // ── PAGE SWITCHING ───────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Delivery Receipts',pulloutreceipts:'Pullout Receipts',transmittalreceipts:'Transmittal Receipts',cipl:'CI / PL — Commercial Invoice & Packing List',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',settings:'Settings'};
+const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Delivery Receipts',pulloutreceipts:'Pullout Receipts',transmittalreceipts:'Transmittal Receipts',cipl:'CI / PL — Commercial Invoice & Packing List',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',auditlog:'Audit Log',stockmovements:'Stock Movements',settings:'Settings'};
 function showPage(page){
   // ── Role guard: Staff cannot visit admin-only pages ──────────
   if(currentUser && currentUser.role==='Staff' && STAFF_BLOCKED_PAGES.includes(page)){
@@ -2701,6 +2701,8 @@ function showPage(page){
   else if(page==='logistics')loadLogistics();
   else if(page==='localpurchase')loadLP();
   else if(page==='activitycalendar'){acYear=new Date().getFullYear();acMonth=new Date().getMonth();acSelectedDate=null;renderACCalendar();loadACEvents();}
+  else if(page==='auditlog')loadAuditLog();
+  else if(page==='stockmovements')loadStockMovements();
 }
 
 // ── INIT ─────────────────────────────────────────────────────
@@ -4262,3 +4264,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+                                                                                        
