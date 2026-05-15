@@ -299,6 +299,10 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 @media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.charts-row{grid-template-columns:1fr;}}
 @media(max-width:640px){.sidebar{display:none;}}
 /* ── STAFF / VIEW-ONLY MODE ─────────────────────────────────────────────── */
+/* Hide Audit Log and Stock Movements nav items for staff */
+body.staff-mode .nav-item[data-page="auditlog"],
+body.staff-mode .nav-item[data-page="stockmovements"] { display:none !important; }
+
 /* Hide every add / edit / delete control when staff is logged in */
 body.staff-mode .page-add-btn,
 body.staff-mode .page-act-btn,
@@ -4274,11 +4278,4 @@ function renderStockMovements(){
 // ════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
-  loadACEvents();
-  loadLineConfig();
-  setTimeout(loadDashboardCharts, 1500);
-});
-</script>
-</body>
-</html>
-                                                                                        
+  l
