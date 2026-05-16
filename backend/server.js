@@ -26,12 +26,18 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`[server] Listening on port ${PORT}`);
 });
 
+// ── Collect route-load errors for diagnostics ────────────────────────────
+const routeErrors = {};
+
 // ── Load DB and routes asynchronously after port is bound ───────────────
 (async () => {
   console.log('[server] Starting DB + route init...');
+  console.log('[server] NODE_PATH:', process.env.NODE_PATH || '(not set)');
+  console.log('[server] __dirname:', __dirname);
+  console.log('[server] DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
 
   try { require('./database'); console.log('[server] database.js loaded'); }
-  catch (e) { console.error('[server] FAILED database.js:', e.message); }
+  catch (e) { console.error('[server] FAILED database.js:', e.message); routeErrors['database'] = e.message; }
 
   const loadRouter = (name, file) => {
     try {
@@ -40,6 +46,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       return r;
     } catch (e) {
       console.error(`[server] FAILED route ${name}:`, e.message);
+      routeErrors[name] = e.message;
       return express.Router(); // empty fallback
     }
   };
@@ -57,19 +64,6 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   const alertsRouter         = loadRouter('alerts',          './routes/alerts');
   const statsRouter          = loadRouter('stats',           './routes/stats');
 
-  // ── Diagnostic email endpoint ──────────────────────────────────────────
-  try {
-    const { dbPromise }         = require('./database');
-    const { sendApprovedPODraft } = require('./services/outlookDraftService');
-    app.get('/api/diag/email', async (req, res) => {
-      try {
-        const { db } = await dbPromise;
-        const suppliers = await db.getAll('SELECT name, email FROM suppliers ORDER BY name');
-        res.json({ suppliers });
-      } catch (err) { res.status(500).json({ error: err.message }); }
-    });
-  } catch (e) { console.error('[server] diag/email setup failed:', e.message); }
-
   // ── Mount all routers ──────────────────────────────────────────────────
   app.use('/api', inventoryRouter);
   app.use('/api', jobsRouter);
@@ -84,9 +78,21 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   app.use('/api', statsRouter);
   try { app.use('/', lineRouter); } catch (_) {}
 
+  // ── Diagnostics endpoint — shows exactly what failed to load ─────────
+  app.get('/api/diag', (_req, res) => {
+    res.json({
+      routeErrors,
+      loadedOk: Object.keys(routeErrors).length === 0,
+      databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
+      nodeVersion: process.version,
+      dirname: __dirname,
+      uptime: Math.round(process.uptime()),
+    });
+  });
+
   app.get('/', (_req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
   });
 
-  console.log('[server] All routes mounted. Ready.');
+  console.log('[server] All routes mounted. Ready. Errors:', JSON.stringify(routeErrors));
 })();
