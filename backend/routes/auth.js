@@ -129,4 +129,32 @@ router.delete('/users/:id', async (req, res) => {
   }
 });
 
-// POST /api/auth/change-
+// POST /api/auth/change-password
+router.post('/auth/change-password', async (req, res) => {
+  try {
+    const { email, currentPassword, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return res.status(400).json({ error: 'Email and new password are required.' });
+    }
+    if (newPassword.trim().length < 4) {
+      return res.status(400).json({ error: 'New password must be at least 4 characters.' });
+    }
+    const { db } = await dbPromise;
+    const user = await db.getOne('SELECT id, password FROM users WHERE LOWER(email)=LOWER(?)', [email.trim()]);
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with that email address.' });
+    }
+    // If currentPassword is supplied (Settings page flow), verify it first
+    if (currentPassword !== undefined && currentPassword !== null && currentPassword !== '') {
+      if (user.password !== currentPassword) {
+        return res.status(401).json({ error: 'Current password is incorrect.' });
+      }
+    }
+    await db.run(`UPDATE users SET password=?,updated_at=NOW() WHERE id=?`, [newPassword.trim(), user.id]);
+    res.json({ ok: true, message: 'Password updated successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
