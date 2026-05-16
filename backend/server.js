@@ -14,30 +14,44 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// ── /health responds immediately — before DB or routes are loaded ────────
+// ── Diagnostics collected across startup ─────────────────────────────────
+const startupInfo = {
+  databaseUrl:  process.env.DATABASE_URL ? 'SET' : 'NOT SET',
+  nodeVersion:  process.version,
+  dirname:      __dirname,
+  routeErrors:  {},
+  dbError:      null,
+  ready:        false,
+};
+
+// ── Always-available endpoints (registered before anything async) ─────────
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: Date.now() }));
+
+app.get('/api/diag', (_req, res) => res.json(startupInfo));
 
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── Bind port NOW so Railway healthcheck can always reach us ────────────
-const server = app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`[server] Listening on port ${PORT}`);
 });
-
-// ── Collect route-load errors for diagnostics ────────────────────────────
-const routeErrors = {};
 
 // ── Load DB and routes asynchronously after port is bound ───────────────
 (async () => {
   console.log('[server] Starting DB + route init...');
-  console.log('[server] NODE_PATH:', process.env.NODE_PATH || '(not set)');
+  console.log('[server] DATABASE_URL:', startupInfo.databaseUrl);
   console.log('[server] __dirname:', __dirname);
-  console.log('[server] DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+  console.log('[server] node:', process.version);
 
-  try { require('./database'); console.log('[server] database.js loaded'); }
-  catch (e) { console.error('[server] FAILED database.js:', e.message); routeErrors['database'] = e.message; }
+  try {
+    require('./database');
+    console.log('[server] database.js loaded');
+  } catch (e) {
+    console.error('[server] FAILED database.js:', e.message);
+    startupInfo.dbError = e.message;
+  }
 
   const loadRouter = (name, file) => {
     try {
@@ -46,8 +60,8 @@ const routeErrors = {};
       return r;
     } catch (e) {
       console.error(`[server] FAILED route ${name}:`, e.message);
-      routeErrors[name] = e.message;
-      return express.Router(); // empty fallback
+      startupInfo.routeErrors[name] = e.message;
+      return express.Router();
     }
   };
 
@@ -64,7 +78,6 @@ const routeErrors = {};
   const alertsRouter         = loadRouter('alerts',          './routes/alerts');
   const statsRouter          = loadRouter('stats',           './routes/stats');
 
-  // ── Mount all routers ──────────────────────────────────────────────────
   app.use('/api', inventoryRouter);
   app.use('/api', jobsRouter);
   app.use('/api', logisticsRouter);
@@ -78,21 +91,10 @@ const routeErrors = {};
   app.use('/api', statsRouter);
   try { app.use('/', lineRouter); } catch (_) {}
 
-  // ── Diagnostics endpoint — shows exactly what failed to load ─────────
-  app.get('/api/diag', (_req, res) => {
-    res.json({
-      routeErrors,
-      loadedOk: Object.keys(routeErrors).length === 0,
-      databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
-      nodeVersion: process.version,
-      dirname: __dirname,
-      uptime: Math.round(process.uptime()),
-    });
-  });
-
   app.get('/', (_req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
   });
 
-  console.log('[server] All routes mounted. Ready. Errors:', JSON.stringify(routeErrors));
+  startupInfo.ready = true;
+  console.log('[server] All routes mounted. Errors:', JSON.stringify(startupInfo.routeErrors));
 })();
