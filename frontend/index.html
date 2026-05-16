@@ -2643,7 +2643,8 @@ async function doLogin(){
   if(!id||!pw){document.getElementById('login-err').textContent='Please enter username and password.';return;}
   try{
     const r=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:id,password:pw})});
-    const d=await r.json();
+    let d;
+    try{d=await r.json();}catch(_){document.getElementById('login-err').textContent=`Server error (HTTP ${r.status}) — routes may not be loaded.`;return;}
     if(!r.ok){document.getElementById('login-err').textContent=d.error||'Login failed.';return;}
     currentUser=d.user;
     document.getElementById('login-overlay').style.display='none';
@@ -2659,7 +2660,7 @@ async function doLogin(){
     // Admin-only settings
     if(currentUser.role==='Admin'){loadLineConfig();loadUsers();}
     initApp();
-  }catch(e){document.getElementById('login-err').textContent='Cannot connect to server.';}
+  }catch(e){document.getElementById('login-err').textContent='Cannot connect to server. ('+e.message+')';}
 }
 // ── Change Password (from login page) ────────────────────────────────────
 function toggleCPForm(show){
