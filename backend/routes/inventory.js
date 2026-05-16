@@ -3,7 +3,10 @@ const path    = require('path');
 const fs      = require('fs');
 const multer  = require('multer');
 const { dbPromise, calcStatus } = require('../database');
-const { sendApprovedPODraft }   = require('../services/outlookDraftService');
+// Lazy-load email service so a missing/slow module never blocks startup
+let sendApprovedPODraft = async () => {};
+try { ({ sendApprovedPODraft } = require('../services/outlookDraftService')); }
+catch (e) { console.warn('[inventory] outlookDraftService unavailable:', e.message); }
 
 const router = express.Router();
 
