@@ -194,18 +194,18 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .ac-add-btn:hover{background:var(--primary-light);}
 .ac-legend-item{display:flex;align-items:center;gap:9px;margin-bottom:7px;font-size:12px;color:var(--text);}
 .ac-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.ac-task-item{padding:9px 11px;border-radius:9px;background:var(--bg);border:1px solid var(--border);font-size:12px;margin-bottom:8px;position:relative;}
-.ac-task-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;}
-.ac-task-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;}
-.ac-task-title{font-weight:700;color:var(--text);flex:1;line-height:1.3;}
-.ac-task-actions{display:flex;gap:4px;flex-shrink:0;}
-.ac-task-edit,.ac-task-del{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;border:none;cursor:pointer;}
+.ac-task-item{padding:6px 9px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:12px;margin-bottom:5px;position:relative;}
+.ac-task-top{display:flex;align-items:flex-start;gap:6px;margin-bottom:3px;}
+.ac-task-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.ac-task-title{font-weight:700;color:var(--text);flex:1;line-height:1.3;font-size:12px;}
+.ac-task-actions{display:flex;gap:3px;flex-shrink:0;}
+.ac-task-edit,.ac-task-del{font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;border:none;cursor:pointer;}
 .ac-task-edit{background:#eff6ff;color:var(--primary);}
 .ac-task-edit:hover{background:#dbeafe;}
 .ac-task-del{background:#fef2f2;color:var(--danger);}
 .ac-task-del:hover{background:#fee2e2;}
-.ac-task-meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;}
-.ac-task-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;}
+.ac-task-meta{display:flex;gap:4px;flex-wrap:wrap;margin-top:2px;}
+.ac-task-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;}
 .ac-badge-priority-High{background:#fef2f2;color:#ef4444;}
 .ac-badge-priority-Medium{background:#fffbeb;color:#d97706;}
 .ac-badge-priority-Low{background:#f0fdf4;color:#16a34a;}
@@ -213,7 +213,9 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .ac-badge-status-In\ Progress{background:#eff6ff;color:#3b82f6;}
 .ac-badge-status-Done{background:#f0fdf4;color:#16a34a;}
 .ac-badge-status-Cancelled{background:#fef2f2;color:#ef4444;}
-.ac-task-desc{font-size:11px;color:var(--text-2);margin-top:4px;line-height:1.4;}
+.ac-task-desc{font-size:11px;color:var(--text-2);margin-top:3px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ac-task-desc.expanded{display:block;overflow:visible;}
+.ac-task-toggle{font-size:10px;color:var(--primary);cursor:pointer;background:none;border:none;padding:0;margin-top:2px;font-weight:600;}
 .ac-no-events{text-align:center;color:var(--text-2);padding:16px 0;font-size:12px;}
 .ac-color-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
 .ac-color-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .12s;}
@@ -3734,7 +3736,7 @@ function acSelectDay(iso){
         <span class="ac-task-badge" style="background:#f1f5f9;color:#64748b">${t.status}</span>
         ${t.task_end_date&&t.task_end_date!==t.task_date?`<span class="ac-task-badge" style="background:#f0fdf4;color:#16a34a">📅 Until ${t.task_end_date}</span>`:''}
       </div>
-      ${t.description?`<div class="ac-task-desc">${t.description}</div>`:''}
+      ${t.description?`<div class="ac-task-desc" id="ac-desc-${t.id}">${esc(t.description)}</div><button class="ac-task-toggle" onclick="acToggleDesc(${t.id},this)">Show more ▾</button>`:''}
     </div>`;
   }).join('');
   document.getElementById('ac-event-list').innerHTML=holHtml+taskHtml;
@@ -3779,6 +3781,7 @@ function renderACSummary(){
 function acPickColor(el){document.querySelectorAll('.ac-color-swatch').forEach(s=>s.classList.remove('selected'));el.classList.add('selected');acPickedColor=el.dataset.color;}
 function acSetColor(hex){const sw=document.querySelector(`.ac-color-swatch[data-color="${hex}"]`);if(sw)acPickColor(sw);else{acPickedColor=hex;}}
 function acAutoColor(){const cat=document.getElementById('ac-f-category').value;const hex=AC_CAT_COLOR[cat];if(hex)acSetColor(hex);}
+function acToggleDesc(id,btn){const el=document.getElementById('ac-desc-'+id);if(!el)return;const exp=el.classList.toggle('expanded');btn.textContent=exp?'Show less ▴':'Show more ▾';}
 
 // ── Duplicate warning modal ───────────────────────────────────
 let acDupResolve=null;
