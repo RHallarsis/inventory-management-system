@@ -2558,7 +2558,7 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
       <div class="g-form-group"><label>Title <span style="color:var(--danger)">*</span></label><input id="ac-f-title" placeholder="Task title"/></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="g-form-group"><label>Category</label>
-          <select id="ac-f-category">
+          <select id="ac-f-category" onchange="acAutoColor()">
             <option>Work</option><option>Meeting</option><option>Delivery</option>
             <option>Maintenance</option><option>Personal</option><option selected>General</option><option>Pullout</option>
           </select>
@@ -3759,6 +3759,8 @@ function renderACSummary(){
 
 // ── Modal ──────────────────────────────────────────────────────
 function acPickColor(el){document.querySelectorAll('.ac-color-swatch').forEach(s=>s.classList.remove('selected'));el.classList.add('selected');acPickedColor=el.dataset.color;}
+function acSetColor(hex){const sw=document.querySelector(`.ac-color-swatch[data-color="${hex}"]`);if(sw)acPickColor(sw);else{acPickedColor=hex;}}
+function acAutoColor(){const cat=document.getElementById('ac-f-category').value;const hex=AC_CAT_COLOR[cat];if(hex)acSetColor(hex);}
 function openACModal(date,id){
   acEditId=id;
   const r=id?acTasksData.find(t=>t.id===id):null;
@@ -3771,7 +3773,9 @@ function openACModal(date,id){
   document.getElementById('ac-f-desc').value=r?r.description:'';
   document.getElementById('ac-f-time').value=r&&r.task_time?r.task_time:'';
   document.getElementById('ac-f-end-date').value=r&&r.task_end_date?r.task_end_date:'';
-  acPickedColor=r?r.color:'#6366f1';
+  // For new tasks auto-pick colour from category; for edits use the saved colour
+  const initColor = r ? r.color : (AC_CAT_COLOR[r?r.category:'General']||'#6366f1');
+  acPickedColor=initColor;
   document.querySelectorAll('.ac-color-swatch').forEach(s=>{s.classList.toggle('selected',s.dataset.color===acPickedColor);});
   document.getElementById('ac-task-modal').classList.add('open');
 }
