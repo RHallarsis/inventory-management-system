@@ -26,19 +26,19 @@ const diag = {
 app.get('/health',   (_req, res) => res.json({ status: 'ok', ts: Date.now() }));
 app.get('/api/diag', (_req, res) => res.json(diag));
 
-// Serve static assets but never cache the HTML entry point
-app.use(express.static(path.join(__dirname, '../frontend'), { etag: false, lastModified: false }));
-app.use('/uploads',  express.static(path.join(__dirname, 'uploads')));
-
-// Force no-cache on every HTML response so browsers always fetch fresh JS
-app.use((req, res, next) => {
-  if (req.path === '/' || req.path.endsWith('.html')) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+// Serve static files — HTML is never cached so browsers always get fresh JS
+app.use(express.static(path.join(__dirname, '../frontend'), {
+  etag: false,
+  lastModified: false,
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
   }
-  next();
-});
+}));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Bind port FIRST so Railway healthcheck always passes
 app.listen(PORT, '0.0.0.0', () => console.log(`[server] Listening on port ${PORT}`));
