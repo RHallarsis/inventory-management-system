@@ -2590,6 +2590,26 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
     </div>
   </div>
 </div>
+<!-- ===== DUPLICATE TASK WARNING MODAL ===== -->
+<div class="g-modal-overlay" id="ac-dup-modal">
+  <div class="g-modal" style="max-width:420px">
+    <div class="g-modal-head" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-radius:12px 12px 0 0">
+      <span style="display:flex;align-items:center;gap:8px;font-weight:700">
+        <span style="font-size:20px">⚠️</span> Duplicate Task Detected
+      </span>
+      <button class="g-modal-close" onclick="acDupResolve(false)" style="color:#fff;opacity:.8">&#215;</button>
+    </div>
+    <div class="g-modal-body" style="padding:24px 28px;text-align:center">
+      <div style="width:56px;height:56px;background:#fef3c7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px">⚠️</div>
+      <p style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px" id="ac-dup-title"></p>
+      <p style="font-size:13px;color:var(--text-2);line-height:1.6" id="ac-dup-msg"></p>
+    </div>
+    <div class="g-modal-foot" style="justify-content:center;gap:12px;padding:16px 24px">
+      <button class="g-btn g-btn-cancel" onclick="acDupResolve(false)" style="min-width:110px">Cancel</button>
+      <button class="g-btn" onclick="acDupResolve(true)" style="min-width:110px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:700">Save Anyway</button>
+    </div>
+  </div>
+</div>
 <!-- ===== ACTIVITY CALENDAR DELETE MODAL ===== -->
 <div class="g-modal-overlay" id="ac-del-modal">
   <div class="g-modal" style="max-width:400px">
@@ -3759,6 +3779,21 @@ function renderACSummary(){
 function acPickColor(el){document.querySelectorAll('.ac-color-swatch').forEach(s=>s.classList.remove('selected'));el.classList.add('selected');acPickedColor=el.dataset.color;}
 function acSetColor(hex){const sw=document.querySelector(`.ac-color-swatch[data-color="${hex}"]`);if(sw)acPickColor(sw);else{acPickedColor=hex;}}
 function acAutoColor(){const cat=document.getElementById('ac-f-category').value;const hex=AC_CAT_COLOR[cat];if(hex)acSetColor(hex);}
+
+// ── Duplicate warning modal ───────────────────────────────────
+let acDupResolve=null;
+function acShowDupWarning(title,date){
+  document.getElementById('ac-dup-title').textContent=`"${title}" already exists on ${date}`;
+  document.getElementById('ac-dup-msg').textContent='A task with the same title is already scheduled for this date. You can save it anyway or go back and make changes.';
+  document.getElementById('ac-dup-modal').style.display='flex';
+  return new Promise(resolve=>{
+    acDupResolve=function(ok){
+      document.getElementById('ac-dup-modal').style.display='none';
+      acDupResolve=null;
+      resolve(ok);
+    };
+  });
+}
 function openACModal(date,id){
   acEditId=id;
   const r=id?acTasksData.find(t=>t.id===id):null;
@@ -3793,7 +3828,7 @@ async function saveACTask(){
       t.title.trim().toLowerCase()===title.toLowerCase()
     );
     if(dup){
-      const go=confirm(`⚠️ Duplicate task detected!\n\n"${title}" already exists on ${date}.\n\nDo you still want to save it?`);
+      const go=await acShowDupWarning(title,date);
       if(!go)return;
     }
   }
