@@ -3785,6 +3785,19 @@ async function saveACTask(){
   const taskTime=document.getElementById('ac-f-time').value||null;
   const taskEndDate=document.getElementById('ac-f-end-date').value||null;
   const body={task_date:date,task_end_date:taskEndDate,task_time:taskTime,title,description:document.getElementById('ac-f-desc').value.trim(),category:document.getElementById('ac-f-category').value,priority:document.getElementById('ac-f-priority').value,status:document.getElementById('ac-f-status').value,color:acPickedColor};
+
+  // ── Duplicate detection (new tasks only) ─────────────────────
+  if(!acEditId){
+    const dup=acTasksData.find(t=>
+      t.task_date&&t.task_date.slice(0,10)===date&&
+      t.title.trim().toLowerCase()===title.toLowerCase()
+    );
+    if(dup){
+      const go=confirm(`⚠️ Duplicate task detected!\n\n"${title}" already exists on ${date}.\n\nDo you still want to save it?`);
+      if(!go)return;
+    }
+  }
+
   try{
     const url=acEditId?`${API}/calendar/tasks/${acEditId}`:API+'/calendar/tasks';
     const res=await fetch(url,{method:acEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
