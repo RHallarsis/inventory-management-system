@@ -2558,7 +2558,8 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
   <div class="g-modal" style="max-width:500px">
     <div class="g-modal-head"><span id="ac-task-modal-title">Add Task</span><button class="g-modal-close" onclick="closeACModal()">&#215;</button></div>
     <div class="g-modal-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="g-form-group"><label>Date <span style="color:var(--danger)">*</span></label><input type="date" id="ac-f-date"/></div><div class="g-form-group"><label>Time <span style="color:var(--text-2);font-weight:400;font-size:11px">(optional)</span></label><input type="time" id="ac-f-time"/></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="g-form-group"><label>Start Date <span style="color:var(--danger)">*</span></label><input type="date" id="ac-f-date"/></div><div class="g-form-group"><label>Time <span style="color:var(--text-2);font-weight:400;font-size:11px">(optional)</span></label><input type="time" id="ac-f-time"/></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="g-form-group"><label>End Date <span style="color:var(--text-2);font-weight:400;font-size:11px">(optional)</span></label><input type="date" id="ac-f-end-date"/></div><div class="g-form-group" style="display:flex;align-items:flex-end;padding-bottom:2px"><span style="font-size:11px;color:var(--text-2)">Leave blank if single-day task</span></div></div>
       <div class="g-form-group"><label>Title <span style="color:var(--danger)">*</span></label><input id="ac-f-title" placeholder="Task title"/></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="g-form-group"><label>Category</label>
@@ -3612,7 +3613,18 @@ async function loadACEvents(){
     const r=await fetch(API+'/calendar/tasks');
     acTasksData=r.ok?await r.json():[];
     const filtered=acCategoryFilter?acTasksData.filter(t=>t.category===acCategoryFilter):acTasksData;
-    filtered.forEach(t=>{const d=t.task_date.slice(0,10);if(!acEvents[d])acEvents[d]=[];acEvents[d].push(t);});
+    filtered.forEach(t=>{
+    const startIso=t.task_date.slice(0,10);
+    const endIso=t.task_end_date?t.task_end_date.slice(0,10):startIso;
+    let cur=new Date(startIso+'T00:00:00');
+    const endD=new Date(endIso+'T00:00:00');
+    while(cur<=endD){
+      const iso=cur.toISOString().slice(0,10);
+      if(!acEvents[iso])acEvents[iso]=[];
+      acEvents[iso].push(t);
+      cur.setDate(cur.getDate()+1);
+    }
+  });
   }catch{acTasksData=[];}
   // ── Merge Philippine Public Holidays ──────────────────────
   await loadPHHolidays(acYear);
@@ -3706,6 +3718,7 @@ function acSelectDay(iso){
         <span class="ac-task-badge" style="background:${dotColor}22;color:${dotColor}">${t.category}</span>
         <span class="ac-task-badge ${priClass}">${t.priority}</span>
         <span class="ac-task-badge" style="background:#f1f5f9;color:#64748b">${t.status}</span>
+        ${t.task_end_date&&t.task_end_date!==t.task_date?`<span class="ac-task-badge" style="background:#f0fdf4;color:#16a34a">📅 Until ${t.task_end_date}</span>`:''}
       </div>
       ${t.description?`<div class="ac-task-desc">${t.description}</div>`:''}
     </div>`;
@@ -3761,6 +3774,7 @@ function openACModal(date,id){
   document.getElementById('ac-f-status').value=r?r.status:'Pending';
   document.getElementById('ac-f-desc').value=r?r.description:'';
   document.getElementById('ac-f-time').value=r&&r.task_time?r.task_time:'';
+  document.getElementById('ac-f-end-date').value=r&&r.task_end_date?r.task_end_date:'';
   acPickedColor=r?r.color:'#6366f1';
   document.querySelectorAll('.ac-color-swatch').forEach(s=>{s.classList.toggle('selected',s.dataset.color===acPickedColor);});
   document.getElementById('ac-task-modal').classList.add('open');
@@ -3771,7 +3785,8 @@ async function saveACTask(){
   const title=document.getElementById('ac-f-title').value.trim();
   if(!date||!title){gToast('Date and title are required.','error');return;}
   const taskTime=document.getElementById('ac-f-time').value||null;
-  const body={task_date:date,task_time:taskTime,title,description:document.getElementById('ac-f-desc').value.trim(),category:document.getElementById('ac-f-category').value,priority:document.getElementById('ac-f-priority').value,status:document.getElementById('ac-f-status').value,color:acPickedColor};
+  const taskEndDate=document.getElementById('ac-f-end-date').value||null;
+  const body={task_date:date,task_end_date:taskEndDate,task_time:taskTime,title,description:document.getElementById('ac-f-desc').value.trim(),category:document.getElementById('ac-f-category').value,priority:document.getElementById('ac-f-priority').value,status:document.getElementById('ac-f-status').value,color:acPickedColor};
   try{
     const url=acEditId?`${API}/calendar/tasks/${acEditId}`:API+'/calendar/tasks';
     const res=await fetch(url,{method:acEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -4462,12 +4477,4 @@ function renderStockMovements(){
 // ════════════════════════════════════════════════════════════════
 // BOOT — runs after DOM is ready
 // ════════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  initApp();
-  loadACEvents();
-  loadLineConfig();
-  setTimeout(loadDashboardCharts, 1500);
-});
-</script>
-</body>
-</html>
+document.addEventLi
