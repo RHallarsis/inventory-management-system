@@ -4477,4 +4477,12 @@ function renderStockMovements(){
 // ════════════════════════════════════════════════════════════════
 // BOOT — runs after DOM is ready
 // ════════════════════════════════════════════════════════════════
-document.addEventLi
+document.addEventListener('DOMContentLoaded', () => {
+  initApp();
+  loadACEvents();
+  loadLineConfig();
+  setTimeout(loadDashboardCharts, 1500);
+});
+</script>
+</body>
+</html>
