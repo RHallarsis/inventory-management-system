@@ -568,6 +568,16 @@ const dbPromise = (async () => {
     console.log('[db] Seeded default admin users.');
   }
 
+  // ── Ensure Rogen's account always exists (idempotent) ──────────
+  const rogenExists = await db.getOne(
+    "SELECT id FROM users WHERE LOWER(email) = 'rogen.hallarsis29@gmail.com'"
+  );
+  if (!rogenExists) {
+    await db.run("INSERT INTO users (name, email, role, password, status) VALUES (?,?,?,?,?)",
+      ['Rogen Hallarsis', 'rogen.hallarsis29@gmail.com', 'Admin', '063013', 'Active']);
+    console.log('[db] Inserted Rogen Hallarsis admin account.');
+  }
+
   // ── Seed machine_monitoring ────────────────────────────────────
   const mmCnt = await db.scalar('SELECT COUNT(*) FROM machine_monitoring');
   if (!mmCnt) {
