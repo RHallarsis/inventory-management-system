@@ -2626,7 +2626,8 @@ function badge(st){const k=(st||'').toLowerCase().replace(/\s+/g,'');return `<sp
 function fileLink(r){return r&&r.file_name?`<a class="file-link" href="${window.location.origin}${esc(r.file_path)}" target="_blank">📎 ${esc(r.file_name.replace(/^\d+[-_]/,''))}</a>`:'<span style="color:var(--text-2);font-size:11px">—</span>';}
 function ini(name){return (name||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();}
 function avatarColor(s){const colors=['#6366f1','#10b981','#f59e0b','#ec4899','#8b5cf6','#3b82f6'];let h=0;for(let c of s||'')h=(h<<5)-h+c.charCodeAt(0);return colors[Math.abs(h)%colors.length];}
-function today(){return new Date().toISOString().slice(0,10);}
+function localIso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function today(){return localIso(new Date());}
 
 // ── TOAST ────────────────────────────────────────────────────
 function gToast(msg,type='success'){
@@ -3045,7 +3046,7 @@ function smCalc(r){
 function renderSM(){
   // Set generated date
   const gd=document.getElementById('sm-gen-date');
-  if(gd&&!gd.textContent){const d=new Date();gd.textContent=d.toISOString().split('T')[0];}
+  if(gd&&!gd.textContent){gd.textContent=today();}
   // Compute per-row values for KPIs
   const computed=smData.map(r=>({...r,...smCalc(r)}));
   const orderNowCount=computed.filter(r=>r.orderNow).length;
@@ -3619,7 +3620,7 @@ async function loadACEvents(){
     let cur=new Date(startIso+'T00:00:00');
     const endD=new Date(endIso+'T00:00:00');
     while(cur<=endD){
-      const iso=cur.toISOString().slice(0,10);
+      const iso=localIso(cur);
       if(!acEvents[iso])acEvents[iso]=[];
       acEvents[iso].push(t);
       cur.setDate(cur.getDate()+1);
@@ -3954,7 +3955,7 @@ async function deleteUser(id,name){
 let lineConfigured=false;
 async function sendLineNotification(){
   if(!lineConfigured){gToast('LINE not connected. Configure it in Settings.','error');return;}
-  const urgentTasks=acTasksData.filter(t=>{const today=new Date().toISOString().slice(0,10);return t.status!=='Done'&&(t.task_date<=today||t.priority==='High');});
+  const urgentTasks=acTasksData.filter(t=>{return t.status!=='Done'&&(t.task_date<=today()||t.priority==='High');});
   if(!urgentTasks.length){gToast('No urgent tasks to notify.','info');return;}
   try{
     const btn=document.getElementById('line-notif-btn');
@@ -4091,7 +4092,7 @@ function openCIModal(id){
     ['ci-f-number','ci-f-supplier','ci-f-date','ci-f-amount','ci-f-desc','ci-f-remarks'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('ci-f-currency').value='USD';
     document.getElementById('ci-f-status').value='Draft';
-    document.getElementById('ci-f-date').value=new Date().toISOString().slice(0,10);
+    document.getElementById('ci-f-date').value=today();
   }
   document.getElementById('ci-f-file').value='';
   document.getElementById('ci-modal').style.display='flex';
@@ -4216,7 +4217,7 @@ function openPLModal(id){
     document.getElementById('pl-f-bl-details').value='';
     document.getElementById('pl-current-bl-file').textContent='';
     document.getElementById('pl-f-status').value='Draft';
-    document.getElementById('pl-f-date').value=new Date().toISOString().slice(0,10);
+    document.getElementById('pl-f-date').value=today();
     if(ciData.length){const latest=ciData[0];if(latest)document.getElementById('pl-f-ci').value=latest.ci_number;}
   }
   document.getElementById('pl-f-file').value='';
