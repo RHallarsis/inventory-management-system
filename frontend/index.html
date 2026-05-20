@@ -2282,7 +2282,17 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
       <div style="background:#f8f8f8;border-bottom:1px solid #ddd;padding:14px 20px;font-size:0.85rem;display:grid;gap:8px">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-weight:600;color:#666;min-width:75px">To:</span>
-          <input id="po-notify-to" type="email" multiple placeholder="supplier@email.com"
+          <input id="po-notify-to" type="text" placeholder="supplier@email.com"
+            style="flex:1;border:1px solid #ccc;border-radius:6px;padding:6px 10px;font-size:0.85rem;outline:none"/>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600;color:#666;min-width:75px">CC:</span>
+          <input id="po-notify-cc" type="text" placeholder="cc@email.com, another@email.com"
+            style="flex:1;border:1px solid #ccc;border-radius:6px;padding:6px 10px;font-size:0.85rem;outline:none"/>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600;color:#666;min-width:75px">BCC:</span>
+          <input id="po-notify-bcc" type="text" placeholder="bcc@email.com, another@email.com"
             style="flex:1;border:1px solid #ccc;border-radius:6px;padding:6px 10px;font-size:0.85rem;outline:none"/>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -3272,6 +3282,8 @@ async function notifyPOSupplier(id){
     if(!res.ok) throw new Error(data.error||'Preview failed');
     document.getElementById('po-notify-subject').textContent=data.subject;
     document.getElementById('po-notify-to').value=data.supplier_email||'';
+    document.getElementById('po-notify-cc').value='';
+    document.getElementById('po-notify-bcc').value='';
     document.getElementById('po-notify-body').innerHTML=data.body_html;
     // Show attachment badge if PO has a file
     const attRow=document.getElementById('po-notify-attachment-row');
@@ -3295,7 +3307,9 @@ async function sendPONotification(){
     // 30-second client-side timeout so the button doesn't hang forever
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),30000);
-    const res=await fetch(API+'/purchase-orders/'+poNotifyId+'/notify-supplier',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:toEmail}),signal:controller.signal});
+    const ccEmail=document.getElementById('po-notify-cc').value.trim();
+    const bccEmail=document.getElementById('po-notify-bcc').value.trim();
+    const res=await fetch(API+'/purchase-orders/'+poNotifyId+'/notify-supplier',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:toEmail,cc:ccEmail||undefined,bcc:bccEmail||undefined}),signal:controller.signal});
     clearTimeout(timer);
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||'Send failed');
@@ -4520,23 +4534,4 @@ function renderStockMovements(){
     const chg=+r.change_qty||0;
     const chgHtml=chg>0?'<span style="color:#10b981;font-weight:700">+'+chg+'</span>':'<span style="color:#ef4444;font-weight:700">'+chg+'</span>';
     return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.product_name||'—')+'</strong></td><td style="font-size:12px;color:#64748b">'+esc(r.product_code||'')+'</td><td style="text-align:center">'+(r.prev_qty!=null?r.prev_qty:'—')+'</td><td style="text-align:center">'+chgHtml+'</td><td style="text-align:center;font-weight:700">'+(r.new_qty!=null?r.new_qty:'—')+'</td><td style="font-size:12px">'+esc(r.reason||'—')+'</td><td style="font-size:12px;color:#64748b">'+esc(r.user_name||'System')+'</td></tr>';
-  }).join(''):'<tr><td colspan="9"><div class="no-results">No stock movements yet.</div></td></tr>';
-}
-
-// ════════════════════════════════════════════════════════════════
-// BOOT — runs after DOM is ready
-// ════════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  initApp();
-  loadACEvents();
-  loadLineConfig();
-  setTimeout(loadDashboardCharts, 1500);
-});
-</script>
-<script src="/chart.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script src="/ua.js?v=3"></script>
-</body>
-</html>
+  }).join(''):'<tr><td colspan="9"><div class="no-res

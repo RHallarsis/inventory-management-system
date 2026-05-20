@@ -642,6 +642,8 @@ router.post('/purchase-orders/:id/notify-supplier', async (req, res) => {
       }
       console.log(`[PO Notify] file_path="${po.file_path}" resolved="${attachmentPath || 'NOT FOUND'}"`);
     }
+    const ccRaw  = (req.body?.cc  || '').trim();
+    const bccRaw = (req.body?.bcc || '').trim();
     await sendApprovedPODraft({
       po_number:       po.po_number,
       order_date:      po.order_date,
@@ -650,6 +652,8 @@ router.post('/purchase-orders/:id/notify-supplier', async (req, res) => {
       total_amount:    po.total_amount,
       attachment_path: attachmentPath,
       attachment_name: po.file_name || null,
+      cc:              ccRaw  || null,
+      bcc:             bccRaw || null,
     });
     res.json({ success: true, message: `Notification sent to ${recipientEmail}` });
   } catch (err) {
@@ -1026,9 +1030,4 @@ router.delete('/machine-monitoring/:id', async (req, res) => {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM machine_monitoring WHERE id = ?', [+req.params.id]);
     if (!ex) return res.status(404).json({ error: 'Record not found' });
-    await db.run('DELETE FROM machine_monitoring WHERE id = ?', [+req.params.id]);
-    res.status(204).end();
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-module.exports = router;
+    await db.run('DELETE FROM 

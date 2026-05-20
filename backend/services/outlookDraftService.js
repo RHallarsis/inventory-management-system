@@ -118,18 +118,18 @@ async function sendApprovedPODraft(po) {
     htmlContent: buildEmailBody(po),
   };
 
+  // Add CC recipients if provided (comma-separated list)
+  if (po.cc) {
+    const ccList = po.cc.split(',').map(e => ({ email: e.trim() })).filter(e => e.email);
+    if (ccList.length) payload.cc = ccList;
+  }
+  // Add BCC recipients if provided (comma-separated list)
+  if (po.bcc) {
+    const bccList = po.bcc.split(',').map(e => ({ email: e.trim() })).filter(e => e.email);
+    if (bccList.length) payload.bcc = bccList;
+  }
+
   // Attach the PO file if one was found on disk
   if (po.attachment_path && po.attachment_name && fs.existsSync(po.attachment_path)) {
     const cleanName = po.attachment_name.replace(/^\d+[-_]/, '');
-    const content   = fs.readFileSync(po.attachment_path).toString('base64');
-    payload.attachment = [{ name: cleanName, content }];
-    console.log(`[EmailService] Attaching file: ${cleanName}`);
-  }
-
-  console.log(`[EmailService] Sending via Brevo: PO ${po.po_number} → ${po.supplier_email}`);
-  const result = await brevoSend(payload);
-  console.log(`[EmailService] Email sent. Message ID: ${result.messageId}`);
-  return result;
-}
-
-module.exports = { sendApprovedPODraft };
+    const content   = fs.readFileSync(po.attachment_
