@@ -24,7 +24,11 @@ const diag = {
 };
 
 app.get('/health',   (_req, res) => res.json({ status: 'ok', ts: Date.now() }));
-app.get('/api/diag', (_req, res) => res.json(diag));
+app.get('/api/diag', (_req, res) => res.json({
+  ...diag,
+  BREVO_API_KEY: process.env.BREVO_API_KEY ? `✅ set (length=${process.env.BREVO_API_KEY.length})` : '❌ NOT SET',
+  GMAIL_USER:    process.env.GMAIL_USER    ? `✅ set (${process.env.GMAIL_USER})`                  : '❌ NOT SET',
+}));
 
 // Serve static files — HTML is never cached so browsers always get fresh JS
 app.use(express.static(path.join(__dirname, '../frontend'), {
