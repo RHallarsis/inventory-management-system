@@ -4534,4 +4534,23 @@ function renderStockMovements(){
     const chg=+r.change_qty||0;
     const chgHtml=chg>0?'<span style="color:#10b981;font-weight:700">+'+chg+'</span>':'<span style="color:#ef4444;font-weight:700">'+chg+'</span>';
     return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.product_name||'—')+'</strong></td><td style="font-size:12px;color:#64748b">'+esc(r.product_code||'')+'</td><td style="text-align:center">'+(r.prev_qty!=null?r.prev_qty:'—')+'</td><td style="text-align:center">'+chgHtml+'</td><td style="text-align:center;font-weight:700">'+(r.new_qty!=null?r.new_qty:'—')+'</td><td style="font-size:12px">'+esc(r.reason||'—')+'</td><td style="font-size:12px;color:#64748b">'+esc(r.user_name||'System')+'</td></tr>';
-  }).join(''):'<tr><td colspan="9"><div class="no-res
+  }).join(''):'<tr><td colspan="9"><div class="no-results">No stock movements yet.</div></td></tr>';
+}
+
+// ╔═══════════════════════════════════════════════════════════════
+// BOOT — runs after DOM is ready
+// ╚═══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initApp();
+  loadACEvents();
+  loadLineConfig();
+  setTimeout(loadDashboardCharts, 1500);
+});
+</script>
+<script src="/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="/ua.js?v=3"></script>
+</body>
+</html>
