@@ -132,4 +132,17 @@ async function sendApprovedPODraft(po) {
   // Attach the PO file if one was found on disk
   if (po.attachment_path && po.attachment_name && fs.existsSync(po.attachment_path)) {
     const cleanName = po.attachment_name.replace(/^\d+[-_]/, '');
-    const content   = fs.readFileSync(po.attachment_
+    const content   = fs.readFileSync(po.attachment_path).toString('base64');
+    payload.attachment = [{ name: cleanName, content }];
+    console.log(`[EmailService] Attaching file: ${cleanName}`);
+  }
+
+  console.log(`[EmailService] Sending via Brevo: PO ${po.po_number} → ${po.supplier_email}`);
+  console.log(`[EmailService] CC:`, JSON.stringify(payload.cc || null));
+  console.log(`[EmailService] BCC:`, JSON.stringify(payload.bcc || null));
+  const result = await brevoSend(payload);
+  console.log(`[EmailService] Email sent. Message ID: ${result.messageId}`);
+  return result;
+}
+
+module.exports = { sendApprovedPODraft };

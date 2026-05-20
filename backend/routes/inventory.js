@@ -644,6 +644,7 @@ router.post('/purchase-orders/:id/notify-supplier', async (req, res) => {
     }
     const ccRaw  = (req.body?.cc  || '').trim();
     const bccRaw = (req.body?.bcc || '').trim();
+    console.log(`[PO Notify] to="${req.body?.to}" cc="${ccRaw}" bcc="${bccRaw}"`);
     await sendApprovedPODraft({
       po_number:       po.po_number,
       order_date:      po.order_date,
