@@ -94,11 +94,10 @@ app.listen(PORT, '0.0.0.0', () => console.log(`[server] Listening on port ${PORT
     try { app.use('/', lineRouter); } catch (_) {}
 
     app.get('/', (_req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
-
     diag.ready = true;
-    console.log('[server] Ready. Route errors:', JSON.stringify(diag.routeErrors));
+    console.log("[server] Ready. Route errors:", JSON.stringify(diag.routeErrors));
   } catch (err) {
     diag.iifeError = err.stack || err.message;
-    console.error('[server] IIFE CRASHED:', diag.iifeError);
+    console.error("[server] IIFE CRASHED:", diag.iifeError);
   }
 })();
