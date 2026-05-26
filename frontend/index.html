@@ -3373,9 +3373,11 @@ async function confirmDeleteGR(){try{await fetch(API+'/goods-received/'+grDelete
 
 // ── STOCK TRANSFERS ─────────────────────────────────────────
 async function loadST(){try{const r=await fetch(API+'/stock-transfers');stData=await r.json();renderST();}catch{document.getElementById('st-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
+function stSuffix(no){const m=(no||'').match(/-(\d+)$/);return m?+m[1]:0;}
 function renderST(){
   const q=(document.getElementById('st-search').value||'').toLowerCase();
-  const rows=q?stData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)):stData;
+  let rows=q?stData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)):[...stData];
+  rows.sort((a,b)=>stSuffix(a.transfer_no)-stSuffix(b.transfer_no));
   document.getElementById('st-meta').textContent=`Showing ${rows.length} of ${stData.length}`;
   document.getElementById('st-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||0}</td><td>${badge(r.status)}</td><td>${r.transferred_by||'—'}</td><td>${fileLink(r)}</td>
     <td><button class="page-act-btn btn-edit" onclick="openSTModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSTDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="10"><div class="no-results">No transfers.</div></td></tr>';
