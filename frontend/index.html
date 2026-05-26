@@ -1095,9 +1095,10 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
 <script>
 (function(){
   var s=document.getElementById('loading-screen');
-  var l=document.getElementById('login-overlay');
   function dismiss(){
     if(s){s.classList.add('ls-gone');}
+    // look up login-overlay here — it exists in DOM by the time dismiss() fires
+    var l=document.getElementById('login-overlay');
     if(l){l.style.display='flex';}
   }
   setTimeout(dismiss,600);
@@ -4447,4 +4448,4 @@ function openPLModal(id){
       document.getElementById('pl-f-remarks').value=r.remarks||'';
       if(r.file_name)document.getElementById('pl-current-file').innerHTML='Current file: <strong>'+esc(r.file_name.replace(/^\d+[-_]/,''))+'</strong>';
       if(r.bl_awb_file_name)document.getElementById('pl-current-bl-file').innerHTML='Current BL/AWB file: <strong>'+esc(r.bl_awb_file_name.replace(/^\d+[-_]/,''))+'</strong>';
-      else document.getElementBy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+      else document.getElementBy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
