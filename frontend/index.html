@@ -1492,7 +1492,7 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
   </div>
   <div class="page-tbl-wrap">
     <table class="page-table">
-      <thead><tr><th>#</th><th>Pullout No.</th><th>From</th><th>To</th><th>Date</th><th>Items</th><th>Status</th><th>Pulled Out By</th><th>Prepared By</th><th>Returned By</th><th>Witnessed By</th><th>File</th><th>Actions</th></tr></thead>
+      <thead><tr><th>#</th><th>Pullout No.</th><th>From</th><th>To</th><th>Date</th><th>Items Description</th><th>Status</th><th>Pulled Out By</th><th>Prepared By</th><th>Returned By</th><th>Witnessed By</th><th>File</th><th>Actions</th></tr></thead>
       <tbody id="pull-body"></tbody>
     </table>
   </div>
@@ -2411,7 +2411,7 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
         <div class="g-form-group"><label>Date</label><input type="date" id="pull-f-date"/></div>
         <div class="g-form-group"><label>From Location *</label><input id="pull-f-from" placeholder="Source"/></div>
         <div class="g-form-group"><label>To Location *</label><input id="pull-f-to" placeholder="Destination"/></div>
-        <div class="g-form-group"><label>Items Count</label><input type="number" id="pull-f-items" min="0" value="0"/></div>
+        <div class="g-form-group"><label>Items Description</label><input type="text" id="pull-f-items" placeholder="Describe items..."/></div>
         <div class="g-form-group"><label>Status</label><select id="pull-f-status"><option>Pending</option><option>In Progress</option><option>Completed</option><option>Cancelled</option></select></div>
         <div class="g-form-group"><label>Pulled Out By</label><input id="pull-f-pulled-out-by" placeholder="Name"/></div>
         <div class="g-form-group"><label>Prepared By</label><input id="pull-f-prepared-by" placeholder="Name"/></div>
