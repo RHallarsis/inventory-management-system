@@ -1054,9 +1054,9 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
   position:fixed;inset:0;z-index:99999;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   background:var(--sidebar-bg);
-  transition:opacity .6s ease, visibility .6s ease;
+  transition:opacity .2s ease, visibility .2s ease;
 }
-#loading-screen.hide{opacity:0;visibility:hidden;}
+#loading-screen.hide{opacity:0;visibility:hidden;pointer-events:none;}
 .ls-logo{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:40px;animation:lsFadeUp .7s ease both;}
 .ls-logo img{width:88px;height:88px;object-fit:contain;filter:drop-shadow(0 0 18px rgba(129,140,248,.5));}
 .ls-logo h1{color:#fff;font-size:22px;font-weight:800;letter-spacing:-.4px;margin:0;}
@@ -2718,26 +2718,24 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
 // ── Loading screen ──────────────────────────────────────────────────────────
 (function(){
   const bar=document.getElementById('ls-bar');
-  const screen=document.getElementById('ls-screen')||document.getElementById('loading-screen');
+  const screen=document.getElementById('loading-screen');
   const loginOverlay=document.getElementById('login-overlay');
+  if(!bar||!screen||!loginOverlay){return;}
+  // Fill bar fast, then dismiss
   let pct=0;
-  // Animate bar from 0 → 90% quickly, then hold until done
-  const fast=setInterval(()=>{
-    pct+=Math.random()*14+8;
-    if(pct>=90){pct=90;clearInterval(fast);}
+  const iv=setInterval(()=>{
+    pct=Math.min(pct+20,100);
     bar.style.width=pct+'%';
-  },40);
-  // After a short delay, complete bar and show login
+    if(pct>=100){clearInterval(iv);}
+  },30);
+  // Show login after 400ms total
   setTimeout(()=>{
-    clearInterval(fast);
-    bar.style.transition='width .2s ease';
+    clearInterval(iv);
     bar.style.width='100%';
-    setTimeout(()=>{
-      screen.classList.add('hide');
-      loginOverlay.style.display='flex';
-      setTimeout(()=>screen.style.display='none',600);
-    },200);
-  }, 600);
+    screen.classList.add('hide');
+    loginOverlay.style.display='flex';
+    setTimeout(()=>{screen.style.display='none';},220);
+  },400);
 })();
 
 const API=window.location.origin+'/api';
@@ -4457,4 +4455,4 @@ function openPLModal(id){
       document.getElementById('pl-f-remarks').value=r.remarks||'';
       if(r.file_name)document.getElementById('pl-current-file').innerHTML='Current file: <strong>'+esc(r.file_name.replace(/^\d+[-_]/,''))+'</strong>';
       if(r.bl_awb_file_name)document.getElementById('pl-current-bl-file').innerHTML='Current BL/AWB file: <strong>'+esc(r.bl_awb_file_name.replace(/^\d+[-_]/,''))+'</strong>';
-      else document.getElementBy
+      else document.getElementBy                                                                                                                    
