@@ -761,7 +761,7 @@ router.post('/stock-transfers', stUpload.single('file'), async (req, res) => {
       'INSERT INTO stock_transfers (transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by, file_name, file_path) VALUES (?,?,?,?,?,?,?,?,?)',
       [transfer_no.trim(), transfer_date || new Date().toISOString().split('T')[0],
        source_location.trim(), destination_location.trim(),
-       +items_count || 0, status || 'Pending', (transferred_by || '').trim(),
+       (items_count || '').trim(), status || 'Pending', (transferred_by || '').trim(),
        file_name, file_path]
     );
     res.status(201).json(await db.getOne('SELECT * FROM stock_transfers WHERE id = ?', [id]));
@@ -788,7 +788,7 @@ router.put('/stock-transfers/:id', stUpload.single('file'), async (req, res) => 
       `UPDATE stock_transfers SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_count=?, status=?, transferred_by=?, file_name=?, file_path=?, updated_at=NOW() WHERE id=?`,
       [(transfer_no ?? ex.transfer_no).trim(), transfer_date ?? ex.transfer_date,
        (source_location ?? ex.source_location).trim(), (destination_location ?? ex.destination_location).trim(),
-       items_count != null ? +items_count : ex.items_count, status ?? ex.status,
+       items_count != null ? (items_count || '').trim() : ex.items_count, status ?? ex.status,
        (transferred_by ?? ex.transferred_by).trim(), file_name, file_path, +req.params.id]
     );
     res.json(await db.getOne('SELECT * FROM stock_transfers WHERE id = ?', [+req.params.id]));

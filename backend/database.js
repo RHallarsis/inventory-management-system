@@ -415,6 +415,11 @@ const dbPromise = (async () => {
     await db.run(`ALTER TABLE stock_transfers ADD COLUMN IF NOT EXISTS file_path TEXT NOT NULL DEFAULT ''`);
   } catch (_) {}
 
+  // ── Change items_count to TEXT in stock_transfers (Items Definition) ─────
+  try {
+    await db.run(`ALTER TABLE stock_transfers ALTER COLUMN items_count TYPE TEXT USING items_count::TEXT`);
+  } catch (_) {}
+
   // ── Add file upload columns to pullout & transmittal receipts ───────────
   try {
     await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS file_name TEXT NOT NULL DEFAULT ''`);
