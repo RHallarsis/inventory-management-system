@@ -2723,21 +2723,21 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
   let pct=0;
   // Animate bar from 0 → 90% quickly, then hold until done
   const fast=setInterval(()=>{
-    pct+=Math.random()*8+4;
+    pct+=Math.random()*14+8;
     if(pct>=90){pct=90;clearInterval(fast);}
     bar.style.width=pct+'%';
-  },80);
+  },40);
   // After a short delay, complete bar and show login
   setTimeout(()=>{
     clearInterval(fast);
-    bar.style.transition='width .35s ease';
+    bar.style.transition='width .2s ease';
     bar.style.width='100%';
     setTimeout(()=>{
       screen.classList.add('hide');
       loginOverlay.style.display='flex';
-      setTimeout(()=>screen.style.display='none',650);
-    },400);
-  }, 2000);
+      setTimeout(()=>screen.style.display='none',600);
+    },200);
+  }, 600);
 })();
 
 const API=window.location.origin+'/api';
@@ -4457,4 +4457,4 @@ function openPLModal(id){
       document.getElementById('pl-f-remarks').value=r.remarks||'';
       if(r.file_name)document.getElementById('pl-current-file').innerHTML='Current file: <strong>'+esc(r.file_name.replace(/^\d+[-_]/,''))+'</strong>';
       if(r.bl_awb_file_name)document.getElementById('pl-current-bl-file').innerHTML='Current BL/AWB file: <strong>'+esc(r.bl_awb_file_name.replace(/^\d+[-_]/,''))+'</strong>';
-      else document.getElementB
+      else document.getElementBy
