@@ -1049,64 +1049,11 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
 .page-table tr:nth-child(odd) td{background:#fff;}
 .page-table tr:nth-child(even) td{background:#fafbff;}
 
-/* ── Loading / Splash Screen ── */
-#loading-screen{
-  position:fixed;inset:0;z-index:99999;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:#16123a;
-  animation:lsAutoHide 0s 1.5s forwards;
-}
-@keyframes lsAutoHide{to{opacity:0;visibility:hidden;pointer-events:none;display:none;}}
-#loading-screen.ls-gone{display:none!important;}
-.ls-logo{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:40px;}
-.ls-logo img{width:88px;height:88px;object-fit:contain;filter:drop-shadow(0 0 18px rgba(129,140,248,.5));}
-.ls-logo h1{color:#fff;font-size:22px;font-weight:800;letter-spacing:-.4px;margin:0;}
-.ls-logo p{color:#a5b4fc;font-size:12.5px;margin:0;}
-.ls-bar-wrap{width:220px;height:4px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden;}
-.ls-bar{height:100%;background:linear-gradient(90deg,#6366f1,#a78bfa);border-radius:99px;animation:lsBarFill .5s ease forwards;}
-@keyframes lsBarFill{from{width:0%}to{width:100%}}
-.ls-dots{display:flex;gap:7px;margin-top:22px;}
-.ls-dot{width:7px;height:7px;border-radius:50%;background:rgba(129,140,248,.4);}
-.ls-dot:nth-child(1){animation:lsBounce 1s 0s infinite ease-in-out;}
-.ls-dot:nth-child(2){animation:lsBounce 1s .18s infinite ease-in-out;}
-.ls-dot:nth-child(3){animation:lsBounce 1s .36s infinite ease-in-out;}
-@keyframes lsBounce{0%,80%,100%{transform:translateY(0);background:rgba(129,140,248,.4);}40%{transform:translateY(-8px);background:#818cf8;}}
-@keyframes lsFadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
-
 </style>
 </head>
 <body>
 <!-- LOGIN OVERLAY -->
-<!-- ===== LOADING / SPLASH SCREEN ===== -->
-<div id="loading-screen">
-  <div class="ls-logo">
-    <img src="/images/bg-logo.png" alt="Logo"/>
-    <h1>Inventory System</h1>
-    <p>Perception Gaming Management Dashboard</p>
-  </div>
-  <div class="ls-bar-wrap"><div class="ls-bar"></div></div>
-  <div class="ls-dots">
-    <div class="ls-dot"></div>
-    <div class="ls-dot"></div>
-    <div class="ls-dot"></div>
-  </div>
-</div>
-<!-- Standalone script — runs independently of main app JS -->
-<script>
-(function(){
-  var s=document.getElementById('loading-screen');
-  function dismiss(){
-    if(s){s.classList.add('ls-gone');}
-    // look up login-overlay here — it exists in DOM by the time dismiss() fires
-    var l=document.getElementById('login-overlay');
-    if(l){l.style.display='flex';}
-  }
-  setTimeout(dismiss,600);
-  window.addEventListener('error',function(){setTimeout(dismiss,800);},{once:true});
-})();
-</script>
-
-<div class="login-overlay" id="login-overlay" style="display:none">
+<div class="login-overlay" id="login-overlay">
   <div class="login-box">
     <div class="login-logo">
       <img src="/images/bg-logo.png" alt="Perception Gaming" class="login-logo-img"/>
@@ -4448,4 +4395,285 @@ function openPLModal(id){
       document.getElementById('pl-f-remarks').value=r.remarks||'';
       if(r.file_name)document.getElementById('pl-current-file').innerHTML='Current file: <strong>'+esc(r.file_name.replace(/^\d+[-_]/,''))+'</strong>';
       if(r.bl_awb_file_name)document.getElementById('pl-current-bl-file').innerHTML='Current BL/AWB file: <strong>'+esc(r.bl_awb_file_name.replace(/^\d+[-_]/,''))+'</strong>';
-      else document.getElementBy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+      else document.getElementById('pl-current-bl-file').textContent='';
+    }
+  } else {
+    ['pl-f-number','pl-f-ci','pl-f-shipper','pl-f-consignee','pl-f-date','pl-f-bl','pl-f-pkgs','pl-f-nw','pl-f-gw','pl-f-remarks'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('pl-f-bl-details').value='';
+    document.getElementById('pl-current-bl-file').textContent='';
+    document.getElementById('pl-f-status').value='Draft';
+    document.getElementById('pl-f-date').value=today();
+    if(ciData.length){const latest=ciData[0];if(latest)document.getElementById('pl-f-ci').value=latest.ci_number;}
+  }
+  document.getElementById('pl-f-file').value='';
+  document.getElementById('pl-f-bl-file').value='';
+  document.getElementById('pl-modal').style.display='flex';
+}
+
+function closePLModal(){document.getElementById('pl-modal').style.display='none';}
+
+async function savePL(){
+  const id=document.getElementById('pl-modal-id').value;
+  const num=document.getElementById('pl-f-number').value.trim();
+  if(!num){gToast('PL Number is required','error');return;}
+  const fd=new FormData();
+  fd.append('pl_number',num);
+  fd.append('ci_number',document.getElementById('pl-f-ci').value.trim());
+  fd.append('shipper',document.getElementById('pl-f-shipper').value.trim());
+  fd.append('consignee',document.getElementById('pl-f-consignee').value.trim());
+  fd.append('pl_date',document.getElementById('pl-f-date').value);
+  fd.append('status',document.getElementById('pl-f-status').value);
+  fd.append('bl_awb_number',document.getElementById('pl-f-bl').value.trim());
+  fd.append('bl_awb_details',document.getElementById('pl-f-bl-details').value.trim());
+  fd.append('total_packages',document.getElementById('pl-f-pkgs').value||0);
+  fd.append('total_net_weight',document.getElementById('pl-f-nw').value||0);
+  fd.append('total_gross_weight',document.getElementById('pl-f-gw').value||0);
+  fd.append('remarks',document.getElementById('pl-f-remarks').value.trim());
+  const file=document.getElementById('pl-f-file').files[0];
+  if(file)fd.append('file',file);
+  const blFile=document.getElementById('pl-f-bl-file').files[0];
+  if(blFile)fd.append('bl_awb_file',blFile);
+  try{
+    const url=id?API+'/cipl/pl/'+id:API+'/cipl/pl';
+    const r=await fetch(url,{method:id?'PUT':'POST',body:fd});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Save failed');
+    gToast(id?'Packing list updated!':'Packing list added!');
+    closePLModal();
+    await loadPL();
+  }catch(err){gToast(err.message,'error');}
+}
+
+async function deletePL(id){
+  const r=plData.find(x=>x.id===id);
+  if(!confirm(`Delete PL "${r?r.pl_number:id}"? This cannot be undone.`))return;
+  try{
+    const res=await fetch(API+'/cipl/pl/'+id,{method:'DELETE'});
+    if(!res.ok){const d=await res.json();throw new Error(d.error||'Delete failed');}
+    gToast('Packing list deleted.');
+    await loadPL();
+  }catch(err){gToast(err.message,'error');}
+}
+
+// ── DASHBOARD CHARTS ────────────────────────────────────────────
+async function loadDashboardCharts(){
+  try{
+    const monthly=await fetch(API+'/stats/monthly-purchases').then(r=>r.json()).catch(()=>[]);
+    renderMonthlyChart(monthly||[]);
+  }catch(e){console.error('[loadDashboardCharts]',e.message);}
+}
+
+function renderMonthlyChart(monthly){
+  const el=document.getElementById('chart-monthly-purchases');
+  if(!el)return;
+  if(!monthly.length){
+    el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:220px;color:#94a3b8;font-size:13px">No purchase order data yet</div>';
+    return;
+  }
+  const data=monthly.map(r=>({label:r.month,val:parseFloat(r.total)||0}));
+  const VW=860,VH=240;
+  const PAD={top:30,right:24,bottom:50,left:80};
+  const cW=VW-PAD.left-PAD.right, cH=VH-PAD.top-PAD.bottom;
+  const n=data.length;
+  const maxVal=Math.max(...data.map(d=>d.val),1);
+  // Nice Y scale
+  const tickCount=4;
+  const mag=Math.pow(10,Math.floor(Math.log10(maxVal/tickCount||1)));
+  const niceStep=Math.ceil((maxVal/tickCount)/mag)*mag||1;
+  const yMax=niceStep*tickCount;
+  // For single point: spread it across the full width with a horizontal reference line
+  const xPos=i=>PAD.left+(n>1?(i/(n-1))*cW:cW/2);
+  const yPos=v=>PAD.top+cH*(1-(Math.min(v,yMax)/yMax));
+  // Y grid lines + labels
+  const yTicks=Array.from({length:tickCount+1},(_,i)=>i*niceStep).map(v=>{
+    const y=yPos(v).toFixed(1);
+    const lbl=v===0?'₱0':v>=1000000?'₱'+(v/1000000).toFixed(1)+'M':v>=1000?'₱'+(v/1000).toFixed(0)+'k':'₱'+v;
+    return `<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+cW}" y2="${y}" stroke="#eef0f8" stroke-width="1.5" stroke-dasharray="${v===0?'none':'4,3'}"/>
+<text x="${PAD.left-10}" y="${y}" text-anchor="end" dominant-baseline="middle" font-size="11.5" fill="#b0bec5" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">${lbl}</text>`;
+  }).join('');
+  // X labels — skip to avoid crowding, always show first+last
+  const skip=Math.max(1,Math.ceil(n/8));
+  const xLabels=data.map((d,i)=>(n===1||i%skip===0||i===n-1)?
+    `<text x="${xPos(i).toFixed(1)}" y="${PAD.top+cH+26}" text-anchor="middle" font-size="11.5" fill="#b0bec5" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">${d.label}</text>`:''
+  ).join('');
+  // For single point: draw a dashed horizontal line at value level
+  const singleRef=n===1?`<line x1="${PAD.left}" y1="${yPos(data[0].val).toFixed(1)}" x2="${PAD.left+cW}" y2="${yPos(data[0].val).toFixed(1)}" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="6,4" stroke-opacity="0.4"/>`:'' ;
+  // Line + area paths
+  const pts=data.map((d,i)=>`${xPos(i).toFixed(1)},${yPos(d.val).toFixed(1)}`);
+  const linePath=n>1?'M '+pts.join(' L '):'';
+  const areaPath=n>1?`M ${xPos(0).toFixed(1)},${(PAD.top+cH).toFixed(1)} L ${pts.join(' L ')} L ${xPos(n-1).toFixed(1)},${(PAD.top+cH).toFixed(1)} Z`:'';
+  // Dots + floating value callouts
+  const showLabel=i=>(n<=6)||(i%skip===0)||(i===n-1);
+  const dots=data.map((d,i)=>{
+    const cx=xPos(i).toFixed(1), cy=yPos(d.val).toFixed(1);
+    const labelY=(+cy-16).toFixed(1);
+    const anchor=n>1&&i===n-1?'end':n>1&&i===0?'start':'middle';
+    return `
+<circle cx="${cx}" cy="${cy}" r="6" fill="white" stroke="#6366f1" stroke-width="2.5" filter="url(#dotShadow)"/>
+<circle cx="${cx}" cy="${cy}" r="3" fill="#6366f1"/>
+${showLabel(i)?`<text x="${cx}" y="${labelY}" text-anchor="${anchor}" font-size="11" font-weight="700" fill="#4f46e5" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">₱${Math.round(d.val).toLocaleString()}</text>`:''}`;
+  }).join('');
+  // Total badge top-right
+  const grandTotal=data.reduce((s,d)=>s+d.val,0);
+  const totalBadge=`<text x="${PAD.left+cW}" y="${PAD.top-10}" text-anchor="end" font-size="11" fill="#94a3b8" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">Total: <tspan font-weight="700" fill="#4f46e5">₱${Math.round(grandTotal).toLocaleString()}</tspan></text>`;
+  el.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">
+  <defs>
+    <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.18"/>
+      <stop offset="75%" stop-color="#6366f1" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="dotShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#6366f1" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  ${totalBadge}
+  ${yTicks}
+  <line x1="${PAD.left}" y1="${PAD.top}" x2="${PAD.left}" y2="${PAD.top+cH}" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="${PAD.left}" y1="${PAD.top+cH}" x2="${PAD.left+cW}" y2="${PAD.top+cH}" stroke="#e2e8f0" stroke-width="1"/>
+  ${singleRef}
+  ${areaPath?`<path d="${areaPath}" fill="url(#areaFill)" />` :''}
+  ${linePath?`<path d="${linePath}" fill="none" stroke="url(#lineGrad)" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>`:''}
+  <defs><linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#6366f1"/></linearGradient></defs>
+  ${xLabels}
+  ${dots}
+</svg>`;
+}
+
+function renderPartsStatusChart(parts){
+  const el=document.getElementById('chart-parts-status');
+  if(!el)return;
+  const outOfStock=parts.filter(r=>(+r.on_hand||0)===0).length;
+  const lowStock=parts.filter(r=>(+r.on_hand||0)>0&&(+r.on_hand||0)<=(+r.safety_stock||1)).length;
+  const ok=parts.length-outOfStock-lowStock;
+  const total=parts.length;
+  if(!total){
+    el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:160px;color:#94a3b8;font-size:13px">No spare parts data</div>';
+    return;
+  }
+  // SVG donut
+  const R=56,ri=36,cx=75,cy=75;
+  const segs=[{val:ok,color:'#10b981'},{val:lowStock,color:'#f59e0b'},{val:outOfStock,color:'#ef4444'}].filter(s=>s.val>0);
+  let ang=-Math.PI/2;
+  const paths=segs.map(s=>{
+    const sweep=(s.val/total)*2*Math.PI;
+    const ea=ang+sweep;
+    const x1=cx+R*Math.cos(ang),y1=cy+R*Math.sin(ang);
+    const x2=cx+R*Math.cos(ea),y2=cy+R*Math.sin(ea);
+    const xi1=cx+ri*Math.cos(ang),yi1=cy+ri*Math.sin(ang);
+    const xi2=cx+ri*Math.cos(ea),yi2=cy+ri*Math.sin(ea);
+    const lg=sweep>Math.PI?1:0;
+    const d=`M${x1} ${y1} A${R} ${R} 0 ${lg} 1 ${x2} ${y2} L${xi2} ${yi2} A${ri} ${ri} 0 ${lg} 0 ${xi1} ${yi1}Z`;
+    ang=ea;
+    return `<path d="${d}" fill="${s.color}" stroke="white" stroke-width="2"/>`;
+  }).join('');
+  const legend=[
+    {val:ok,color:'#10b981',label:'OK'},
+    {val:lowStock,color:'#f59e0b',label:'Low Stock'},
+    {val:outOfStock,color:'#ef4444',label:'Out of Stock'}
+  ].map(s=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;padding:5px 0;border-bottom:1px solid #f1f5f9">
+    <div style="width:10px;height:10px;border-radius:50%;background:${s.color};flex-shrink:0"></div>
+    <span style="flex:1">${s.label}</span>
+    <span style="font-weight:800;color:#0f172a">${s.val}</span>
+    <span style="color:#94a3b8;font-size:11px">${Math.round(s.val/total*100)}%</span>
+  </div>`).join('');
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:18px;padding:8px 0">
+    <svg width="150" height="150" viewBox="0 0 150 150" style="flex-shrink:0">
+      ${paths}
+      <circle cx="${cx}" cy="${cy}" r="${ri-2}" fill="white"/>
+      <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="20" font-weight="900" fill="#0f172a" font-family="system-ui">${total}</text>
+      <text x="${cx}" y="${cy+13}" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="system-ui" letter-spacing="1">TOTAL</text>
+    </svg>
+    <div style="flex:1;min-width:0">${legend}</div>
+  </div>`;
+}
+
+// ── LOW-STOCK EMAIL ALERT ────────────────────────────────────────
+async function sendLowStockAlert(){
+  const btn=document.getElementById('dash-alert-btn');
+  try{
+    if(btn){btn.disabled=true;btn.textContent='Sending...';}
+    const r=await fetch(API+'/alerts/low-stock/send',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}' });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Failed');
+    gToast('✉ '+d.message,'success');
+  }catch(e){
+    gToast(e.message.includes('No email provider')?'No email provider configured in Railway environment variables':e.message,'error');
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML='⚠️ Send Low-Stock Alert <span id="dash-low-count" style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 7px;margin-left:4px">...</span>';}
+    setTimeout(loadDashboardCharts,500);
+  }
+}
+
+// ── AUDIT LOG ────────────────────────────────────────────────────
+let auditData=[],auditOffset=0;
+async function loadAuditLog(reset){
+  if(reset===undefined||reset)auditOffset=0,auditData=[];
+  try{
+    const r=await fetch(API+'/audit-log?limit=100&offset='+auditOffset);
+    const d=await r.json();
+    auditData=[...auditData,...(d.rows||[])];
+    auditOffset=auditData.length;
+    const mb=document.getElementById('al-load-more');
+    if(mb)mb.style.display=(auditData.length<(d.total||0))?'inline-flex':'none';
+    renderAuditLog();
+  }catch(e){const b=document.getElementById('al-body');if(b)b.innerHTML='<tr><td colspan="6"><div class="no-results">Could not load audit log.</div></td></tr>';}
+}
+function loadMoreAudit(){loadAuditLog(false);}
+function renderAuditLog(){
+  const q=(document.getElementById('al-search')||{}).value||'';
+  const ql=q.toLowerCase();
+  const rows=auditData.filter(r=>!ql||(r.user_name||'').toLowerCase().includes(ql)||(r.action||'').toLowerCase().includes(ql)||(r.entity||'').toLowerCase().includes(ql)||(r.details||'').toLowerCase().includes(ql));
+  const meta=document.getElementById('al-meta');
+  if(meta)meta.textContent='Showing '+rows.length+' of '+auditData.length+' entries';
+  const AC={CREATE:'#10b981',UPDATE:'#f59e0b',DELETE:'#ef4444',SEND_ALERT:'#6366f1'};
+  const b=document.getElementById('al-body');
+  if(!b)return;
+  b.innerHTML=rows.length?rows.map((r,i)=>{
+    const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
+    const col=AC[r.action]||'#64748b';
+    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.user_name||'—')+'</strong><br><span style="font-size:11px;color:#94a3b8">'+esc(r.user_email||'')+'</span></td><td><span style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">'+(r.action||'—')+'</span></td><td>'+esc(r.entity||'—')+(r.entity_id?' #'+r.entity_id:'')+'</td><td style="font-size:12px;max-width:300px">'+esc(r.details||'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6"><div class="no-results">No audit entries found.</div></td></tr>';
+}
+
+// ── STOCK MOVEMENTS ──────────────────────────────────────────────
+let smovData=[];
+async function loadStockMovements(){
+  try{
+    const r=await fetch(API+'/stock-movements?limit=200');
+    smovData=await r.json();
+    renderStockMovements();
+  }catch(e){const b=document.getElementById('sm2-body');if(b)b.innerHTML='<tr><td colspan="9"><div class="no-results">Could not load stock movements.</div></td></tr>';}
+}
+function renderStockMovements(){
+  const q=((document.getElementById('sm2-search')||{}).value||'').toLowerCase();
+  const rows=(smovData||[]).filter(r=>!q||(r.product_name||'').toLowerCase().includes(q)||(r.reason||'').toLowerCase().includes(q));
+  const meta=document.getElementById('sm2-meta');
+  if(meta)meta.textContent=rows.length+' movements';
+  const b=document.getElementById('sm2-body');
+  if(!b)return;
+  b.innerHTML=rows.length?rows.map((r,i)=>{
+    const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
+    const chg=+r.change_qty||0;
+    const chgHtml=chg>0?'<span style="color:#10b981;font-weight:700">+'+chg+'</span>':'<span style="color:#ef4444;font-weight:700">'+chg+'</span>';
+    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.product_name||'—')+'</strong></td><td style="font-size:12px;color:#64748b">'+esc(r.product_code||'')+'</td><td style="text-align:center">'+(r.prev_qty!=null?r.prev_qty:'—')+'</td><td style="text-align:center">'+chgHtml+'</td><td style="text-align:center;font-weight:700">'+(r.new_qty!=null?r.new_qty:'—')+'</td><td style="font-size:12px">'+esc(r.reason||'—')+'</td><td style="font-size:12px;color:#64748b">'+esc(r.user_name||'System')+'</td></tr>';
+  }).join(''):'<tr><td colspan="9"><div class="no-results">No stock movements yet.</div></td></tr>';
+}
+
+// ╔═══════════════════════════════════════════════════════════════
+// BOOT — runs after DOM is ready
+// ╚═══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initApp();
+  loadACEvents();
+  loadLineConfig();
+  setTimeout(loadDashboardCharts, 1500);
+});
+</script>
+<script src="/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="/ua.js?v=3"></script>
+</body>
+</html>
