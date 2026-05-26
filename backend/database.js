@@ -387,6 +387,25 @@ const dbPromise = (async () => {
   `);
 
 
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS supplier_quotations (
+      id                SERIAL      PRIMARY KEY,
+      quote_number      TEXT        NOT NULL UNIQUE,
+      supplier          TEXT        NOT NULL DEFAULT '',
+      contact_person    TEXT        NOT NULL DEFAULT '',
+      quote_date        TEXT        NOT NULL DEFAULT '',
+      valid_until       TEXT        NOT NULL DEFAULT '',
+      items_description TEXT        NOT NULL DEFAULT '',
+      unit_price        REAL        NOT NULL DEFAULT 0,
+      quantity          REAL        NOT NULL DEFAULT 0,
+      total_amount      REAL        NOT NULL DEFAULT 0,
+      status            TEXT        NOT NULL DEFAULT 'Pending',
+      remarks           TEXT        NOT NULL DEFAULT '',
+      created_at        TIMESTAMPTZ DEFAULT NOW(),
+      updated_at        TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
   // ── Migrate pullout_receipts: rename transferred_by → pulled_out_by, add new columns ──
   try {
     await db.run(`ALTER TABLE pullout_receipts RENAME COLUMN transferred_by TO pulled_out_by`);
