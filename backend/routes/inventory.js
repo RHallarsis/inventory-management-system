@@ -901,7 +901,7 @@ router.get('/transmittal-receipts', async (_req, res) => {
 });
 
 router.post('/transmittal-receipts', trmitUpload.single('file'), async (req, res) => {
-  const { transfer_no, transfer_date, source_location, destination_location, items_count, status, turned_over_by, received_by, witnessed_by, noted_by } = req.body;
+  const { transfer_no, transfer_date, source_location, destination_location, items_description, status, turned_over_by, received_by, witnessed_by, noted_by } = req.body;
   if (!transfer_no || !source_location || !destination_location) {
     return res.status(400).json({ error: 'transfer_no, source_location, and destination_location are required' });
   }
@@ -910,10 +910,10 @@ router.post('/transmittal-receipts', trmitUpload.single('file'), async (req, res
     const file_name = req.file ? req.file.originalname : '';
     const file_path = req.file ? '/uploads/transmittal/' + req.file.filename : '';
     const id = await db.insert(
-      'INSERT INTO transmittal_receipts (transfer_no, transfer_date, source_location, destination_location, items_count, status, turned_over_by, received_by, witnessed_by, noted_by, file_name, file_path) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+      'INSERT INTO transmittal_receipts (transfer_no, transfer_date, source_location, destination_location, items_description, status, turned_over_by, received_by, witnessed_by, noted_by, file_name, file_path) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
       [transfer_no.trim(), transfer_date || new Date().toISOString().split('T')[0],
        source_location.trim(), destination_location.trim(),
-       +items_count || 0, status || 'Pending',
+       (items_description || '').trim(), status || 'Pending',
        (turned_over_by || '').trim(), (received_by || '').trim(),
        (witnessed_by || '').trim(), (noted_by || '').trim(),
        file_name, file_path]
@@ -930,7 +930,7 @@ router.put('/transmittal-receipts/:id', trmitUpload.single('file'), async (req, 
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM transmittal_receipts WHERE id = ?', [+req.params.id]);
     if (!ex) return res.status(404).json({ error: 'Transmittal receipt not found' });
-    const { transfer_no, transfer_date, source_location, destination_location, items_count, status, turned_over_by, received_by, witnessed_by, noted_by } = req.body;
+    const { transfer_no, transfer_date, source_location, destination_location, items_description, status, turned_over_by, received_by, witnessed_by, noted_by } = req.body;
     let file_name = ex.file_name || '';
     let file_path = ex.file_path || '';
     if (req.file) {
@@ -939,10 +939,10 @@ router.put('/transmittal-receipts/:id', trmitUpload.single('file'), async (req, 
       file_path = '/uploads/transmittal/' + req.file.filename;
     }
     await db.run(
-      `UPDATE transmittal_receipts SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_count=?, status=?, turned_over_by=?, received_by=?, witnessed_by=?, noted_by=?, file_name=?, file_path=?, updated_at=NOW() WHERE id=?`,
+      `UPDATE transmittal_receipts SET transfer_no=?, transfer_date=?, source_location=?, destination_location=?, items_description=?, status=?, turned_over_by=?, received_by=?, witnessed_by=?, noted_by=?, file_name=?, file_path=?, updated_at=NOW() WHERE id=?`,
       [(transfer_no ?? ex.transfer_no).trim(), transfer_date ?? ex.transfer_date,
        (source_location ?? ex.source_location).trim(), (destination_location ?? ex.destination_location).trim(),
-       items_count != null ? +items_count : ex.items_count, status ?? ex.status,
+       (items_description ?? ex.items_description ?? '').trim(), status ?? ex.status,
        (turned_over_by ?? ex.turned_over_by ?? '').trim(), (received_by ?? ex.received_by ?? '').trim(),
        (witnessed_by ?? ex.witnessed_by ?? '').trim(), (noted_by ?? ex.noted_by ?? '').trim(),
        file_name, file_path, +req.params.id]

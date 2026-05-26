@@ -207,7 +207,7 @@ const dbPromise = (async () => {
       transfer_date        TEXT        NOT NULL DEFAULT '',
       source_location      TEXT        NOT NULL DEFAULT '',
       destination_location TEXT        NOT NULL DEFAULT '',
-      items_count          INTEGER     NOT NULL DEFAULT 0,
+      items_description    TEXT        NOT NULL DEFAULT '',
       status               TEXT        NOT NULL DEFAULT 'Pending',
       turned_over_by       TEXT        NOT NULL DEFAULT '',
       received_by          TEXT        NOT NULL DEFAULT '',
@@ -407,6 +407,10 @@ const dbPromise = (async () => {
     await db.run(`ALTER TABLE transmittal_receipts ADD COLUMN IF NOT EXISTS received_by TEXT NOT NULL DEFAULT ''`);
     await db.run(`ALTER TABLE transmittal_receipts ADD COLUMN IF NOT EXISTS witnessed_by TEXT NOT NULL DEFAULT ''`);
     await db.run(`ALTER TABLE transmittal_receipts ADD COLUMN IF NOT EXISTS noted_by TEXT NOT NULL DEFAULT ''`);
+  } catch (_) {}
+  // 🔧 Migrate transmittal_receipts: items_count (integer) → items_description (text)
+  try {
+    await db.run(`ALTER TABLE transmittal_receipts ADD COLUMN IF NOT EXISTS items_description TEXT NOT NULL DEFAULT ''`);
   } catch (_) {}
 
   // ── Add file upload columns to stock_transfers (Delivery Receipts) ──────
