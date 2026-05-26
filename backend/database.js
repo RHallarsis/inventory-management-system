@@ -590,19 +590,19 @@ const dbPromise = (async () => {
   const userCnt = await db.scalar('SELECT COUNT(*) FROM users');
   if (userCnt === 0) {
     await db.run("INSERT INTO users (name, email, role, password, status) VALUES (?,?,?,?,?)",
-      ['Admin', 'admin@inventory.com', 'Admin', 'admin123', 'Active']);
+      ['Admin', 'admin@inventory.com', 'Admin', 'Admin@2025', 'Active']);
     await db.run("INSERT INTO users (name, email, role, password, status) VALUES (?,?,?,?,?)",
-      ['Rogen Hallarsis', 'rogen.hallarsis29@gmail.com', 'Admin', '063013', 'Active']);
+      ['Rogen Hallarsis', 'rogen.hallarsis29@gmail.com', 'Admin', 'Admin@2025', 'Active']);
     console.log('[db] Seeded default admin users.');
   }
 
-  // ── Ensure Rogen's account always exists (idempotent) ──────────
+  // ── Ensure Rogen's account always exists — never overwrite existing password ──
   const rogenExists = await db.getOne(
     "SELECT id FROM users WHERE LOWER(email) = 'rogen.hallarsis29@gmail.com'"
   );
   if (!rogenExists) {
     await db.run("INSERT INTO users (name, email, role, password, status) VALUES (?,?,?,?,?)",
-      ['Rogen Hallarsis', 'rogen.hallarsis29@gmail.com', 'Admin', '063013', 'Active']);
+      ['Rogen Hallarsis', 'rogen.hallarsis29@gmail.com', 'Admin', 'Admin@2025', 'Active']);
     console.log('[db] Inserted Rogen Hallarsis admin account.');
   }
 
