@@ -32,6 +32,28 @@ function removeFile(filename) {
   try { fs.unlinkSync(path.join(UPLOAD_DIR, filename)); } catch (_) {}
 }
 
+// ── GET /api/supplier-quotations/next-quote-number ──────────────
+router.get('/supplier-quotations/next-quote-number', async (_req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const year = new Date().getFullYear();
+    const prefix = `SQ-${year}-`;
+    // Find the highest sequence number for the current year
+    const rows = await db.getAll(
+      `SELECT quote_number FROM supplier_quotations WHERE quote_number LIKE ? ORDER BY quote_number DESC`,
+      [prefix + '%']
+    );
+    let nextSeq = 1;
+    if (rows.length > 0) {
+      const last = rows[0].quote_number; // e.g. SQ-2026-007
+      const seq = parseInt(last.replace(prefix, ''), 10);
+      if (!isNaN(seq)) nextSeq = seq + 1;
+    }
+    const quote_number = prefix + String(nextSeq).padStart(3, '0');
+    res.json({ quote_number });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ── GET /api/supplier-quotations ────────────────────────────────
 router.get('/supplier-quotations', async (_req, res) => {
   try {
