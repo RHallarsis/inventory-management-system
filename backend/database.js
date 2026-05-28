@@ -703,4 +703,17 @@ const dbPromise = (async () => {
       change_qty   INTEGER     NOT NULL DEFAULT 0,
       reason       TEXT        NOT NULL DEFAULT 'Manual update',
       user_name    TEXT        NOT NULL DEFAULT 'System',
-      created_at   TIM
+      created_at   TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  console.log('[db] PostgreSQL schema ready.');
+  return { db, save: () => {} };
+})();
+
+// Prevent unhandled-rejection crash — log the error but keep the process alive
+dbPromise.catch(err => {
+  console.error('[db] FATAL init error:', err.message);
+});
+
+module.exports = { dbPromise, calcStatus };
