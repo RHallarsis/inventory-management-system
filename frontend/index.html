@@ -2886,7 +2886,7 @@ async function doSettingsChangePassword(){
     document.getElementById('sp-current').value='';
     document.getElementById('sp-new').value='';
     document.getElementById('sp-confirm').value='';
-    showToast('Password updated successfully','success');
+    gToast('Password updated successfully!');
   }catch(e){msg.textContent='Cannot connect to server.';}
 }
 function doLogout(){
