@@ -1070,29 +1070,56 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
 <!-- LOGIN OVERLAY -->
 <!-- ===== SPLASH SCREEN ===== -->
 <div id="ls-screen">
-  <div class="ls-logo">
-    <img src="/images/bg-logo.png" alt="Logo"/>
-    <h1>Inventory System</h1>
-    <p>Perception Gaming Management Dashboard</p>
+  <div class="ls-bg-orb"></div>
+  <div class="ls-bg-orb"></div>
+  <div class="ls-bg-orb"></div>
+  <div class="ls-grid"></div>
+  <div class="ls-card">
+    <div class="ls-ring-wrap">
+      <div class="ls-ring"></div>
+      <div class="ls-ring2"></div>
+      <img src="/images/bg-logo.png" alt="Logo"/>
+    </div>
+    <h1 class="ls-brand">Inventory System</h1>
+    <p class="ls-tagline">Perception Gaming &nbsp;&middot;&nbsp; Management Dashboard</p>
+    <div class="ls-divider"></div>
+    <div class="ls-progress-wrap">
+      <div class="ls-pct-row">
+        <span class="ls-status" id="ls-status">Initializing modules&hellip;</span>
+        <span class="ls-pct" id="ls-pct">0%</span>
+      </div>
+      <div class="ls-track"><div class="ls-fill" id="ls-fill"></div></div>
+    </div>
+    <div class="ls-footer">v2.0 &nbsp;&middot;&nbsp; Enterprise Edition</div>
   </div>
-  <div class="ls-track"><div class="ls-fill" id="ls-fill"></div></div>
-  <div class="ls-dots"><div class="ls-dot"></div><div class="ls-dot"></div><div class="ls-dot"></div></div>
 </div>
 <script>
 (function(){
   var fill=document.getElementById('ls-fill');
   var scr=document.getElementById('ls-screen');
-  var pct=0;
-  var iv=setInterval(function(){pct=Math.min(pct+1.5,95);if(fill)fill.style.width=pct+'%';},30);
+  var pctEl=document.getElementById('ls-pct');
+  var statEl=document.getElementById('ls-status');
+  var statuses=['Initializing modules…','Loading inventory data…','Syncing dashboard…','Preparing interface…','Almost ready…'];
+  var pct=0,si=0;
+  var iv=setInterval(function(){
+    pct=Math.min(pct+1.5,95);
+    if(fill)fill.style.width=pct+'%';
+    if(pctEl)pctEl.textContent=Math.round(pct)+'%';
+    var ni=Math.floor(pct/20);
+    if(ni!==si&&ni<statuses.length){si=ni;if(statEl)statEl.textContent=statuses[si];}
+  },30);
   setTimeout(function(){
     clearInterval(iv);
+    pct=100;
     if(fill)fill.style.width='100%';
+    if(pctEl)pctEl.textContent='100%';
+    if(statEl)statEl.textContent='Ready!';
     setTimeout(function(){
       if(scr)scr.classList.add('ls-out');
       var lg=document.getElementById('login-overlay');
       if(lg)lg.style.display='flex';
-      setTimeout(function(){if(scr)scr.classList.add('ls-done');},350);
-    },150);
+      setTimeout(function(){if(scr)scr.classList.add('ls-done');},450);
+    },200);
   },2000);
 })();
 </script>
