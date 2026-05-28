@@ -602,7 +602,7 @@ const dbPromise = (async () => {
     console.log('[db] Seeded default admin users.');
   }
 
-  // ── Ensure Rogen's account always exists — never overwrite existing password ──
+  // ── Ensure Rogen's account always exists — never overwrite a user-set password ──
   const rogenExists = await db.getOne(
     "SELECT id FROM users WHERE LOWER(email) = 'rogen.hallarsis29@gmail.com'"
   );
@@ -610,6 +610,15 @@ const dbPromise = (async () => {
     await db.run("INSERT INTO users (name, email, role, password, status) VALUES (?,?,?,?,?)",
       ['Rogen Hallarsis', 'rogen.hallarsis29@gmail.com', 'Admin', 'Admin@2025', 'Active']);
     console.log('[db] Inserted Rogen Hallarsis admin account.');
+  } else {
+    // Upgrade old default password → Admin@2025 (only if still on the original default)
+    await db.run(
+      "UPDATE users SET password='Admin@2025' WHERE LOWER(email)='rogen.hallarsis29@gmail.com' AND password='063013'"
+    );
+    // Also ensure admin@inventory.com has the correct password if still on old default
+    await db.run(
+      "UPDATE users SET password='Admin@2025' WHERE LOWER(email)='admin@inventory.com' AND password IN ('063013','admin123')"
+    );
   }
 
   // ── Seed machine_monitoring ────────────────────────────────────
