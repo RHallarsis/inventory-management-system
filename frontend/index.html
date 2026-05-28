@@ -1493,7 +1493,7 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
   </div>
   <div class="page-tbl-wrap">
     <table class="page-table">
-      <thead><tr><th>#</th><th>Quote No.</th><th>Supplier</th><th>Contact Person</th><th>Quote Date</th><th>Valid Until</th><th>Total Amount</th><th>Status</th><th>Actions</th></tr></thead>
+      <thead><tr><th>#</th><th>Quote No.</th><th>Supplier</th><th>Contact Person</th><th>Quote Date</th><th>Valid Until</th><th>Total Amount</th><th>Status</th><th>File</th><th>Actions</th></tr></thead>
       <tbody id="sq-body"></tbody>
     </table>
   </div>
@@ -2401,6 +2401,7 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
       <div class="g-form-group"><label>Total Amount</label><input type="number" id="sq-f-total" min="0" step="0.01" placeholder="0.00"/></div>
       <div class="g-form-group"><label>Items / Description</label><textarea id="sq-f-desc" rows="3" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;resize:vertical" placeholder="Describe the items or services quoted..."></textarea></div>
       <div class="g-form-group"><label>Remarks</label><input id="sq-f-remarks" placeholder="Optional notes"/></div>
+      <div class="g-form-group"><label>Attach File</label><input type="file" id="sq-f-file" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface)"/><div id="sq-cur-file" style="margin-top:5px;font-size:12px;color:var(--text-2)"></div></div>
     </div>
     <div class="g-modal-foot"><button class="g-btn g-btn-cancel" onclick="closeSQModal()">Cancel</button><button class="g-btn g-btn-save" onclick="saveSQ()">Save</button></div>
   </div>
@@ -3421,15 +3422,15 @@ function renderSQ(){
   const ft=document.getElementById('sq-filter').value;
   const rows=sqData.filter(r=>(!q||(r.quote_number||'').toLowerCase().includes(q)||(r.supplier||'').toLowerCase().includes(q)||(r.contact_person||'').toLowerCase().includes(q))&&(!ft||r.status===ft));
   document.getElementById('sq-meta').textContent=rows.length+' record'+(rows.length===1?'':'s');
-  document.getElementById('sq-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${esc(r.quote_number)}</strong></td><td>${esc(r.supplier)||'—'}</td><td>${esc(r.contact_person)||'—'}</td><td>${r.quote_date||'—'}</td><td>${r.valid_until||'—'}</td><td>${fmt(r.total_amount)}</td><td>${badge(r.status)}</td><td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openSQModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSQDelModal(${r.id},'${(r.quote_number||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="9"><div class="no-results">No supplier quotations found.</div></td></tr>';
+  document.getElementById('sq-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${esc(r.quote_number)}</strong></td><td>${esc(r.supplier)||'—'}</td><td>${esc(r.contact_person)||'—'}</td><td>${r.quote_date||'—'}</td><td>${r.valid_until||'—'}</td><td>${fmt(r.total_amount)}</td><td>${badge(r.status)}</td><td>${fileLink(r)}</td><td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openSQModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSQDelModal(${r.id},'${(r.quote_number||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="10"><div class="no-results">No supplier quotations found.</div></td></tr>';
 }
 function sqCalcTotal(){const up=parseFloat(document.getElementById('sq-f-unitprice').value)||0;const qty=parseFloat(document.getElementById('sq-f-qty').value)||0;if(up&&qty)document.getElementById('sq-f-total').value=(up*qty).toFixed(2);}
-function openSQModal(id=null){sqEditId=id;const r=id?sqData.find(x=>x.id===id):null;document.getElementById('sq-modal-title').textContent=id?'Edit Quotation':'Add Supplier Quotation';document.getElementById('sq-f-no').value=r?r.quote_number:'';document.getElementById('sq-f-supplier').value=r?r.supplier:'';document.getElementById('sq-f-contact').value=r?r.contact_person:'';document.getElementById('sq-f-status').value=r?r.status:'Pending';document.getElementById('sq-f-date').value=r?r.quote_date:today();document.getElementById('sq-f-valid').value=r?r.valid_until:'';document.getElementById('sq-f-unitprice').value=r?r.unit_price:'';document.getElementById('sq-f-qty').value=r?r.quantity:'';document.getElementById('sq-f-total').value=r?r.total_amount:'';document.getElementById('sq-f-desc').value=r?r.items_description:'';document.getElementById('sq-f-remarks').value=r?r.remarks:'';document.getElementById('sq-modal').classList.add('open');}
+function openSQModal(id=null){sqEditId=id;const r=id?sqData.find(x=>x.id===id):null;document.getElementById('sq-modal-title').textContent=id?'Edit Quotation':'Add Supplier Quotation';document.getElementById('sq-f-no').value=r?r.quote_number:'';document.getElementById('sq-f-supplier').value=r?r.supplier:'';document.getElementById('sq-f-contact').value=r?r.contact_person:'';document.getElementById('sq-f-status').value=r?r.status:'Pending';document.getElementById('sq-f-date').value=r?r.quote_date:today();document.getElementById('sq-f-valid').value=r?r.valid_until:'';document.getElementById('sq-f-unitprice').value=r?r.unit_price:'';document.getElementById('sq-f-qty').value=r?r.quantity:'';document.getElementById('sq-f-total').value=r?r.total_amount:'';document.getElementById('sq-f-desc').value=r?r.items_description:'';document.getElementById('sq-f-remarks').value=r?r.remarks:'';document.getElementById('sq-f-file').value='';document.getElementById('sq-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('sq-modal').classList.add('open');}
 function closeSQModal(){document.getElementById('sq-modal').classList.remove('open');}
 async function saveSQ(){
-  const body={quote_number:document.getElementById('sq-f-no').value.trim(),supplier:document.getElementById('sq-f-supplier').value.trim(),contact_person:document.getElementById('sq-f-contact').value.trim(),status:document.getElementById('sq-f-status').value,quote_date:document.getElementById('sq-f-date').value,valid_until:document.getElementById('sq-f-valid').value,unit_price:parseFloat(document.getElementById('sq-f-unitprice').value)||0,quantity:parseFloat(document.getElementById('sq-f-qty').value)||0,total_amount:parseFloat(document.getElementById('sq-f-total').value)||0,items_description:document.getElementById('sq-f-desc').value.trim(),remarks:document.getElementById('sq-f-remarks').value.trim()};
-  if(!body.quote_number||!body.supplier){gToast('Quote number and supplier are required.','error');return;}
-  try{const url=sqEditId?API+'/supplier-quotations/'+sqEditId:API+'/supplier-quotations';const res=await fetch(url,{method:sqEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(sqEditId?'Updated!':'Added!');closeSQModal();loadSQ();}catch(err){gToast(err.message,'error');}
+  const fd=new FormData();fd.append('quote_number',document.getElementById('sq-f-no').value.trim());fd.append('supplier',document.getElementById('sq-f-supplier').value.trim());fd.append('contact_person',document.getElementById('sq-f-contact').value.trim());fd.append('status',document.getElementById('sq-f-status').value);fd.append('quote_date',document.getElementById('sq-f-date').value);fd.append('valid_until',document.getElementById('sq-f-valid').value);fd.append('unit_price',parseFloat(document.getElementById('sq-f-unitprice').value)||0);fd.append('quantity',parseFloat(document.getElementById('sq-f-qty').value)||0);fd.append('total_amount',parseFloat(document.getElementById('sq-f-total').value)||0);fd.append('items_description',document.getElementById('sq-f-desc').value.trim());fd.append('remarks',document.getElementById('sq-f-remarks').value.trim());const fi=document.getElementById('sq-f-file');if(fi.files[0])fd.append('file',fi.files[0]);
+  if(!fd.get('quote_number')||!fd.get('supplier')){gToast('Quote number and supplier are required.','error');return;}
+  try{const url=sqEditId?API+'/supplier-quotations/'+sqEditId:API+'/supplier-quotations';const res=await fetch(url,{method:sqEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(sqEditId?'Updated!':'Added!');closeSQModal();loadSQ();}catch(err){gToast(err.message,'error');}
 }
 function openSQDelModal(id,name){sqDeleteId=id;document.getElementById('sq-del-name').textContent=name;document.getElementById('sq-del-modal').classList.add('open');}
 function closeSQDelModal(){document.getElementById('sq-del-modal').classList.remove('open');}
@@ -4654,20 +4655,4 @@ function renderStockMovements(){
   }).join(''):'<tr><td colspan="9"><div class="no-results">No stock movements yet.</div></td></tr>';
 }
 
-// ╔═══════════════════════════════════════════════════════════════
-// BOOT — runs after DOM is ready
-// ╚═══════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  initApp();
-  loadACEvents();
-  loadLineConfig();
-  setTimeout(loadDashboardCharts, 1500);
-});
-</script>
-<script src="/chart.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script src="/ua.js?v=3"></script>
-</body>
-</html>
+// ╔══════════════════════════════════════════════════════════

@@ -406,6 +406,12 @@ const dbPromise = (async () => {
     )
   `);
 
+  // ── Migrate supplier_quotations: add file_name and file_path columns ──
+  try {
+    await db.run(`ALTER TABLE supplier_quotations ADD COLUMN IF NOT EXISTS file_name TEXT NOT NULL DEFAULT ''`);
+    await db.run(`ALTER TABLE supplier_quotations ADD COLUMN IF NOT EXISTS file_path TEXT NOT NULL DEFAULT ''`);
+  } catch (_) {}
+
   // ── Migrate pullout_receipts: rename transferred_by → pulled_out_by, add new columns ──
   try {
     await db.run(`ALTER TABLE pullout_receipts RENAME COLUMN transferred_by TO pulled_out_by`);
@@ -697,17 +703,4 @@ const dbPromise = (async () => {
       change_qty   INTEGER     NOT NULL DEFAULT 0,
       reason       TEXT        NOT NULL DEFAULT 'Manual update',
       user_name    TEXT        NOT NULL DEFAULT 'System',
-      created_at   TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
-
-  console.log('[db] PostgreSQL schema ready.');
-  return { db, save: () => {} };
-})();
-
-// Prevent unhandled-rejection crash — log the error but keep the process alive
-dbPromise.catch(err => {
-  console.error('[db] FATAL init error:', err.message);
-});
-
-module.exports = { dbPromise, calcStatus };
+      created_at   TIM
