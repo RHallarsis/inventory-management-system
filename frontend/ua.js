@@ -19,7 +19,7 @@
       }
       const active = users.filter(function(u){ return u.status === 'Active'; }).length;
       if (countLabel) countLabel.textContent = users.length + ' account' + (users.length !== 1 ? 's' : '') + ' · ' + active + ' active';
-      const roleColors = { Admin: '#6366f1', Manager: '#0ea5e9', Staff: '#64748b' };
+      const roleColors = { Admin: '#6366f1', Manager: '#0ea5e9', Staff: '#64748b', Viewer: '#10b981' };
       const avatarColors = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899'];
       var html = '';
       users.forEach(function(u, i) {

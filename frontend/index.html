@@ -374,6 +374,36 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
   white-space:nowrap;
 }
 .staff-viewonly-badge.visible { display:flex; }
+/* Viewer badge */
+.viewer-badge {
+  display:none;
+  align-items:center;
+  gap:5px;
+  background:rgba(16,185,129,.12);
+  color:#10b981;
+  border:1px solid rgba(16,185,129,.25);
+  font-size:11px;
+  font-weight:700;
+  padding:4px 12px;
+  border-radius:20px;
+  letter-spacing:.3px;
+  white-space:nowrap;
+}
+.viewer-badge.visible { display:flex; }
+/* Viewer mode — hide ALL CRUD controls with no exceptions */
+body.viewer-mode .page-add-btn,
+body.viewer-mode .page-act-btn,
+body.viewer-mode .btn-edit,
+body.viewer-mode .btn-del,
+body.viewer-mode .ua-btn,
+body.viewer-mode .ua-btn-edit,
+body.viewer-mode .ua-btn-del,
+body.viewer-mode .ac-add-btn,
+body.viewer-mode .ac-task-edit,
+body.viewer-mode .ac-task-del,
+body.viewer-mode .ac-sum-edit,
+body.viewer-mode .ac-sum-del,
+body.viewer-mode .line-notify-btn { display:none !important; }
 /* Staff access-denied screen (shown when a blocked page is attempted) */
 .staff-blocked-notice {
   display:none;
@@ -1268,6 +1298,10 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
       <span class="staff-viewonly-badge" id="staff-viewonly-badge">
         <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
         View Only — Staff
+      </span>
+      <span class="viewer-badge" id="viewer-badge">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+        Viewer — Read Only
       </span>
       <span id="topbar-date"></span>
     </div>
@@ -2203,6 +2237,7 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
         <div class="g-form-group">
           <label>Role <span style="color:var(--danger)">*</span></label>
           <select id="u-role">
+            <option value="Viewer">Viewer (View Only)</option>
             <option value="Staff">Staff</option>
             <option value="Manager">Manager</option>
             <option value="Admin">Admin</option>
@@ -2911,32 +2946,36 @@ const STAFF_BLOCKED_PAGES = ['settings'];
  * Call after login (with the user's role) and after logout (with null).
  */
 function applyRoleAccess(role) {
-  const isStaff = role === 'Staff';
+  const isStaff  = role === 'Staff';
+  const isViewer = role === 'Viewer';
 
   // ── body class toggles the CSS visibility rules ──
-  document.body.classList.toggle('staff-mode', isStaff);
+  document.body.classList.toggle('staff-mode',  isStaff);
+  document.body.classList.toggle('viewer-mode', isViewer);
 
-  // ── topbar badge ──
-  const badge = document.getElementById('staff-viewonly-badge');
-  if (badge) badge.classList.toggle('visible', isStaff);
+  // ── topbar badges ──
+  const staffBadge  = document.getElementById('staff-viewonly-badge');
+  const viewerBadge = document.getElementById('viewer-badge');
+  if (staffBadge)  staffBadge.classList.toggle('visible',  isStaff);
+  if (viewerBadge) viewerBadge.classList.toggle('visible', isViewer);
 
-  // ── sidebar nav items ──
+  // ── sidebar nav: hide Settings for Staff and Viewer ──
   STAFF_BLOCKED_PAGES.forEach(page => {
     const el = document.querySelector(`.nav-item[data-page="${page}"]`);
-    if (el) el.style.display = isStaff ? 'none' : '';
+    if (el) el.style.display = (isStaff || isViewer) ? 'none' : '';
   });
 
-  // ── Nav labels — all section labels visible for Staff ──
+  // ── Nav labels always visible ──
   document.querySelectorAll('.nav-label').forEach(label => {
-    label.style.display = ''; // always visible; sections now controlled by nav-item visibility
+    label.style.display = '';
   });
 }
 
 // ── PAGE SWITCHING ───────────────────────────────────────────
 const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',supplierquotations:'Supplier Quotations',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Delivery Receipts',pulloutreceipts:'Pullout Receipts',transmittalreceipts:'Transmittal Receipts',cipl:'CI / PL — Commercial Invoice & Packing List',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',auditlog:'Audit Log',stockmovements:'Stock Movements',settings:'Settings'};
 function showPage(page){
-  // ── Role guard: Staff cannot visit admin-only pages ──────────
-  if(currentUser && currentUser.role==='Staff' && STAFF_BLOCKED_PAGES.includes(page)){
+  // ── Role guard: Staff and Viewer cannot visit blocked pages ──
+  if(currentUser && (currentUser.role==='Staff' || currentUser.role==='Viewer') && STAFF_BLOCKED_PAGES.includes(page)){
     document.querySelectorAll('.page-section').forEach(el=>el.classList.remove('active'));
     document.getElementById('page-staff-blocked').classList.add('active');
     document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
