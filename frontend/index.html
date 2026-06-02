@@ -1589,7 +1589,7 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
 <div id="page-stocktransfers" class="page-section">
   <div class="page-hero h-purple"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 4l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z"/></svg></div><div><div class="ph-title">Delivery Receipts</div><div class="ph-sub">Track inventory movements and inter-location stock transfers</div></div></div></div>
   <div class="page-toolbar">
-    <input class="search-input" id="st-search" placeholder="Search transfers..." oninput="renderST()"/>
+    <input class="search-input" id="st-search" placeholder="Search transfers..." oninput="stPage=1;renderST()"/>
     <span class="table-meta" id="st-meta"></span>
     <button class="page-add-btn" onclick="openSTModal()">+ Add Transfer</button>
   </div>
@@ -1599,6 +1599,7 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
       <tbody id="st-body"></tbody>
     </table>
   </div>
+  <div id="st-pagination" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:10px 4px;flex-wrap:wrap"></div>
 </div>
 <!-- ===== PULLOUT RECEIPTS ===== -->
 <div id="page-pulloutreceipts" class="page-section">
@@ -3547,15 +3548,33 @@ function closeGRDelModal(){document.getElementById('gr-del-modal').classList.rem
 async function confirmDeleteGR(){try{await fetch(API+'/goods-received/'+grDeleteId,{method:'DELETE'});gToast('Deleted.');closeGRDelModal();loadGR();}catch{gToast('Delete failed','error');}}
 
 // ── STOCK TRANSFERS ─────────────────────────────────────────
-async function loadST(){try{const r=await fetch(API+'/stock-transfers');stData=await r.json();renderST();}catch{document.getElementById('st-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
+const ST_PAGE_SIZE=50;let stPage=1;
+async function loadST(){try{const r=await fetch(API+'/stock-transfers');stData=await r.json();stPage=1;renderST();}catch{document.getElementById('st-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
 function stSuffix(no){const m=(no||'').match(/-(\d+)$/);return m?+m[1]:0;}
 function renderST(){
   const q=(document.getElementById('st-search').value||'').toLowerCase();
   let rows=q?stData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)):[...stData];
   rows.sort((a,b)=>stSuffix(a.transfer_no)-stSuffix(b.transfer_no));
-  document.getElementById('st-meta').textContent=`Showing ${rows.length} of ${stData.length}`;
-  document.getElementById('st-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||0}</td><td>${badge(r.status)}</td><td>${r.transferred_by||'—'}</td><td>${fileLink(r)}</td>
+  const total=rows.length;
+  const totalPages=Math.max(1,Math.ceil(total/ST_PAGE_SIZE));
+  if(stPage>totalPages)stPage=totalPages;
+  const start=(stPage-1)*ST_PAGE_SIZE;
+  const pageRows=rows.slice(start,start+ST_PAGE_SIZE);
+  document.getElementById('st-meta').textContent=`Showing ${start+1}–${Math.min(start+ST_PAGE_SIZE,total)} of ${total}`;
+  document.getElementById('st-body').innerHTML=pageRows.map((r,i)=>`<tr><td>${start+i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||'—'}</td><td>${badge(r.status)}</td><td>${r.transferred_by||'—'}</td><td>${fileLink(r)}</td>
     <td><button class="page-act-btn btn-edit" onclick="openSTModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSTDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="10"><div class="no-results">No transfers.</div></td></tr>';
+  // pagination controls
+  const pg=document.getElementById('st-pagination');
+  if(totalPages<=1){pg.innerHTML='';return;}
+  let btns=`<span style="font-size:12px;color:var(--text-2)">Page ${stPage} of ${totalPages}</span>`;
+  btns+=`<button class="page-act-btn" ${stPage===1?'disabled':''} onclick="stPage=1;renderST()">«</button>`;
+  btns+=`<button class="page-act-btn" ${stPage===1?'disabled':''} onclick="stPage--;renderST()">‹ Prev</button>`;
+  // page number buttons (show up to 5 around current)
+  const s=Math.max(1,stPage-2),e=Math.min(totalPages,s+4);
+  for(let p=s;p<=e;p++)btns+=`<button class="page-act-btn${p===stPage?' btn-edit':''}" onclick="stPage=${p};renderST()">${p}</button>`;
+  btns+=`<button class="page-act-btn" ${stPage===totalPages?'disabled':''} onclick="stPage++;renderST()">Next ›</button>`;
+  btns+=`<button class="page-act-btn" ${stPage===totalPages?'disabled':''} onclick="stPage=${totalPages};renderST()">»</button>`;
+  pg.innerHTML=btns;
 }
 function openSTModal(id=null){stEditId=id;const r=id?stData.find(x=>x.id===id):null;document.getElementById('st-modal-title').textContent=id?'Edit Transfer':'Add Delivery Receipt';document.getElementById('st-f-no').value=r?r.transfer_no:'';document.getElementById('st-f-date').value=r?r.transfer_date:today();document.getElementById('st-f-from').value=r?r.source_location:'';document.getElementById('st-f-to').value=r?r.destination_location:'';document.getElementById('st-f-items').value=r?r.items_count||'':'';document.getElementById('st-f-status').value=r?r.status:'Pending';document.getElementById('st-f-by').value=r?r.transferred_by:'';document.getElementById('st-f-file').value='';document.getElementById('st-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('st-modal').classList.add('open');}
 function closeSTModal(){document.getElementById('st-modal').classList.remove('open');}
