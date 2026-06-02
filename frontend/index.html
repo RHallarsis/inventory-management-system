@@ -4635,79 +4635,92 @@ function renderGoodsReceivedPanel(data){
     return;
   }
   const {summary=[],recent=[],total=0}=data;
-  // Status color map
   const colorMap={
-    'Pending':   {bg:'rgba(245,158,11,.1)',  color:'#d97706', dot:'#f59e0b'},
-    'Completed': {bg:'rgba(16,185,129,.1)',  color:'#059669', dot:'#10b981'},
-    'Complete':  {bg:'rgba(16,185,129,.1)',  color:'#059669', dot:'#10b981'},
-    'Received':  {bg:'rgba(99,102,241,.1)',  color:'#4f46e5', dot:'#6366f1'},
-    'Partial':   {bg:'rgba(59,130,246,.1)',  color:'#2563eb', dot:'#3b82f6'},
-    'Cancelled': {bg:'rgba(239,68,68,.1)',   color:'#dc2626', dot:'#ef4444'},
-    'Rejected':  {bg:'rgba(239,68,68,.1)',   color:'#dc2626', dot:'#ef4444'},
+    'Pending':   {bg:'rgba(245,158,11,.08)', border:'rgba(245,158,11,.2)',  color:'#b45309', dot:'#f59e0b', bar:'#f59e0b'},
+    'Completed': {bg:'rgba(16,185,129,.08)', border:'rgba(16,185,129,.2)',  color:'#065f46', dot:'#10b981', bar:'#10b981'},
+    'Complete':  {bg:'rgba(16,185,129,.08)', border:'rgba(16,185,129,.2)',  color:'#065f46', dot:'#10b981', bar:'#10b981'},
+    'Received':  {bg:'rgba(99,102,241,.08)', border:'rgba(99,102,241,.2)',  color:'#3730a3', dot:'#6366f1', bar:'#6366f1'},
+    'Partial':   {bg:'rgba(59,130,246,.08)', border:'rgba(59,130,246,.2)',  color:'#1d4ed8', dot:'#3b82f6', bar:'#3b82f6'},
+    'Cancelled': {bg:'rgba(239,68,68,.08)',  border:'rgba(239,68,68,.2)',   color:'#991b1b', dot:'#ef4444', bar:'#ef4444'},
+    'Rejected':  {bg:'rgba(239,68,68,.08)',  border:'rgba(239,68,68,.2)',   color:'#991b1b', dot:'#ef4444', bar:'#ef4444'},
   };
-  const getC=s=>colorMap[s]||{bg:'rgba(100,116,139,.1)',color:'#475569',dot:'#94a3b8'};
-  // Status pill cards
-  const pills=summary.map(r=>{
+  const getC=s=>colorMap[s]||{bg:'rgba(100,116,139,.08)',border:'rgba(100,116,139,.2)',color:'#334155',dot:'#94a3b8',bar:'#94a3b8'};
+  // Stat cards — compact row
+  const statCards=[
+    {label:'Total GR',count:total,sub:'All records',bg:'rgba(99,102,241,.06)',border:'rgba(99,102,241,.2)',color:'#3730a3',dot:'#6366f1',bar:'#6366f1',pct:100}
+  ].concat(summary.map(r=>{
     const c=getC(r.status);
     const pct=total>0?Math.round(+r.count/total*100):0;
-    return `<div style="flex:1;min-width:110px;background:${c.bg};border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px">
-      <div style="display:flex;align-items:center;gap:6px">
-        <div style="width:8px;height:8px;border-radius:50%;background:${c.dot};flex-shrink:0"></div>
-        <span style="font-size:11px;font-weight:700;color:${c.color};text-transform:uppercase;letter-spacing:.5px">${r.status}</span>
+    return {label:r.status,count:+r.count,sub:`${pct}% of total`,...c,pct};
+  }));
+  const cards=statCards.map(s=>`
+    <div style="flex:1;min-width:130px;max-width:200px;background:${s.bg};border:1px solid ${s.border};border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:7px;height:7px;border-radius:50%;background:${s.dot}"></div>
+          <span style="font-size:10.5px;font-weight:800;color:${s.color};text-transform:uppercase;letter-spacing:.6px">${s.label}</span>
+        </div>
+        <span style="font-size:10px;color:${s.color};opacity:.65;font-weight:600">${s.sub}</span>
       </div>
-      <div style="font-size:26px;font-weight:900;color:${c.color};line-height:1">${r.count}</div>
-      <div style="font-size:10.5px;color:${c.color};opacity:.7">${pct}% of total</div>
-    </div>`;
-  }).join('');
-  const totalCard=`<div style="flex:1;min-width:110px;background:rgba(99,102,241,.06);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;border:1.5px solid rgba(99,102,241,.15)">
-    <div style="display:flex;align-items:center;gap:6px">
-      <div style="width:8px;height:8px;border-radius:50%;background:#6366f1;flex-shrink:0"></div>
-      <span style="font-size:11px;font-weight:700;color:#4f46e5;text-transform:uppercase;letter-spacing:.5px">Total GR</span>
-    </div>
-    <div style="font-size:26px;font-weight:900;color:#4f46e5;line-height:1">${total}</div>
-    <div style="font-size:10.5px;color:#6366f1;opacity:.7">All records</div>
-  </div>`;
-  // Recent records table
-  const recentRows=recent.length?recent.map(r=>{
+      <div style="font-size:28px;font-weight:900;color:${s.color};line-height:1;letter-spacing:-1px">${s.count}</div>
+      <div style="background:rgba(0,0,0,.06);border-radius:99px;height:4px;overflow:hidden">
+        <div style="height:100%;width:${s.pct}%;background:${s.bar};border-radius:99px;transition:width .6s ease"></div>
+      </div>
+    </div>`).join('');
+  // Table rows
+  const recentRows=recent.length?recent.map((r,i)=>{
     const c=getC(r.status);
-    return `<tr>
-      <td style="font-weight:700;color:#0f172a;font-size:12px">${r.gr_number||'—'}</td>
-      <td style="color:#475569;font-size:12px">${r.po_number||'—'}</td>
-      <td style="color:#475569;font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.supplier||'—'}</td>
-      <td style="color:#64748b;font-size:12px">${r.received_date||'—'}</td>
-      <td style="color:#64748b;font-size:12px;text-align:center">${r.total_items||0}</td>
-      <td><span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${c.bg};color:${c.color}">
-        <span style="width:6px;height:6px;border-radius:50%;background:${c.dot};display:inline-block"></span>${r.status}
-      </span></td>
+    const bg=i%2===0?'#fff':'#f8fafc';
+    return `<tr style="background:${bg};transition:background .15s" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='${bg}'">
+      <td style="padding:10px 14px;font-weight:700;color:#0f172a;font-size:12px;white-space:nowrap">${r.gr_number||'—'}</td>
+      <td style="padding:10px 14px;color:#475569;font-size:12px;white-space:nowrap">${r.po_number||'—'}</td>
+      <td style="padding:10px 14px;color:#334155;font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.supplier||'—'}</td>
+      <td style="padding:10px 14px;color:#64748b;font-size:12px;white-space:nowrap">${r.received_date||'—'}</td>
+      <td style="padding:10px 14px;color:#0f172a;font-size:12px;text-align:center;font-weight:700">${r.total_items||0}</td>
+      <td style="padding:10px 14px">
+        <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:700;background:${c.bg};color:${c.color};border:1px solid ${c.border}">
+          <span style="width:6px;height:6px;border-radius:50%;background:${c.dot};flex-shrink:0"></span>${r.status}
+        </span>
+      </td>
     </tr>`;
   }).join('')
-  :`<tr><td colspan="6" style="text-align:center;padding:22px;color:#94a3b8;font-size:12.5px">No goods received records yet</td></tr>`;
+  :`<tr><td colspan="6" style="text-align:center;padding:28px;color:#94a3b8;font-size:12.5px">No goods received records yet</td></tr>`;
   el.innerHTML=`
-  <div style="padding:20px 24px 16px;border-bottom:1px solid #f1f5f9">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div>
-        <div style="font-size:13px;font-weight:800;color:#0f172a;letter-spacing:-.3px">Goods Received Overview</div>
-        <div style="font-size:11px;color:#94a3b8;margin-top:2px">Status breakdown of all goods received records</div>
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 18px;border-bottom:1px solid #f1f5f9">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(99,102,241,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#6366f1"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
       </div>
-      <button onclick="showPage('goodsreceived')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;border:1.5px solid rgba(99,102,241,.3);background:rgba(99,102,241,.06);color:#6366f1;cursor:pointer;font-size:11.5px;font-weight:700;transition:all .2s" onmouseover="this.style.background='rgba(99,102,241,.14)'" onmouseout="this.style.background='rgba(99,102,241,.06)'">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
-        View All
-      </button>
+      <div>
+        <div style="font-size:14px;font-weight:800;color:#0f172a;letter-spacing:-.3px">Goods Received Overview</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px">Tracking receipt status of all incoming purchase orders</div>
+      </div>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      ${totalCard}${pills}
-    </div>
+    <button onclick="showPage('goodsreceived')" style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;border:1.5px solid rgba(99,102,241,.25);background:rgba(99,102,241,.06);color:#4f46e5;cursor:pointer;font-size:12px;font-weight:700;transition:all .18s" onmouseover="this.style.background='rgba(99,102,241,.14)';this.style.borderColor='rgba(99,102,241,.5)'" onmouseout="this.style.background='rgba(99,102,241,.06)';this.style.borderColor='rgba(99,102,241,.25)'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"/></svg>
+      View All Records
+    </button>
   </div>
-  <div style="padding:0 8px 8px">
+  <!-- Stat cards -->
+  <div style="display:flex;gap:12px;flex-wrap:wrap;padding:18px 24px;border-bottom:1px solid #f1f5f9">
+    ${cards}
+  </div>
+  <!-- Recent table -->
+  <div style="padding:0 0 4px">
+    <div style="padding:12px 24px 8px;display:flex;align-items:center;gap:6px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="#94a3b8"><path d="M13 3a9 9 0 1 0 .001 18.001A9 9 0 0 0 13 3zm0 16a7 7 0 1 1 .001-14.001A7 7 0 0 1 13 19zm.5-11H12v6l5.25 3.15.75-1.23-4.5-2.67V8z"/></svg>
+      <span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px">Recent Receipts</span>
+    </div>
     <table style="width:100%;border-collapse:collapse">
       <thead>
-        <tr style="border-bottom:1px solid #f1f5f9">
-          <th style="padding:10px 12px;text-align:left;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">GR #</th>
-          <th style="padding:10px 12px;text-align:left;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">PO #</th>
-          <th style="padding:10px 12px;text-align:left;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Supplier</th>
-          <th style="padding:10px 12px;text-align:left;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Date Received</th>
-          <th style="padding:10px 12px;text-align:center;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Items</th>
-          <th style="padding:10px 12px;text-align:left;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Status</th>
+        <tr style="background:#f8fafc;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9">
+          <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">GR #</th>
+          <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">PO #</th>
+          <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Supplier</th>
+          <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Date Received</th>
+          <th style="padding:9px 14px;text-align:center;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Items</th>
+          <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Status</th>
         </tr>
       </thead>
       <tbody>${recentRows}</tbody>
