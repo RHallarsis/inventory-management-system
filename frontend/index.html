@@ -3378,8 +3378,10 @@ async function openLPModal(id=null){
     sel.style.display='';
     try{
       const pos=await fetch(API+'/purchase-orders').then(r=>r.json());
+      const usedPOs=new Set((lpData||[]).map(lp=>lp.po_number));
+      const availPOs=pos.filter(p=>!usedPOs.has(p.po_number));
       sel.innerHTML='<option value="">— Select PO / Reference No. —</option>'+
-        pos.map(p=>`<option value="${p.po_number}" data-supplier="${(p.supplier||'').replace(/"/g,'&quot;')}">${p.po_number} — ${p.supplier||''}</option>`).join('');
+        availPOs.map(p=>`<option value="${p.po_number}" data-supplier="${(p.supplier||'').replace(/"/g,'&quot;')}">${p.po_number} — ${p.supplier||''}</option>`).join('');
     }catch{sel.innerHTML='<option value="">— Could not load POs —</option>';}
     document.getElementById('lp-f-supplier').value='';
     document.getElementById('lp-f-supplier').readOnly=true;
