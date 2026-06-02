@@ -77,6 +77,8 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .btn-edit:hover{background:#c7d2fe;}
 .btn-del{background:#fee2e2;color:#dc2626;}
 .btn-del:hover{background:#fecaca;}
+.pag-active{background:#6366f1;color:#fff;}
+.pag-active:hover{background:#4f46e5;}
 /* BADGES */
 .badge-instock,.badge-active{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#d1fae5;color:#065f46;}
 .badge-lowstock{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#fef3c7;color:#92400e;}
@@ -307,7 +309,6 @@ body.staff-mode .nav-item[data-page="stockmovements"] { display:none !important;
 
 /* Hide every add / edit / delete control when staff is logged in */
 body.staff-mode .page-add-btn,
-body.staff-mode .page-act-btn,
 body.staff-mode .btn-edit,
 body.staff-mode .btn-del,
 body.staff-mode .ua-add-btn,
@@ -323,39 +324,39 @@ body.staff-mode .line-notify-btn { display:none !important; }
 
 /* ── Staff CRUD exceptions: full access pages ── */
 body.staff-mode #page-machinemonitoring .page-add-btn,
-body.staff-mode #page-machinemonitoring .page-act-btn,
+
 body.staff-mode #page-machinemonitoring .btn-edit,
 body.staff-mode #page-machinemonitoring .btn-del,
 body.staff-mode #page-goodsreceived .page-add-btn,
-body.staff-mode #page-goodsreceived .page-act-btn,
+
 body.staff-mode #page-goodsreceived .btn-edit,
 body.staff-mode #page-goodsreceived .btn-del,
 body.staff-mode #page-stocktransfers .page-add-btn,
-body.staff-mode #page-stocktransfers .page-act-btn,
+
 body.staff-mode #page-stocktransfers .btn-edit,
 body.staff-mode #page-stocktransfers .btn-del,
 body.staff-mode #page-pulloutreceipts .page-add-btn,
-body.staff-mode #page-pulloutreceipts .page-act-btn,
+
 body.staff-mode #page-pulloutreceipts .btn-edit,
 body.staff-mode #page-pulloutreceipts .btn-del,
 body.staff-mode #page-transmittalreceipts .page-add-btn,
-body.staff-mode #page-transmittalreceipts .page-act-btn,
+
 body.staff-mode #page-transmittalreceipts .btn-edit,
 body.staff-mode #page-transmittalreceipts .btn-del,
 body.staff-mode #page-inventoryreport .page-add-btn,
-body.staff-mode #page-inventoryreport .page-act-btn,
+
 body.staff-mode #page-inventoryreport .btn-edit,
 body.staff-mode #page-inventoryreport .btn-del,
 body.staff-mode #page-purchasereport .page-add-btn,
-body.staff-mode #page-purchasereport .page-act-btn,
+
 body.staff-mode #page-purchasereport .btn-edit,
 body.staff-mode #page-purchasereport .btn-del,
 body.staff-mode #log-panel-sites .page-add-btn,
-body.staff-mode #log-panel-sites .page-act-btn,
+
 body.staff-mode #log-panel-sites .btn-edit,
 body.staff-mode #log-panel-sites .btn-del,
 body.staff-mode #log-panel-waybills .page-add-btn,
-body.staff-mode #log-panel-waybills .page-act-btn,
+
 body.staff-mode #log-panel-waybills .btn-edit,
 body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
 /* Staff topbar badge */
@@ -392,7 +393,6 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
 .viewer-badge.visible { display:flex; }
 /* Viewer mode — hide ALL CRUD controls with no exceptions */
 body.viewer-mode .page-add-btn,
-body.viewer-mode .page-act-btn,
 body.viewer-mode .btn-edit,
 body.viewer-mode .btn-del,
 body.viewer-mode .ua-btn,
@@ -3647,7 +3647,7 @@ function renderST(){
   btns+=`<button class="page-act-btn" ${stPage===1?'disabled':''} onclick="stPage--;renderST()">‹ Prev</button>`;
   // page number buttons (show up to 5 around current)
   const s=Math.max(1,stPage-2),e=Math.min(totalPages,s+4);
-  for(let p=s;p<=e;p++)btns+=`<button class="page-act-btn${p===stPage?' btn-edit':''}" onclick="stPage=${p};renderST()">${p}</button>`;
+  for(let p=s;p<=e;p++)btns+=`<button class="page-act-btn${p===stPage?' pag-active':''}" onclick="stPage=${p};renderST()">${p}</button>`;
   btns+=`<button class="page-act-btn" ${stPage===totalPages?'disabled':''} onclick="stPage++;renderST()">Next ›</button>`;
   btns+=`<button class="page-act-btn" ${stPage===totalPages?'disabled':''} onclick="stPage=${totalPages};renderST()">»</button>`;
   pg.innerHTML=btns;
