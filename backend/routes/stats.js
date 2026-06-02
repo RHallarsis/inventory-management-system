@@ -56,6 +56,22 @@ router.get('/stats/spare-parts-status', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// GET /api/stats/goods-received — status summary + recent 5 records
+router.get('/stats/goods-received', async (req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const summary = await db.getAll(
+      `SELECT status, COUNT(*) AS count FROM goods_received GROUP BY status ORDER BY status`
+    );
+    const recent = await db.getAll(
+      `SELECT gr_number, po_number, supplier, received_date, received_by, status, total_items
+       FROM goods_received ORDER BY created_at DESC LIMIT 5`
+    );
+    const total = summary.reduce((s, r) => s + (+r.count || 0), 0);
+    res.json({ summary, recent, total });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // GET /api/stock-movements — recent stock changes
 router.get('/stock-movements', async (req, res) => {
   try {
