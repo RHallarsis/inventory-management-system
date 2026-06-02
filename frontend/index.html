@@ -2235,11 +2235,14 @@ body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
     <div class="g-modal-head"><span id="lp-modal-title">Add Local Purchase</span><button class="g-modal-close" onclick="closeLPModal()">×</button></div>
     <div class="g-modal-body">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="g-form-group"><label>PO / Reference No. *</label><input id="lp-f-pono" placeholder="LP-2024-001"/></div>
+        <div class="g-form-group"><label>PO / Reference No. *</label>
+  <select id="lp-f-pono-select" onchange="onLPPoSelect()" style="display:none"></select>
+  <input id="lp-f-pono" placeholder="LP-2024-001" style="display:none" readonly/>
+</div>
         <div class="g-form-group"><label>Part Name *</label><input id="lp-f-part" placeholder="Spare part name"/></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="g-form-group"><label>Supplier</label><input id="lp-f-supplier" placeholder="Supplier name"/></div>
+        <div class="g-form-group"><label>Supplier</label><input id="lp-f-supplier" placeholder="Auto-filled from PO" readonly style="background:#f1f5f9;color:#374151"/></div>
         <div class="g-form-group"><label>Status</label>
           <select id="lp-f-status"><option>Pending</option><option>Ordered</option><option>Received</option><option>Cancelled</option></select>
         </div>
@@ -3354,13 +3357,36 @@ function calcLPTotal(){
   const price=+(document.getElementById('lp-f-uprice').value)||0;
   document.getElementById('lp-f-total').value=(qty*price).toFixed(2);
 }
-function openLPModal(id=null){
+async function openLPModal(id=null){
   lpEditId=id;
   const r=id?lpData.find(x=>x.id===id):null;
   document.getElementById('lp-modal-title').textContent=id?'Edit Local Purchase':'Add Local Purchase';
-  document.getElementById('lp-f-pono').value=r?r.po_number:'';
+  const sel=document.getElementById('lp-f-pono-select');
+  const inp=document.getElementById('lp-f-pono');
+  if(id){
+    // Edit mode: show readonly text input
+    sel.style.display='none';
+    inp.style.display='';
+    inp.value=r?r.po_number:'';
+    document.getElementById('lp-f-supplier').value=r?r.supplier:'';
+    document.getElementById('lp-f-supplier').readOnly=false;
+    document.getElementById('lp-f-supplier').style.background='';
+    document.getElementById('lp-f-supplier').style.color='';
+  } else {
+    // Add mode: show PO dropdown populated from purchase_orders
+    inp.style.display='none';
+    sel.style.display='';
+    try{
+      const pos=await fetch(API+'/purchase-orders').then(r=>r.json());
+      sel.innerHTML='<option value="">— Select PO / Reference No. —</option>'+
+        pos.map(p=>`<option value="${p.po_number}" data-supplier="${(p.supplier||'').replace(/"/g,'&quot;')}">${p.po_number} — ${p.supplier||''}</option>`).join('');
+    }catch{sel.innerHTML='<option value="">— Could not load POs —</option>';}
+    document.getElementById('lp-f-supplier').value='';
+    document.getElementById('lp-f-supplier').readOnly=true;
+    document.getElementById('lp-f-supplier').style.background='#f1f5f9';
+    document.getElementById('lp-f-supplier').style.color='#374151';
+  }
   document.getElementById('lp-f-part').value=r?r.part_name:'';
-  document.getElementById('lp-f-supplier').value=r?r.supplier:'';
   document.getElementById('lp-f-status').value=r?r.status:'Pending';
   document.getElementById('lp-f-qty').value=r?r.qty_ordered:1;
   document.getElementById('lp-f-uprice').value=r?r.unit_price:0;
@@ -3370,9 +3396,15 @@ function openLPModal(id=null){
   document.getElementById('lp-f-remarks').value=r?r.remarks:'';
   document.getElementById('lp-modal').classList.add('open');
 }
+function onLPPoSelect(){
+  const sel=document.getElementById('lp-f-pono-select');
+  const opt=sel.options[sel.selectedIndex];
+  const supplier=opt?opt.getAttribute('data-supplier'):'';
+  document.getElementById('lp-f-supplier').value=supplier||'';
+}
 function closeLPModal(){document.getElementById('lp-modal').classList.remove('open');}
 async function saveLP(){
-  const po_number=document.getElementById('lp-f-pono').value.trim();
+  const _poSel=document.getElementById('lp-f-pono-select');const _poInp=document.getElementById('lp-f-pono');const po_number=(lpEditId?_poInp.value:_poSel.value).trim();
   const part_name=document.getElementById('lp-f-part').value.trim();
   if(!po_number||!part_name){gToast('PO / Reference No. and Part Name are required.','error');return;}
   const qty=+(document.getElementById('lp-f-qty').value)||0;
