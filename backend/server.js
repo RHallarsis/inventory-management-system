@@ -79,6 +79,7 @@ app.listen(PORT, '0.0.0.0', () => console.log(`[server] Listening on port ${PORT
     const auditRouter          = loadRouter('audit',           './routes/audit');
     const alertsRouter         = loadRouter('alerts',          './routes/alerts');
     const statsRouter               = loadRouter('stats',               './routes/stats');
+    const activityLogsRouter        = loadRouter('activity-logs',       './routes/activity-logs');
     const supplierQuotationsRouter  = loadRouter('supplier-quotations', './routes/supplier-quotations');
 
     app.use('/api', inventoryRouter);
@@ -93,6 +94,7 @@ app.listen(PORT, '0.0.0.0', () => console.log(`[server] Listening on port ${PORT
     app.use('/api', alertsRouter);
     app.use('/api', statsRouter);
     app.use('/api', supplierQuotationsRouter);
+    app.use('/api', activityLogsRouter);
     try { app.use('/', lineRouter); } catch (_) {}
 
     app.get('/', (_req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));

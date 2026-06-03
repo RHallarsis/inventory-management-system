@@ -1402,6 +1402,9 @@ body.viewer-mode .line-notify-btn { display:none !important; }
       <svg viewBox="0 0 24 24"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg><span>Activity Calendar</span><span class="nav-badge" id="ac-urgent-badge" style="display:none">0</span></div>
     <div class="nav-item" data-page="auditlog" onclick="showPage(&apos;auditlog&apos;);loadAuditLog()">
       <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8zm0-4h5v2H8z"/></svg><span>Audit Log</span></div>
+    <div class="nav-item" data-page="activitylogs" onclick="showPage(&apos;activitylogs&apos;)">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg><span>Activity Logs</span>
+    </div>
     <div class="nav-item" data-page="stockmovements" onclick="showPage(&apos;stockmovements&apos;);loadStockMovements()">
       <svg viewBox="0 0 24 24"><path d="M7 16l-4-4 4-4 1.41 1.41L6.83 11H21v2H6.83l1.58 1.59L7 16zm10-8l4 4-4 4-1.41-1.41L17.17 13H3v-2h14.17l-1.58-1.59L17 8z"/></svg><span>Stock Movements</span></div>
     <div class="nav-item" data-page="settings" onclick="showPage(&apos;settings&apos;)">
@@ -2248,6 +2251,52 @@ body.viewer-mode .line-notify-btn { display:none !important; }
   </div>
 </div>
 <!-- ===== STOCK MOVEMENTS ===== -->
+
+<!-- ===== ACCOUNT ACTIVITY LOGS ===== -->
+<div id="page-activitylogs" class="page-section">
+  <div class="page-hero h-indigo">
+    <div class="ph-left">
+      <div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+      <div><div class="ph-title">Account Activity Logs</div><div class="ph-sub">Track every action performed by each account across all sections</div></div>
+    </div>
+  </div>
+  <div class="page-toolbar" style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+    <input id="al-search" placeholder="Search user or description…" oninput="renderActivityLogs()" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"/>
+    <select id="al-filter-section" onchange="renderActivityLogs()" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px">
+      <option value="">All Sections</option>
+      <option>Inventory Items</option><option>Categories</option><option>Spare Parts</option>
+      <option>Machine Monitoring</option><option>Local Purchases</option><option>Purchase Orders</option>
+      <option>Supplier Quotations</option><option>Suppliers</option><option>Goods Received</option>
+      <option>Stock Transfers</option><option>Pullout Receipts</option><option>Transmittal Receipts</option>
+      <option>Logistics - Trucking</option><option>Logistics - Manpower</option>
+      <option>Logistics - Sites Activity</option><option>Logistics - Waybills</option>
+      <option>Calendar</option><option>Commercial Invoices</option><option>Packing Lists</option>
+      <option>User Management</option>
+    </select>
+    <select id="al-filter-action" onchange="renderActivityLogs()" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px">
+      <option value="">All Actions</option>
+      <option value="CREATE">Create</option>
+      <option value="UPDATE">Update</option>
+      <option value="DELETE">Delete</option>
+    </select>
+    <button class="page-add-btn" onclick="clearActivityLogs()" style="background:#ef4444">🗑 Clear Logs</button>
+    <span id="al-meta" style="font-size:12px;color:#64748b;margin-left:4px"></span>
+  </div>
+  <div class="page-tbl-wrap">
+    <table class="page-table">
+      <thead><tr>
+        <th>#</th>
+        <th>Date &amp; Time</th>
+        <th>User</th>
+        <th>Role</th>
+        <th>Action</th>
+        <th>Section</th>
+        <th>Description</th>
+      </tr></thead>
+      <tbody id="al-body"><tr><td colspan="7"><div class="no-results">Loading…</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
 <div id="page-stockmovements" class="page-section">
   <div class="page-hero h-teal"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M7 16l-4-4 4-4 1.41 1.41L6.83 11H21v2H6.83l1.58 1.59L7 16zm10-8l4 4-4 4-1.41-1.41L17.17 13H3v-2h14.17l-1.58-1.59L17 8z"/></svg></div><div><div class="ph-title">Stock Movements</div><div class="ph-sub">Track every inventory quantity change — additions, deductions &amp; adjustments</div></div></div></div>
   <div class="page-toolbar">
@@ -2967,6 +3016,20 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 <script>
 const API=window.location.origin+'/api';
 let currentUser=null;
+// ── Activity Logger ──────────────────────────────────────────────────────────
+function logActivity(action, section, description){
+  if(!currentUser) return;
+  fetch(API+'/activity-logs',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      username: currentUser.name||currentUser.email||'Unknown',
+      role:     currentUser.role||'',
+      action, section, description
+    })
+  }).catch(()=>{});
+}
+
 let invData=[],catData=[],smData=[],irData=[],mmData=[],poData=[],supData=[],grData=[],stData=[],pullData=[],trmitData=[],tqData=[],mpData=[],saData=[],wbData=[],lpData=[],ciData=[],plData=[];
 let invEditId=null,invDeleteId=null,catEditId=null,catDeleteId=null;
 let smEditId=null,smDeleteId=null,mmEditId=null,mmDeleteId=null,mmAreaFilter='';
@@ -3119,7 +3182,7 @@ function applyRoleAccess(role) {
 }
 
 // ── PAGE SWITCHING ───────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',supplierquotations:'Supplier Quotations',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Delivery Receipts',pulloutreceipts:'Pullout Receipts',transmittalreceipts:'Transmittal Receipts',cipl:'CI / PL — Commercial Invoice & Packing List',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',auditlog:'Audit Log',stockmovements:'Stock Movements',settings:'Settings'};
+const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',supplierquotations:'Supplier Quotations',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Delivery Receipts',pulloutreceipts:'Pullout Receipts',transmittalreceipts:'Transmittal Receipts',cipl:'CI / PL — Commercial Invoice & Packing List',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',auditlog:'Audit Log',activitylogs:'Account Activity Logs',stockmovements:'Stock Movements',settings:'Settings'};
 function showPage(page){
   // ── Role guard: Staff and Viewer cannot visit blocked pages ──
   if(currentUser && (currentUser.role==='Staff' || currentUser.role==='Viewer') && STAFF_BLOCKED_PAGES.includes(page)){
@@ -3154,6 +3217,7 @@ function showPage(page){
   else if(page==='localpurchase')loadLP();
   else if(page==='activitycalendar'){acYear=new Date().getFullYear();acMonth=new Date().getMonth();acSelectedDate=null;renderACCalendar();loadACEvents();}
   else if(page==='auditlog')loadAuditLog();
+  else if(page==='activitylogs')loadActivityLogs();
   else if(page==='stockmovements')loadStockMovements();
 }
 
@@ -3351,7 +3415,7 @@ async function saveInv(){
     const url=invEditId?API+'/inventory/'+invEditId:API+'/inventory';
     const res=await fetch(url,{method:invEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_code,name,category,quantity:+quantity,unit_price:+unit_price})});
     if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}
-    gToast(invEditId?'Item updated!':'Item added!');
+    gToast(invEditId?'Item updated!':'Item added!');logActivity(invEditId?'UPDATE':'CREATE','Inventory Items',invEditId?'Updated inventory item':'Added inventory item');
     closeInvModal();
     initDashboard();
   }catch(err){gToast(err.message,'error');}
@@ -3361,7 +3425,7 @@ async function confirmDeleteInv(){
   try{
     const res=await fetch(API+'/inventory/'+invDeleteId,{method:'DELETE'});
     if(!res.ok&&res.status!==204){const e=await res.json();throw new Error(e.error||'Delete failed');}
-    gToast('Item deleted.');
+    gToast('Item deleted.');logActivity('DELETE','Inventory Items','Deleted inventory item');
     document.getElementById('inv-del-modal').classList.remove('open');
     initDashboard();
   }catch(err){gToast(err.message,'error');}
@@ -3385,11 +3449,11 @@ function closeCatModal(){document.getElementById('cat-modal').classList.remove('
 async function saveCat(){
   const name=document.getElementById('cat-f-name').value.trim();const spec=document.getElementById('cat-f-spec').value.trim();
   if(!name){gToast('Name required.','error');return;}
-  try{const url=catEditId?API+'/categories/'+catEditId:API+'/categories';const res=await fetch(url,{method:catEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,specification:spec})});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(catEditId?'Updated!':'Added!');closeCatModal();loadCat();}catch(err){gToast(err.message,'error');}
+  try{const url=catEditId?API+'/categories/'+catEditId:API+'/categories';const res=await fetch(url,{method:catEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,specification:spec})});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(catEditId?'Updated!':'Added!');logActivity(catEditId?'UPDATE':'CREATE','Categories',catEditId?'Updated category':'Added category');closeCatModal();loadCat();}catch(err){gToast(err.message,'error');}
 }
 function openCatDelModal(id,name){catDeleteId=id;document.getElementById('cat-del-name').textContent=name;document.getElementById('cat-del-modal').classList.add('open');}
 function closeCatDelModal(){document.getElementById('cat-del-modal').classList.remove('open');}
-async function confirmDeleteCat(){try{await fetch(API+'/categories/'+catDeleteId,{method:'DELETE'});gToast('Deleted.');closeCatDelModal();loadCat();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteCat(){try{await fetch(API+'/categories/'+catDeleteId,{method:'DELETE'});gToast('Deleted.');closeCatDelModallogActivity('DELETE','Categories','Deleted category');();loadCat();}catch{gToast('Delete failed','error');}}
 
 // ── STOCK MONITORING ────────────────────────────────────────
 async function loadSM(){
@@ -3447,11 +3511,11 @@ function closeSMModal(){document.getElementById('sm-modal').classList.remove('op
 async function saveSM(){
   const body={name:document.getElementById('sm-f-name').value.trim(),part_no:document.getElementById('sm-f-partno').value.trim(),machine:document.getElementById('sm-f-machine').value.trim(),on_hand:+document.getElementById('sm-f-onhand').value||0,on_order:+document.getElementById('sm-f-onorder').value||0,monthly_usage:+document.getElementById('sm-f-usage').value||0,lead_time:+document.getElementById('sm-f-lead').value||0,buffer:+document.getElementById('sm-f-buffer').value||3,safety_stock:+document.getElementById('sm-f-safety').value||1};
   if(!body.name||!body.part_no){gToast('Name and Part No required.','error');return;}
-  try{const url=smEditId?API+'/spare-parts/'+smEditId:API+'/spare-parts';const res=await fetch(url,{method:smEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(smEditId?'Updated!':'Added!');closeSMModal();loadSM();}catch(err){gToast(err.message,'error');}
+  try{const url=smEditId?API+'/spare-parts/'+smEditId:API+'/spare-parts';const res=await fetch(url,{method:smEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(smEditId?'Updated!':'Added!');logActivity(smEditId?'UPDATE':'CREATE','Spare Parts',smEditId?'Updated spare part':'Added spare part');closeSMModal();loadSM();}catch(err){gToast(err.message,'error');}
 }
 function openSMDelModal(id,name){smDeleteId=id;document.getElementById('sm-del-name').textContent=name;document.getElementById('sm-del-modal').classList.add('open');}
 function closeSMDelModal(){document.getElementById('sm-del-modal').classList.remove('open');}
-async function confirmDeleteSM(){try{await fetch(API+'/spare-parts/'+smDeleteId,{method:'DELETE'});gToast('Deleted.');closeSMDelModal();loadSM();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteSM(){try{await fetch(API+'/spare-parts/'+smDeleteId,{method:'DELETE'});gToast('Deleted.');closeSMDelModallogActivity('DELETE','Spare Parts','Deleted spare part');();loadSM();}catch{gToast('Delete failed','error');}}
 
 // ── MACHINE MONITORING ──────────────────────────────────────
 async function loadMM(){
@@ -3490,11 +3554,11 @@ function closeMMModal(){document.getElementById('mm-modal').classList.remove('op
 async function saveMM(){
   const area=document.getElementById('mm-f-area').value;const body={site:document.getElementById('mm-f-site').value.trim(),area,group_name:area==='Manila Area'?document.getElementById('mm-f-group').value:area,ez:+document.getElementById('mm-f-ez').value||0,br:+document.getElementById('mm-f-br').value||0,ez2:+document.getElementById('mm-f-ez2').value||0,ezl:+document.getElementById('mm-f-ezl').value||0,lb:+document.getElementById('mm-f-lb').value||0,j_ark:+document.getElementById('mm-f-jark').value||0};
   if(!body.site){gToast('Site name required.','error');return;}
-  try{const url=mmEditId?API+'/machine-monitoring/'+mmEditId:API+'/machine-monitoring';const res=await fetch(url,{method:mmEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(mmEditId?'Updated!':'Added!');closeMMModal();loadMM();}catch(err){gToast(err.message,'error');}
+  try{const url=mmEditId?API+'/machine-monitoring/'+mmEditId:API+'/machine-monitoring';const res=await fetch(url,{method:mmEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(mmEditId?'Updated!':'Added!');logActivity(mmEditId?'UPDATE':'CREATE','Machine Monitoring',mmEditId?'Updated machine record':'Added machine record');closeMMModal();loadMM();}catch(err){gToast(err.message,'error');}
 }
 function openMMDelModal(id,name){mmDeleteId=id;document.getElementById('mm-del-name').textContent=name;document.getElementById('mm-del-modal').classList.add('open');}
 function closeMMDelModal(){document.getElementById('mm-del-modal').classList.remove('open');}
-async function confirmDeleteMM(){try{await fetch(API+'/machine-monitoring/'+mmDeleteId,{method:'DELETE'});gToast('Deleted.');closeMMDelModal();loadMM();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteMM(){try{await fetch(API+'/machine-monitoring/'+mmDeleteId,{method:'DELETE'});gToast('Deleted.');closeMMDelModallogActivity('DELETE','Machine Monitoring','Deleted machine record');();loadMM();}catch{gToast('Delete failed','error');}}
 
 // ── LOCAL PURCHASE MONITORING ────────────────────────────────
 let lpEditId=null,lpDeleteId=null;
@@ -3615,14 +3679,14 @@ async function saveLP(){
     const url=lpEditId?API+'/local-purchases/'+lpEditId:API+'/local-purchases';
     const res=await fetch(url,{method:lpEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}
-    gToast(lpEditId?'Purchase updated!':'Purchase added!');
+    gToast(lpEditId?'Purchase updated!':'Purchase added!');logActivity(lpEditId?'UPDATE':'CREATE','Local Purchases',lpEditId?'Updated LP entry':'Added LP entry');
     closeLPModal();loadLP();
   }catch(err){gToast(err.message,'error');}
 }
 function openLPDelModal(id,name){lpDeleteId=id;document.getElementById('lp-del-name').textContent=name;document.getElementById('lp-del-modal').classList.add('open');}
 function closeLPDelModal(){document.getElementById('lp-del-modal').classList.remove('open');}
 async function confirmDeleteLP(){
-  try{await fetch(API+'/local-purchases/'+lpDeleteId,{method:'DELETE'});gToast('Purchase deleted.');closeLPDelModal();loadLP();}
+  try{await fetch(API+'/local-purchases/'+lpDeleteId,{method:'DELETE'});gToast('Purchase deleted.');logActivity('DELETE','Local Purchases','Deleted LP entry');closeLPDelModal();loadLP();}
   catch{gToast('Delete failed','error');}
 }
 
@@ -3643,11 +3707,11 @@ function closePOModal(){document.getElementById('po-modal').classList.remove('op
 async function savePO(){
   const fd=new FormData();fd.append('po_number',document.getElementById('po-f-no').value.trim());fd.append('supplier',document.getElementById('po-f-supplier').value.trim());fd.append('order_date',document.getElementById('po-f-date').value);fd.append('status',document.getElementById('po-f-status').value);fd.append('total_amount',document.getElementById('po-f-amount').value||0);const fi=document.getElementById('po-f-file');if(fi.files[0])fd.append('file',fi.files[0]);
   if(!fd.get('po_number')||!fd.get('supplier')){gToast('PO number and supplier required.','error');return;}
-  try{const url=poEditId?API+'/purchase-orders/'+poEditId:API+'/purchase-orders';const res=await fetch(url,{method:poEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(poEditId?'Updated!':'Added!');closePOModal();loadPO();}catch(err){gToast(err.message,'error');}
+  try{const url=poEditId?API+'/purchase-orders/'+poEditId:API+'/purchase-orders';const res=await fetch(url,{method:poEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(poEditId?'Updated!':'Added!');logActivity(poEditId?'UPDATE':'CREATE','Purchase Orders',poEditId?'Updated purchase order':'Added purchase order');closePOModal();loadPO();}catch(err){gToast(err.message,'error');}
 }
 function openPODelModal(id,name){poDeleteId=id;document.getElementById('po-del-name').textContent=name;document.getElementById('po-del-modal').classList.add('open');}
 function closePODelModal(){document.getElementById('po-del-modal').classList.remove('open');}
-async function confirmDeletePO(){try{await fetch(API+'/purchase-orders/'+poDeleteId,{method:'DELETE'});gToast('Deleted.');closePODelModal();loadPO();}catch{gToast('Delete failed','error');}}
+async function confirmDeletePO(){try{await fetch(API+'/purchase-orders/'+poDeleteId,{method:'DELETE'});gToast('Deleted.');closePODelModallogActivity('DELETE','Purchase Orders','Deleted purchase order');();loadPO();}catch{gToast('Delete failed','error');}}
 let poNotifyId=null;
 async function notifyPOSupplier(id){
   poNotifyId=id;
@@ -3713,11 +3777,11 @@ function closeSQModal(){document.getElementById('sq-modal').classList.remove('op
 async function saveSQ(){
   const fd=new FormData();fd.append('quote_number',document.getElementById('sq-f-no').value.trim());fd.append('supplier',document.getElementById('sq-f-supplier').value.trim());fd.append('contact_person',document.getElementById('sq-f-contact').value.trim());fd.append('status',document.getElementById('sq-f-status').value);fd.append('quote_date',document.getElementById('sq-f-date').value);fd.append('valid_until',document.getElementById('sq-f-valid').value);fd.append('unit_price',parseFloat(document.getElementById('sq-f-unitprice').value)||0);fd.append('quantity',parseFloat(document.getElementById('sq-f-qty').value)||0);fd.append('total_amount',parseFloat(document.getElementById('sq-f-total').value)||0);fd.append('items_description',document.getElementById('sq-f-desc').value.trim());fd.append('remarks',document.getElementById('sq-f-remarks').value.trim());const fi=document.getElementById('sq-f-file');if(fi.files[0])fd.append('file',fi.files[0]);
   if(!fd.get('quote_number')||!fd.get('supplier')){gToast('Quote number and supplier are required.','error');return;}
-  try{const url=sqEditId?API+'/supplier-quotations/'+sqEditId:API+'/supplier-quotations';const res=await fetch(url,{method:sqEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(sqEditId?'Updated!':'Added!');closeSQModal();loadSQ();}catch(err){gToast(err.message,'error');}
+  try{const url=sqEditId?API+'/supplier-quotations/'+sqEditId:API+'/supplier-quotations';const res=await fetch(url,{method:sqEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(sqEditId?'Updated!':'Added!');logActivity(sqEditId?'UPDATE':'CREATE','Supplier Quotations',sqEditId?'Updated supplier quotation':'Added supplier quotation');closeSQModal();loadSQ();}catch(err){gToast(err.message,'error');}
 }
 function openSQDelModal(id,name){sqDeleteId=id;document.getElementById('sq-del-name').textContent=name;document.getElementById('sq-del-modal').classList.add('open');}
 function closeSQDelModal(){document.getElementById('sq-del-modal').classList.remove('open');}
-async function confirmDeleteSQ(){try{await fetch(API+'/supplier-quotations/'+sqDeleteId,{method:'DELETE'});gToast('Deleted.');closeSQDelModal();loadSQ();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteSQ(){try{await fetch(API+'/supplier-quotations/'+sqDeleteId,{method:'DELETE'});gToast('Deleted.');closeSQDelModallogActivity('DELETE','Supplier Quotations','Deleted supplier quotation');();loadSQ();}catch{gToast('Delete failed','error');}}
 
 // ── SUPPLIERS ────────────────────────────────────────────────
 async function loadSup(){try{const r=await fetch(API+'/suppliers');supData=await r.json();renderSup();}catch{document.getElementById('sup-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -3739,11 +3803,11 @@ async function saveSup(){
   const fd=new FormData();['code','name','contact','role','email','phone','category','location'].forEach(k=>{const map={code:'sup-f-code',name:'sup-f-name',contact:'sup-f-contact',role:'sup-f-role',email:'sup-f-email',phone:'sup-f-phone',category:'sup-f-category',location:'sup-f-location'};fd.append(k==='contact'?'contact_person':k,document.getElementById(map[k]).value.trim());});
   fd.append('status',document.getElementById('sup-f-status').value);const fi=document.getElementById('sup-f-2303');if(fi.files[0])fd.append('file_2303',fi.files[0]);
   if(!fd.get('code')||!fd.get('name')){gToast('Code and name required.','error');return;}
-  try{const url=supEditId?API+'/suppliers/'+supEditId:API+'/suppliers';const res=await fetch(url,{method:supEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(supEditId?'Updated!':'Added!');closeSupModal();loadSup();}catch(err){gToast(err.message,'error');}
+  try{const url=supEditId?API+'/suppliers/'+supEditId:API+'/suppliers';const res=await fetch(url,{method:supEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(supEditId?'Updated!':'Added!');logActivity(supEditId?'UPDATE':'CREATE','Suppliers',supEditId?'Updated supplier':'Added supplier');closeSupModal();loadSup();}catch(err){gToast(err.message,'error');}
 }
 function openSupDelModal(id,name){supDeleteId=id;document.getElementById('sup-del-name').textContent=name;document.getElementById('sup-del-modal').classList.add('open');}
 function closeSupDelModal(){document.getElementById('sup-del-modal').classList.remove('open');}
-async function confirmDeleteSup(){try{await fetch(API+'/suppliers/'+supDeleteId,{method:'DELETE'});gToast('Deleted.');closeSupDelModal();loadSup();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteSup(){try{await fetch(API+'/suppliers/'+supDeleteId,{method:'DELETE'});gToast('Deleted.');closeSupDelModallogActivity('DELETE','Suppliers','Deleted supplier');();loadSup();}catch{gToast('Delete failed','error');}}
 
 // ── GOODS RECEIVED ──────────────────────────────────────────
 async function loadGR(){try{const r=await fetch(API+'/goods-received');grData=await r.json();if(!poData||!poData.length){const p=await fetch(API+'/purchase-orders');poData=await p.json();}renderGR();}catch{document.getElementById('gr-body').innerHTML='<tr><td colspan="9"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -3763,11 +3827,11 @@ function onGRPOChange(){const sel=document.getElementById('gr-f-pono');const po=
 async function saveGR(){
   const body={gr_number:document.getElementById('gr-f-grno').value.trim(),po_number:document.getElementById('gr-f-pono').value.trim(),supplier:document.getElementById('gr-f-supplier').value.trim(),received_date:document.getElementById('gr-f-date').value,received_by:document.getElementById('gr-f-by').value.trim(),total_items:+document.getElementById('gr-f-items').value||0,status:document.getElementById('gr-f-status').value};
   if(!body.gr_number||!body.supplier){gToast('GR number and supplier required.','error');return;}
-  try{const url=grEditId?API+'/goods-received/'+grEditId:API+'/goods-received';const res=await fetch(url,{method:grEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(grEditId?'Updated!':'Added!');closeGRModal();loadGR();}catch(err){gToast(err.message,'error');}
+  try{const url=grEditId?API+'/goods-received/'+grEditId:API+'/goods-received';const res=await fetch(url,{method:grEditId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(grEditId?'Updated!':'Added!');logActivity(grEditId?'UPDATE':'CREATE','Goods Received',grEditId?'Updated goods received':'Added goods received');closeGRModal();loadGR();}catch(err){gToast(err.message,'error');}
 }
 function openGRDelModal(id,name){grDeleteId=id;document.getElementById('gr-del-name').textContent=name;document.getElementById('gr-del-modal').classList.add('open');}
 function closeGRDelModal(){document.getElementById('gr-del-modal').classList.remove('open');}
-async function confirmDeleteGR(){try{await fetch(API+'/goods-received/'+grDeleteId,{method:'DELETE'});gToast('Deleted.');closeGRDelModal();loadGR();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteGR(){try{await fetch(API+'/goods-received/'+grDeleteId,{method:'DELETE'});gToast('Deleted.');closeGRDelModallogActivity('DELETE','Goods Received','Deleted goods received record');();loadGR();}catch{gToast('Delete failed','error');}}
 
 // ── STOCK TRANSFERS ─────────────────────────────────────────
 const ST_PAGE_SIZE=50;let stPage=1;
@@ -3803,11 +3867,11 @@ function closeSTModal(){document.getElementById('st-modal').classList.remove('op
 async function saveST(){
   const fd=new FormData();fd.append('transfer_no',document.getElementById('st-f-no').value.trim());fd.append('transfer_date',document.getElementById('st-f-date').value);fd.append('source_location',document.getElementById('st-f-from').value.trim());fd.append('destination_location',document.getElementById('st-f-to').value.trim());fd.append('items_count',document.getElementById('st-f-items').value.trim());fd.append('status',document.getElementById('st-f-status').value);fd.append('transferred_by',document.getElementById('st-f-by').value.trim());const fi=document.getElementById('st-f-file');if(fi.files[0])fd.append('file',fi.files[0]);
   if(!fd.get('transfer_no')||!fd.get('source_location')||!fd.get('destination_location')){gToast('Transfer No, From, and To are required.','error');return;}
-  try{const url=stEditId?API+'/stock-transfers/'+stEditId:API+'/stock-transfers';const res=await fetch(url,{method:stEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(stEditId?'Updated!':'Added!');closeSTModal();loadST();}catch(err){gToast(err.message,'error');}
+  try{const url=stEditId?API+'/stock-transfers/'+stEditId:API+'/stock-transfers';const res=await fetch(url,{method:stEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(stEditId?'Updated!':'Added!');logActivity(stEditId?'UPDATE':'CREATE','Stock Transfers',stEditId?'Updated stock transfer':'Added stock transfer');closeSTModal();loadST();}catch(err){gToast(err.message,'error');}
 }
 function openSTDelModal(id,name){stDeleteId=id;document.getElementById('st-del-name').textContent=name;document.getElementById('st-del-modal').classList.add('open');}
 function closeSTDelModal(){document.getElementById('st-del-modal').classList.remove('open');}
-async function confirmDeleteST(){try{await fetch(API+'/stock-transfers/'+stDeleteId,{method:'DELETE'});gToast('Deleted.');closeSTDelModal();loadST();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteST(){try{await fetch(API+'/stock-transfers/'+stDeleteId,{method:'DELETE'});gToast('Deleted.');closeSTDelModallogActivity('DELETE','Stock Transfers','Deleted stock transfer');();loadST();}catch{gToast('Delete failed','error');}}
 
 // ── PULLOUT RECEIPTS ─────────────────────────────────────────
 async function loadPull(){try{const r=await fetch(API+'/pullout-receipts');pullData=await r.json();renderPull();}catch{document.getElementById('pull-body').innerHTML='<tr><td colspan="13"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -3823,11 +3887,11 @@ function closePullModal(){document.getElementById('pull-modal').classList.remove
 async function savePull(){
   const fd=new FormData();fd.append('transfer_no',document.getElementById('pull-f-no').value.trim());fd.append('transfer_date',document.getElementById('pull-f-date').value);fd.append('source_location',document.getElementById('pull-f-from').value.trim());fd.append('destination_location',document.getElementById('pull-f-to').value.trim());fd.append('items_count',document.getElementById('pull-f-items').value||0);fd.append('status',document.getElementById('pull-f-status').value);fd.append('pulled_out_by',document.getElementById('pull-f-pulled-out-by').value.trim());fd.append('prepared_by',document.getElementById('pull-f-prepared-by').value.trim());fd.append('returned_by',document.getElementById('pull-f-returned-by').value.trim());fd.append('witnessed_by',document.getElementById('pull-f-witnessed-by').value.trim());const fi=document.getElementById('pull-f-file');if(fi.files[0])fd.append('file',fi.files[0]);
   if(!fd.get('transfer_no')||!fd.get('source_location')||!fd.get('destination_location')){gToast('Pullout No, From, and To are required.','error');return;}
-  try{const url=pullEditId?API+'/pullout-receipts/'+pullEditId:API+'/pullout-receipts';const res=await fetch(url,{method:pullEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(pullEditId?'Updated!':'Added!');closePullModal();loadPull();}catch(err){gToast(err.message,'error');}
+  try{const url=pullEditId?API+'/pullout-receipts/'+pullEditId:API+'/pullout-receipts';const res=await fetch(url,{method:pullEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(pullEditId?'Updated!':'Added!');logActivity(pullEditId?'UPDATE':'CREATE','Pullout Receipts',pullEditId?'Updated pullout receipt':'Added pullout receipt');closePullModal();loadPull();}catch(err){gToast(err.message,'error');}
 }
 function openPullDelModal(id,name){pullDeleteId=id;document.getElementById('pull-del-name').textContent=name;document.getElementById('pull-del-modal').classList.add('open');}
 function closePullDelModal(){document.getElementById('pull-del-modal').classList.remove('open');}
-async function confirmDeletePull(){try{await fetch(API+'/pullout-receipts/'+pullDeleteId,{method:'DELETE'});gToast('Deleted.');closePullDelModal();loadPull();}catch{gToast('Delete failed','error');}}
+async function confirmDeletePull(){try{await fetch(API+'/pullout-receipts/'+pullDeleteId,{method:'DELETE'});gToast('Deleted.');closePullDelModallogActivity('DELETE','Pullout Receipts','Deleted pullout receipt');();loadPull();}catch{gToast('Delete failed','error');}}
 
 // ── TRANSMITTAL RECEIPTS ──────────────────────────────────────
 async function loadTrmit(){try{const r=await fetch(API+'/transmittal-receipts');trmitData=await r.json();renderTrmit();}catch{document.getElementById('trmit-body').innerHTML='<tr><td colspan="13"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -3843,11 +3907,11 @@ function closeTrmitModal(){document.getElementById('trmit-modal').classList.remo
 async function saveTrmit(){
   const fd=new FormData();fd.append('transfer_no',document.getElementById('trmit-f-no').value.trim());fd.append('transfer_date',document.getElementById('trmit-f-date').value);fd.append('source_location',document.getElementById('trmit-f-from').value.trim());fd.append('destination_location',document.getElementById('trmit-f-to').value.trim());fd.append('items_description',document.getElementById('trmit-f-items').value.trim());fd.append('status',document.getElementById('trmit-f-status').value);fd.append('turned_over_by',document.getElementById('trmit-f-by').value.trim());fd.append('received_by',document.getElementById('trmit-f-received-by').value.trim());fd.append('witnessed_by',document.getElementById('trmit-f-witnessed-by').value.trim());fd.append('noted_by',document.getElementById('trmit-f-noted-by').value.trim());const fi=document.getElementById('trmit-f-file');if(fi.files[0])fd.append('file',fi.files[0]);
   if(!fd.get('transfer_no')||!fd.get('source_location')||!fd.get('destination_location')){gToast('Transmittal No, From, and To are required.','error');return;}
-  try{const url=trmitEditId?API+'/transmittal-receipts/'+trmitEditId:API+'/transmittal-receipts';const res=await fetch(url,{method:trmitEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(trmitEditId?'Updated!':'Added!');closeTrmitModal();loadTrmit();}catch(err){gToast(err.message,'error');}
+  try{const url=trmitEditId?API+'/transmittal-receipts/'+trmitEditId:API+'/transmittal-receipts';const res=await fetch(url,{method:trmitEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(trmitEditId?'Updated!':'Added!');logActivity(trmitEditId?'UPDATE':'CREATE','Transmittal Receipts',trmitEditId?'Updated transmittal receipt':'Added transmittal receipt');closeTrmitModal();loadTrmit();}catch(err){gToast(err.message,'error');}
 }
 function openTrmitDelModal(id,name){trmitDeleteId=id;document.getElementById('trmit-del-name').textContent=name;document.getElementById('trmit-del-modal').classList.add('open');}
 function closeTrmitDelModal(){document.getElementById('trmit-del-modal').classList.remove('open');}
-async function confirmDeleteTrmit(){try{await fetch(API+'/transmittal-receipts/'+trmitDeleteId,{method:'DELETE'});gToast('Deleted.');closeTrmitDelModal();loadTrmit();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteTrmit(){try{await fetch(API+'/transmittal-receipts/'+trmitDeleteId,{method:'DELETE'});gToast('Deleted.');closeTrmitDelModallogActivity('DELETE','Transmittal Receipts','Deleted transmittal receipt');();loadTrmit();}catch{gToast('Delete failed','error');}}
 
 // ── REPORTS ──────────────────────────────────────────────────
 async function loadIR(){
@@ -3993,10 +4057,10 @@ function renderTQ(){
 function genTQNumber(){const now=new Date();const mm=String(now.getMonth()+1).padStart(2,'0');const dd=String(now.getDate()).padStart(2,'0');const yyyy=now.getFullYear();const base='TQ'+mm+dd+yyyy;const existing=tqData.filter(r=>r.quote_number&&(r.quote_number===base||r.quote_number.startsWith(base+'-')));if(existing.length===0)return base;return base+'-'+String(existing.length).padStart(2,'0');}
 function openTQModal(id=null){tqEditId=id;const r=id?tqData.find(x=>x.id===id):null;document.getElementById('tq-modal-title').textContent=id?'Edit Quotation':'Add Quotation';const qnoEl=document.getElementById('tq-f-qno');qnoEl.value=r?r.quote_number:genTQNumber();document.getElementById('tq-f-service').value=r?r.trucking_service:'';document.getElementById('tq-f-date').value=r?r.date_of_activity:today();document.getElementById('tq-f-status').value=r?r.status:'Pending';document.getElementById('tq-f-sites').value=r?r.sites:'';document.getElementById('tq-f-amount').value=r?r.total_amount:'';document.getElementById('tq-f-file').value='';document.getElementById('tq-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('tq-modal').classList.add('open');}
 function closeTQModal(){document.getElementById('tq-modal').classList.remove('open');}
-async function saveTQ(){const fd=new FormData();fd.append('quote_number',document.getElementById('tq-f-qno').value.trim());fd.append('trucking_service',document.getElementById('tq-f-service').value.trim());fd.append('date_of_activity',document.getElementById('tq-f-date').value);fd.append('status',document.getElementById('tq-f-status').value);fd.append('sites',document.getElementById('tq-f-sites').value.trim());fd.append('total_amount',document.getElementById('tq-f-amount').value||0);const fi=document.getElementById('tq-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('quote_number')||!fd.get('trucking_service')){gToast('Quote number and service required.','error');return;}try{const url=tqEditId?API+'/logistics/trucking/'+tqEditId:API+'/logistics/trucking';const res=await fetch(url,{method:tqEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(tqEditId?'Updated!':'Added!');closeTQModal();loadTQ();}catch(err){gToast(err.message,'error');}}
+async function saveTQ(){const fd=new FormData();fd.append('quote_number',document.getElementById('tq-f-qno').value.trim());fd.append('trucking_service',document.getElementById('tq-f-service').value.trim());fd.append('date_of_activity',document.getElementById('tq-f-date').value);fd.append('status',document.getElementById('tq-f-status').value);fd.append('sites',document.getElementById('tq-f-sites').value.trim());fd.append('total_amount',document.getElementById('tq-f-amount').value||0);const fi=document.getElementById('tq-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('quote_number')||!fd.get('trucking_service')){gToast('Quote number and service required.','error');return;}try{const url=tqEditId?API+'/logistics/trucking/'+tqEditId:API+'/logistics/trucking';const res=await fetch(url,{method:tqEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(tqEditId?'Updated!':'Added!');logActivity(tqEditId?'UPDATE':'CREATE','Logistics - Trucking',tqEditId?'Updated trucking quotation':'Added trucking quotation');closeTQModal();loadTQ();}catch(err){gToast(err.message,'error');}}
 function openTQDelModal(id,name){tqDeleteId=id;document.getElementById('tq-del-name').textContent=name;document.getElementById('tq-del-modal').classList.add('open');}
 function closeTQDelModal(){document.getElementById('tq-del-modal').classList.remove('open');}
-async function confirmDeleteTQ(){try{await fetch(API+'/logistics/trucking/'+tqDeleteId,{method:'DELETE'});gToast('Deleted.');closeTQDelModal();loadTQ();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteTQ(){try{await fetch(API+'/logistics/trucking/'+tqDeleteId,{method:'DELETE'});gToast('Deleted.');closeTQDelModallogActivity('DELETE','Logistics - Trucking','Deleted trucking quotation');();loadTQ();}catch{gToast('Delete failed','error');}}
 
 // Manpower
 async function loadMP(){try{const r=await fetch(API+'/logistics/manpower');mpData=await r.json();renderMP();}catch{document.getElementById('mp-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -4010,10 +4074,10 @@ function renderMP(){
 function calcMPTotal(){const q=+document.getElementById('mp-f-mpqty').value||0;const p=+document.getElementById('mp-f-up').value||0;document.getElementById('mp-f-total').value=fmt(q*p);}
 async function openMPModal(id=null){mpEditId=id;const r=id?mpData.find(x=>x.id===id):null;document.getElementById('mp-modal-title').textContent=id?'Edit Request':'Add Manpower Request';if(!id){try{const res=await fetch(API+'/logistics/manpower/next-request-no');const d=await res.json();document.getElementById('mp-f-rno').value=d.request_no;}catch{document.getElementById('mp-f-rno').value='Auto';}}else{document.getElementById('mp-f-rno').value=r.request_no;}document.getElementById('mp-f-loc').value=r?r.location:'';document.getElementById('mp-f-mtype').value=r?r.machine_type:'';document.getElementById('mp-f-mpqty').value=r?r.manpower_quantity:0;document.getElementById('mp-f-up').value=r?r.unit_price:0;calcMPTotal();document.getElementById('mp-f-purpose').value=r?r.purpose:'';document.getElementById('mp-f-remarks').value=r?r.remarks:'';document.getElementById('mp-f-file').value='';document.getElementById('mp-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('mp-modal').classList.add('open');}
 function closeMPModal(){document.getElementById('mp-modal').classList.remove('open');}
-async function saveMP(){const fd=new FormData();fd.append('location',document.getElementById('mp-f-loc').value.trim());fd.append('machine_type',document.getElementById('mp-f-mtype').value.trim());fd.append('manpower_quantity',document.getElementById('mp-f-mpqty').value||0);fd.append('unit_price',document.getElementById('mp-f-up').value||0);fd.append('purpose',document.getElementById('mp-f-purpose').value.trim());fd.append('remarks',document.getElementById('mp-f-remarks').value.trim());const fi=document.getElementById('mp-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('location')||!fd.get('machine_type')){gToast('Location and machine type required.','error');return;}try{const url=mpEditId?API+'/logistics/manpower/'+mpEditId:API+'/logistics/manpower';const res=await fetch(url,{method:mpEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(mpEditId?'Updated!':'Added!');closeMPModal();loadMP();}catch(err){gToast(err.message,'error');}}
+async function saveMP(){const fd=new FormData();fd.append('location',document.getElementById('mp-f-loc').value.trim());fd.append('machine_type',document.getElementById('mp-f-mtype').value.trim());fd.append('manpower_quantity',document.getElementById('mp-f-mpqty').value||0);fd.append('unit_price',document.getElementById('mp-f-up').value||0);fd.append('purpose',document.getElementById('mp-f-purpose').value.trim());fd.append('remarks',document.getElementById('mp-f-remarks').value.trim());const fi=document.getElementById('mp-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('location')||!fd.get('machine_type')){gToast('Location and machine type required.','error');return;}try{const url=mpEditId?API+'/logistics/manpower/'+mpEditId:API+'/logistics/manpower';const res=await fetch(url,{method:mpEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(mpEditId?'Updated!':'Added!');logActivity(mpEditId?'UPDATE':'CREATE','Logistics - Manpower',mpEditId?'Updated manpower request':'Added manpower request');closeMPModal();loadMP();}catch(err){gToast(err.message,'error');}}
 function openMPDelModal(id,name){mpDeleteId=id;document.getElementById('mp-del-name').textContent=name;document.getElementById('mp-del-modal').classList.add('open');}
 function closeMPDelModal(){document.getElementById('mp-del-modal').classList.remove('open');}
-async function confirmDeleteMP(){try{await fetch(API+'/logistics/manpower/'+mpDeleteId,{method:'DELETE'});gToast('Deleted.');closeMPDelModal();loadMP();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteMP(){try{await fetch(API+'/logistics/manpower/'+mpDeleteId,{method:'DELETE'});gToast('Deleted.');closeMPDelModallogActivity('DELETE','Logistics - Manpower','Deleted manpower request');();loadMP();}catch{gToast('Delete failed','error');}}
 
 // Sites Activity
 async function loadSA(){try{const r=await fetch(API+'/logistics/sites-activity');saData=await r.json();renderSA();}catch{document.getElementById('sa-body').innerHTML='<tr><td colspan="9"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -4026,10 +4090,10 @@ function renderSA(){
 }
 function openSAModal(id=null){saEditId=id;const r=id?saData.find(x=>x.id===id):null;document.getElementById('sa-modal-title').textContent=id?'Edit Activity':'Add Site Activity';document.getElementById('sa-f-site').value=r?r.site_name:'';document.getElementById('sa-f-type').value=r?r.activity_type:'Delivery';document.getElementById('sa-f-date').value=r?r.activity_date:today();document.getElementById('sa-f-status').value=r?r.status:'Scheduled';document.getElementById('sa-f-loc').value=r?r.location:'';document.getElementById('sa-f-desc').value=r?r.description:'';document.getElementById('sa-f-file').value='';document.getElementById('sa-modal').classList.add('open');}
 function closeSAModal(){document.getElementById('sa-modal').classList.remove('open');}
-async function saveSA(){const fd=new FormData();fd.append('site_name',document.getElementById('sa-f-site').value.trim());fd.append('activity_type',document.getElementById('sa-f-type').value);fd.append('activity_date',document.getElementById('sa-f-date').value);fd.append('status',document.getElementById('sa-f-status').value);fd.append('location',document.getElementById('sa-f-loc').value.trim());fd.append('description',document.getElementById('sa-f-desc').value.trim());const fi=document.getElementById('sa-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('site_name')){gToast('Site name required.','error');return;}try{const url=saEditId?API+'/logistics/sites-activity/'+saEditId:API+'/logistics/sites-activity';const res=await fetch(url,{method:saEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(saEditId?'Updated!':'Added!');closeSAModal();loadSA();}catch(err){gToast(err.message,'error');}}
+async function saveSA(){const fd=new FormData();fd.append('site_name',document.getElementById('sa-f-site').value.trim());fd.append('activity_type',document.getElementById('sa-f-type').value);fd.append('activity_date',document.getElementById('sa-f-date').value);fd.append('status',document.getElementById('sa-f-status').value);fd.append('location',document.getElementById('sa-f-loc').value.trim());fd.append('description',document.getElementById('sa-f-desc').value.trim());const fi=document.getElementById('sa-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('site_name')){gToast('Site name required.','error');return;}try{const url=saEditId?API+'/logistics/sites-activity/'+saEditId:API+'/logistics/sites-activity';const res=await fetch(url,{method:saEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(saEditId?'Updated!':'Added!');logActivity(saEditId?'UPDATE':'CREATE','Logistics - Sites Activity',saEditId?'Updated site activity':'Added site activity');closeSAModal();loadSA();}catch(err){gToast(err.message,'error');}}
 function openSADelModal(id,name){saDeleteId=id;document.getElementById('sa-del-name').textContent=name;document.getElementById('sa-del-modal').classList.add('open');}
 function closeSADelModal(){document.getElementById('sa-del-modal').classList.remove('open');}
-async function confirmDeleteSA(){try{await fetch(API+'/logistics/sites-activity/'+saDeleteId,{method:'DELETE'});gToast('Deleted.');closeSADelModal();loadSA();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteSA(){try{await fetch(API+'/logistics/sites-activity/'+saDeleteId,{method:'DELETE'});gToast('Deleted.');closeSADelModallogActivity('DELETE','Logistics - Sites Activity','Deleted site activity');();loadSA();}catch{gToast('Delete failed','error');}}
 
 // Waybills
 async function loadWB(){try{const r=await fetch(API+'/logistics/waybills');wbData=await r.json();renderWB();}catch{document.getElementById('wb-body').innerHTML='<tr><td colspan="8"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -4042,10 +4106,10 @@ function renderWB(){
 }
 function openWBModal(id=null){wbEditId=id;const r=id?wbData.find(x=>x.id===id):null;document.getElementById('wb-modal-title').textContent=id?'Edit Waybill':'Add Waybill';document.getElementById('wb-f-wno').value=r?r.waybill_number:'';document.getElementById('wb-f-date').value=r?r.date:today();document.getElementById('wb-f-origin').value=r?r.origin:'';document.getElementById('wb-f-dest').value=r?r.destination:'';document.getElementById('wb-f-notes').value=r?r.notes:'';document.getElementById('wb-f-file').value='';document.getElementById('wb-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('wb-modal').classList.add('open');}
 function closeWBModal(){document.getElementById('wb-modal').classList.remove('open');}
-async function saveWB(){const fd=new FormData();fd.append('waybill_number',document.getElementById('wb-f-wno').value.trim());fd.append('date',document.getElementById('wb-f-date').value);fd.append('origin',document.getElementById('wb-f-origin').value.trim());fd.append('destination',document.getElementById('wb-f-dest').value.trim());fd.append('notes',document.getElementById('wb-f-notes').value.trim());const fi=document.getElementById('wb-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('waybill_number')){gToast('Waybill number required.','error');return;}try{const url=wbEditId?API+'/logistics/waybills/'+wbEditId:API+'/logistics/waybills';const res=await fetch(url,{method:wbEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(wbEditId?'Updated!':'Added!');closeWBModal();loadWB();}catch(err){gToast(err.message,'error');}}
+async function saveWB(){const fd=new FormData();fd.append('waybill_number',document.getElementById('wb-f-wno').value.trim());fd.append('date',document.getElementById('wb-f-date').value);fd.append('origin',document.getElementById('wb-f-origin').value.trim());fd.append('destination',document.getElementById('wb-f-dest').value.trim());fd.append('notes',document.getElementById('wb-f-notes').value.trim());const fi=document.getElementById('wb-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('waybill_number')){gToast('Waybill number required.','error');return;}try{const url=wbEditId?API+'/logistics/waybills/'+wbEditId:API+'/logistics/waybills';const res=await fetch(url,{method:wbEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(wbEditId?'Updated!':'Added!');logActivity(wbEditId?'UPDATE':'CREATE','Logistics - Waybills',wbEditId?'Updated waybill':'Added waybill');closeWBModal();loadWB();}catch(err){gToast(err.message,'error');}}
 function openWBDelModal(id,name){wbDeleteId=id;document.getElementById('wb-del-name').textContent=name;document.getElementById('wb-del-modal').classList.add('open');}
 function closeWBDelModal(){document.getElementById('wb-del-modal').classList.remove('open');}
-async function confirmDeleteWB(){try{await fetch(API+'/logistics/waybills/'+wbDeleteId,{method:'DELETE'});gToast('Deleted.');closeWBDelModal();loadWB();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteWB(){try{await fetch(API+'/logistics/waybills/'+wbDeleteId,{method:'DELETE'});gToast('Deleted.');closeWBDelModallogActivity('DELETE','Logistics - Waybills','Deleted waybill');();loadWB();}catch{gToast('Delete failed','error');}}
 
 // ── ACTIVITY CALENDAR ────────────────────────────────────────
 const AC_CAT_COLOR={Work:'#6366f1',Meeting:'#f59e0b',Delivery:'#10b981',Maintenance:'#8b5cf6',Personal:'#ec4899',General:'#64748b',Pullout:'#f97316','PH Holiday':'#dc2626'};
@@ -4279,7 +4343,7 @@ async function saveACTask(){
       const msg=ct.includes('json')?(await res.json().catch(()=>({}))).error||'Save failed':'Backend error - please restart the server.';
       throw new Error(msg);
     }
-    gToast(acEditId?'Task updated!':'Task added!');
+    gToast(acEditId?'Task updated!':'Task added!');logActivity(acEditId?'UPDATE':'CREATE','Calendar',acEditId?'Updated calendar task':'Added calendar task');
     closeACModal();
     await loadACEvents();
     if(date)acSelectDay(date);
@@ -4292,7 +4356,7 @@ async function confirmDeleteACTask(){
   try{
     const t=acTasksData.find(x=>x.id===acDeleteId);
     await fetch(API+'/calendar/tasks/'+acDeleteId,{method:'DELETE'});
-    gToast('Task deleted.');closeACDelModal();
+    gToast('Task deleted.');closeACDelModallogActivity('DELETE','Calendar','Deleted calendar task');();
     await loadACEvents();
     if(t&&acSelectedDate===t.task_date)acSelectDay(t.task_date);
   }catch{gToast('Delete failed.','error');}
@@ -4420,7 +4484,7 @@ async function saveUser(){
     const res=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await res.json();
     if(!res.ok){gToast(data.error||'Failed to save user.','error');return;}
-    gToast(id?'User updated successfully!':'User added successfully!');
+    gToast(id?'User updated successfully!':'User added successfully!');logActivity(id?'UPDATE':'CREATE','User Management',id?'Updated user account':'Added user account');
     closeUserModal();loadUsers();
   }catch(e){gToast('Server error. Please try again.','error');}
 }
@@ -4430,7 +4494,7 @@ async function deleteUser(id,name){
     const res=await fetch(`/api/users/${id}`,{method:'DELETE'});
     const data=await res.json();
     if(!res.ok){gToast(data.error||'Failed to delete user.','error');return;}
-    gToast(`User "${name}" deleted.`);loadUsers();
+    gToast(`User "${name}" deleted.`);logActivity('DELETE','User Management',`Deleted user account: ${name}`);loadUsers();
   }catch(e){gToast('Server error. Please try again.','error');}
 }
 
@@ -4603,7 +4667,7 @@ async function saveCI(){
     const r=await fetch(url,{method:id?'PUT':'POST',body:fd});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Save failed');
-    gToast(id?'Invoice updated!':'Invoice added!');
+    gToast(id?'Invoice updated!':'Invoice added!');logActivity(id?'UPDATE':'CREATE','Commercial Invoices',id?'Updated invoice':'Added invoice');
     closeCIModal();
     await loadCI();
   }catch(err){gToast(err.message,'error');}
@@ -4615,7 +4679,7 @@ async function deleteCI(id){
   try{
     const res=await fetch(API+'/cipl/ci/'+id,{method:'DELETE'});
     if(!res.ok){const d=await res.json();throw new Error(d.error||'Delete failed');}
-    gToast('Invoice deleted.');
+    gToast('Invoice deleted.');logActivity('DELETE','Commercial Invoices','Deleted commercial invoice');
     await loadCI();
   }catch(err){gToast(err.message,'error');}
 }
@@ -4736,7 +4800,7 @@ async function savePL(){
     const r=await fetch(url,{method:id?'PUT':'POST',body:fd});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Save failed');
-    gToast(id?'Packing list updated!':'Packing list added!');
+    gToast(id?'Packing list updated!':'Packing list added!');logActivity(id?'UPDATE':'CREATE','Packing Lists',id?'Updated packing list':'Added packing list');
     closePLModal();
     await loadPL();
   }catch(err){gToast(err.message,'error');}
@@ -4748,7 +4812,7 @@ async function deletePL(id){
   try{
     const res=await fetch(API+'/cipl/pl/'+id,{method:'DELETE'});
     if(!res.ok){const d=await res.json();throw new Error(d.error||'Delete failed');}
-    gToast('Packing list deleted.');
+    gToast('Packing list deleted.');logActivity('DELETE','Packing Lists','Deleted packing list');
     await loadPL();
   }catch(err){gToast(err.message,'error');}
 }
@@ -5141,6 +5205,52 @@ function closeMobSidebar(){
 document.querySelectorAll('.nav-item').forEach(function(el){
   el.addEventListener('click',function(){if(window.innerWidth<=768)closeMobSidebar();});
 });
+
+// ── Activity Logs ────────────────────────────────────────────────────────────
+let alData=[];
+async function loadActivityLogs(){
+  try{
+    const r=await fetch(API+'/activity-logs?limit=500');
+    alData=await r.json();
+    renderActivityLogs();
+  }catch{document.getElementById('al-body').innerHTML='<tr><td colspan="7"><div class="no-results">Failed to load.</div></td></tr>';}
+}
+function renderActivityLogs(){
+  const q=(document.getElementById('al-search').value||'').toLowerCase();
+  const sec=document.getElementById('al-filter-section').value;
+  const act=document.getElementById('al-filter-action').value;
+  const rows=alData.filter(r=>
+    (!q||(r.username||'').toLowerCase().includes(q)||(r.description||'').toLowerCase().includes(q))&&
+    (!sec||r.section===sec)&&
+    (!act||r.action===act)
+  );
+  document.getElementById('al-meta').textContent=`Showing ${rows.length} of ${alData.length} entries`;
+  const actionBadge={
+    'CREATE':'<span style="background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">CREATE</span>',
+    'UPDATE':'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">UPDATE</span>',
+    'DELETE':'<span style="background:#fee2e2;color:#b91c1c;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">DELETE</span>',
+  };
+  document.getElementById('al-body').innerHTML=rows.map((r,i)=>{
+    const dt=r.created_at?new Date(r.created_at).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'}):'—';
+    return `<tr>
+      <td>${i+1}</td>
+      <td style="white-space:nowrap;font-size:12px;color:#64748b">${dt}</td>
+      <td><strong>${esc(r.username||'—')}</strong></td>
+      <td><span style="font-size:11px;color:#7c3aed;font-weight:600">${esc(r.role||'—')}</span></td>
+      <td>${actionBadge[r.action]||esc(r.action)}</td>
+      <td style="font-size:12px">${esc(r.section||'—')}</td>
+      <td style="max-width:260px">${esc(r.description||'—')}</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="7"><div class="no-results">No activity logs found.</div></td></tr>';
+}
+async function clearActivityLogs(){
+  if(!confirm('Clear all activity logs? This cannot be undone.'))return;
+  try{
+    await fetch(API+'/activity-logs',{method:'DELETE'});
+    alData=[];renderActivityLogs();
+    gToast('Activity logs cleared.');
+  }catch{gToast('Failed to clear logs','error');}
+}
 </script>
 </body>
 </html>

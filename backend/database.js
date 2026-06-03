@@ -406,6 +406,18 @@ const dbPromise = (async () => {
     )
   `);
 
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS user_activity_logs (
+      id          SERIAL      PRIMARY KEY,
+      username    TEXT        NOT NULL DEFAULT '',
+      role        TEXT        NOT NULL DEFAULT '',
+      action      TEXT        NOT NULL DEFAULT '',
+      section     TEXT        NOT NULL DEFAULT '',
+      description TEXT        NOT NULL DEFAULT '',
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
   // ── Migrate supplier_quotations: add file_name and file_path columns ──
   try {
     await db.run(`ALTER TABLE supplier_quotations ADD COLUMN IF NOT EXISTS file_name TEXT NOT NULL DEFAULT ''`);
