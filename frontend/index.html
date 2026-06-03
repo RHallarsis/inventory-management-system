@@ -321,79 +321,96 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 @media(max-width:768px){
   body{overflow:hidden;display:block!important;}
   .mob-menu-btn{display:flex;align-items:center;justify-content:center;}
-  /* Sidebar pulled out of flow, slides in as overlay */
+
+  /* Sidebar: slide-over overlay */
   .sidebar{position:fixed!important;left:0;top:0;height:100vh!important;width:260px!important;min-width:0!important;z-index:200;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:4px 0 24px rgba(0,0,0,.4);}
   .sidebar.mob-open{transform:translateX(0)!important;}
-  /* Main fills full screen */
+
+  /* Main layout */
   main{display:flex;flex-direction:column;width:100vw;height:100vh;overflow:hidden;}
-  /* Topbar adjustments */
-  .topbar{padding:0 12px;gap:8px;}
-  .topbar-title{font-size:14px;}
-  .topbar-right{font-size:11px;gap:6px;}
+  .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 10px;}
+
+  /* Topbar */
+  .topbar{padding:0 10px;gap:6px;height:50px;}
+  .topbar-title{font-size:13px;font-weight:700;}
+  .topbar-right{font-size:11px;gap:5px;}
   #topbar-date{display:none!important;}
-  /* Content padding */
-  .content{padding:14px 12px;}
-  /* KPI grid single column on small phones */
-  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
-  .kpi-value{font-size:20px;}
-  /* Tables — ALL sections scroll horizontally */
-  .page-tbl-wrap,
-  .page-table-wrap,
-  .table-wrap,
-  .ac-summary-table-wrap{
-    overflow-x:auto!important;
-    -webkit-overflow-scrolling:touch;
-    max-width:100vw;
+
+  /* Page hero — compact strip on mobile */
+  .page-hero{padding:10px 14px;border-radius:10px;}
+  .ph-icon{width:36px;height:36px;border-radius:10px;}
+  .ph-icon svg{width:20px;height:20px;}
+  .ph-title{font-size:14px;font-weight:800;letter-spacing:-.2px;}
+  .ph-sub{display:none;}
+
+  /* KPI grid */
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
+  .kpi-value{font-size:18px;}
+  .kpi-card{padding:12px;}
+
+  /* Charts */
+  .charts-row{grid-template-columns:1fr;gap:10px;}
+  .chart-box{padding:12px;}
+
+  /* Tabs — scrollable, no wrap */
+  .log-tabs{display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;scrollbar-width:none;margin-bottom:12px;}
+  .log-tabs::-webkit-scrollbar{display:none;}
+  .log-tab{padding:8px 14px;font-size:12px;font-weight:600;flex-shrink:0;}
+
+  /* Toolbar — search full width, add button below */
+  .page-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;}
+  .page-toolbar .search-input{flex:1;min-width:0;font-size:13px;}
+  .page-toolbar select.search-input{flex:0 0 auto;min-width:110px;font-size:12px;}
+  .page-toolbar .table-meta{font-size:11px;color:var(--text-2);order:3;width:100%;}
+  .page-add-btn{order:2;margin-left:auto;padding:9px 14px;font-size:13px;border-radius:8px;white-space:nowrap;}
+
+  /* Tables — horizontal scroll */
+  .page-tbl-wrap,.page-table-wrap,.table-wrap,.ac-summary-table-wrap{
+    overflow-x:auto!important;-webkit-overflow-scrolling:touch;max-width:100%;border-radius:10px;
   }
-  .page-tbl-wrap .page-table,
-  .page-table-wrap .page-table{
-    min-width:720px;
-    width:max-content;
-  }
-  .page-tbl-wrap .page-table th,
-  .page-tbl-wrap .page-table td{
-    white-space:nowrap;
-  }
-  .ac-summary-table-wrap table{
-    min-width:500px;
-  }
-  /* ── Activity Calendar mobile fixes ── */
-  .ac-wrapper{flex-direction:column;gap:14px;}
+  .page-tbl-wrap .page-table,.page-table-wrap .page-table{min-width:600px;width:max-content;}
+  .page-tbl-wrap .page-table th,.page-tbl-wrap .page-table td{white-space:nowrap;padding:8px 10px;font-size:12px;}
+  .ac-summary-table-wrap table{min-width:460px;}
+
+  /* Touch-friendly action buttons */
+  .page-act-btn{padding:7px 13px;font-size:12px;border-radius:7px;min-height:34px;}
+
+  /* Activity Calendar */
+  .ac-wrapper{flex-direction:column;gap:12px;}
   .ac-cal-card{min-width:0;width:100%;}
   .ac-side{width:100%;flex-shrink:unset;}
-  /* Smaller calendar cells on mobile */
-  .ac-grid{grid-auto-rows:70px;}
-  .ac-cell{height:70px;padding:3px 4px;}
+  .ac-grid{grid-auto-rows:62px;}
+  .ac-cell{height:62px;padding:3px 4px;}
   .ac-day-num{font-size:11px;}
   .ac-dot{width:5px;height:5px;}
-  /* Summary KPI cards: 2 columns on mobile */
   .ac-summary-kpis{grid-template-columns:repeat(2,1fr);}
   .ac-summary-search{width:100%;box-sizing:border-box;}
   .ac-summary-head{flex-direction:column;align-items:flex-start;gap:8px;}
-  /* Modals — scrollable on mobile */
-  .g-modal-overlay{align-items:flex-start!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch;padding:12px 0 24px;}
-  .g-modal{width:95vw!important;max-width:95vw!important;margin:0 auto;max-height:none!important;overflow-y:visible!important;}
-  .g-modal-body{padding:14px;overflow-y:visible!important;}
-  .g-modal-foot{position:sticky;bottom:0;background:var(--bg-card);z-index:2;}
-  /* Forms: single column on mobile */
+
+  /* Modals */
+  .g-modal-overlay{align-items:flex-end!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch;padding:0;}
+  .g-modal{width:100vw!important;max-width:100vw!important;margin:0;border-radius:18px 18px 0 0!important;max-height:92vh!important;overflow-y:auto!important;}
+  .g-modal-body{padding:14px 16px;overflow-y:auto!important;}
+  .g-modal-head{padding:14px 16px 10px;border-bottom:1px solid var(--border);}
+  .g-modal-foot{padding:10px 16px;position:sticky;bottom:0;background:var(--bg-card);z-index:2;border-top:1px solid var(--border);}
+
+  /* Form grids: force single column */
   .g-modal-body [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;}
-  .g-modal-body [style*="grid-template-columns:1fr 1fr 1fr"]{grid-template-columns:1fr 1fr!important;}
-  /* Page hero compact */
-  .page-hero{padding:14px 16px;}
-  .ph-title{font-size:16px;}
-  .ph-sub{font-size:11px;}
-  /* Section toolbar */
-  .page-toolbar{flex-wrap:wrap;gap:8px;}
-  .page-toolbar input,.page-toolbar select{font-size:13px;}
-  /* Action buttons touch-friendly */
-  .page-act-btn{padding:6px 12px;font-size:12px;}
-  /* Charts */
-  .charts-row{grid-template-columns:1fr;gap:12px;}
-  .chart-box{padding:14px;}
+  .g-modal-body [style*="grid-template-columns:1fr 1fr 1fr"]{grid-template-columns:1fr!important;}
+  .g-form-grid{grid-template-columns:1fr!important;}
+
+  /* Form inputs — larger touch targets */
+  .g-modal-body input,.g-modal-body select,.g-modal-body textarea{font-size:16px!important;padding:10px 12px!important;border-radius:8px!important;}
+
+  /* Search inputs on page */
+  .search-input{font-size:13px;padding:9px 12px;}
 }
+
 @media(max-width:420px){
   .kpi-grid{grid-template-columns:1fr;}
   .topbar-right .staff-viewonly-badge,.topbar-right .viewer-badge{display:none;}
+  .page-tbl-wrap .page-table,.page-table-wrap .page-table{min-width:520px;}
+  .log-tab{padding:7px 11px;font-size:11px;}
 }
 /* ── STAFF / VIEW-ONLY MODE ─────────────────────────────────────────────── */
 /* Hide Audit Log and Stock Movements nav items for staff */
