@@ -49,8 +49,9 @@ router.post('/line/notify', async (req, res) => {
       return res.status(400).json({ error: 'LINE not configured. Please set your Channel Access Token and User ID in Settings.' });
     }
 
-    const tasks = req.body.tasks || [];
-    if (!tasks.length) return res.status(400).json({ error: 'No tasks to notify.' });
+    const allTasks = req.body.tasks || [];
+    const tasks = allTasks.filter(t => t.priority === 'High');
+    if (!tasks.length) return res.status(400).json({ error: 'No High priority tasks to notify. Only High priority tasks trigger LINE notifications.' });
 
     const today = new Date().toISOString().slice(0, 10);
     const lines = tasks.map(t => {
@@ -79,7 +80,13 @@ router.post('/line/broadcast', async (req, res) => {
       return res.status(400).json({ error: 'LINE not configured. Please set your Channel Access Token in Settings.' });
     }
 
-    const { message, tasks } = req.body;
+    const { message } = req.body;
+    const rawTasks = req.body.tasks || [];
+    const tasks = rawTasks.filter(t => t.priority === 'High');
+
+    if (rawTasks.length && !tasks.length) {
+      return res.status(400).json({ error: 'No High priority tasks to notify. Only High priority tasks trigger LINE notifications.' });
+    }
 
     if (tasks && tasks.length) {
       const now = new Date();
