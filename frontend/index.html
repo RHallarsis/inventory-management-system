@@ -3453,7 +3453,7 @@ async function saveCat(){
 }
 function openCatDelModal(id,name){catDeleteId=id;document.getElementById('cat-del-name').textContent=name;document.getElementById('cat-del-modal').classList.add('open');}
 function closeCatDelModal(){document.getElementById('cat-del-modal').classList.remove('open');}
-async function confirmDeleteCat(){try{await fetch(API+'/categories/'+catDeleteId,{method:'DELETE'});gToast('Deleted.');closeCatDelModallogActivity('DELETE','Categories','Deleted category');();loadCat();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteCat(){try{await fetch(API+'/categories/'+catDeleteId,{method:'DELETE'});gToast('Deleted.');closeCatDelModal();logActivity('DELETE','Categories','Deleted category');loadCat();}catch{gToast('Delete failed','error');}}
 
 // ── STOCK MONITORING ────────────────────────────────────────
 async function loadSM(){
@@ -3515,7 +3515,7 @@ async function saveSM(){
 }
 function openSMDelModal(id,name){smDeleteId=id;document.getElementById('sm-del-name').textContent=name;document.getElementById('sm-del-modal').classList.add('open');}
 function closeSMDelModal(){document.getElementById('sm-del-modal').classList.remove('open');}
-async function confirmDeleteSM(){try{await fetch(API+'/spare-parts/'+smDeleteId,{method:'DELETE'});gToast('Deleted.');closeSMDelModallogActivity('DELETE','Spare Parts','Deleted spare part');();loadSM();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteSM(){try{await fetch(API+'/spare-parts/'+smDeleteId,{method:'DELETE'});gToast('Deleted.');closeSMDelModal();logActivity('DELETE','Spare Parts','Deleted spare part');loadSM();}catch{gToast('Delete failed','error');}}
 
 // ── MACHINE MONITORING ──────────────────────────────────────
 async function loadMM(){
@@ -3558,7 +3558,7 @@ async function saveMM(){
 }
 function openMMDelModal(id,name){mmDeleteId=id;document.getElementById('mm-del-name').textContent=name;document.getElementById('mm-del-modal').classList.add('open');}
 function closeMMDelModal(){document.getElementById('mm-del-modal').classList.remove('open');}
-async function confirmDeleteMM(){try{await fetch(API+'/machine-monitoring/'+mmDeleteId,{method:'DELETE'});gToast('Deleted.');closeMMDelModallogActivity('DELETE','Machine Monitoring','Deleted machine record');();loadMM();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteMM(){try{await fetch(API+'/machine-monitoring/'+mmDeleteId,{method:'DELETE'});gToast('Deleted.');closeMMDelModal();logActivity('DELETE','Machine Monitoring','Deleted machine record');loadMM();}catch{gToast('Delete failed','error');}}
 
 // ── LOCAL PURCHASE MONITORING ────────────────────────────────
 let lpEditId=null,lpDeleteId=null;
@@ -3711,7 +3711,7 @@ async function savePO(){
 }
 function openPODelModal(id,name){poDeleteId=id;document.getElementById('po-del-name').textContent=name;document.getElementById('po-del-modal').classList.add('open');}
 function closePODelModal(){document.getElementById('po-del-modal').classList.remove('open');}
-async function confirmDeletePO(){try{await fetch(API+'/purchase-orders/'+poDeleteId,{method:'DELETE'});gToast('Deleted.');closePODelModallogActivity('DELETE','Purchase Orders','Deleted purchase order');();loadPO();}catch{gToast('Delete failed','error');}}
+async function confirmDeletePO(){try{await fetch(API+'/purchase-orders/'+poDeleteId,{method:'DELETE'});gToast('Deleted.');closePODelModal();logActivity('DELETE','Purchase Orders','Deleted purchase order');loadPO();}catch{gToast('Delete failed','error');}}
 let poNotifyId=null;
 async function notifyPOSupplier(id){
   poNotifyId=id;
@@ -3781,7 +3781,7 @@ async function saveSQ(){
 }
 function openSQDelModal(id,name){sqDeleteId=id;document.getElementById('sq-del-name').textContent=name;document.getElementById('sq-del-modal').classList.add('open');}
 function closeSQDelModal(){document.getElementById('sq-del-modal').classList.remove('open');}
-async function confirmDeleteSQ(){try{await fetch(API+'/supplier-quotations/'+sqDeleteId,{method:'DELETE'});gToast('Deleted.');closeSQDelModallogActivity('DELETE','Supplier Quotations','Deleted supplier quotation');();loadSQ();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteSQ(){try{await fetch(API+'/supplier-quotations/'+sqDeleteId,{method:'DELETE'});gToast('Deleted.');closeSQDelModal();logActivity('DELETE','Supplier Quotations','Deleted supplier quotation');loadSQ();}catch{gToast('Delete failed','error');}}
 
 // ── SUPPLIERS ────────────────────────────────────────────────
 async function loadSup(){try{const r=await fetch(API+'/suppliers');supData=await r.json();renderSup();}catch{document.getElementById('sup-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -3807,7 +3807,7 @@ async function saveSup(){
 }
 function openSupDelModal(id,name){supDeleteId=id;document.getElementById('sup-del-name').textContent=name;document.getElementById('sup-del-modal').classList.add('open');}
 function closeSupDelModal(){document.getElementById('sup-del-modal').classList.remove('open');}
-async function confirmDeleteSup(){try{await fetch(API+'/suppliers/'+supDeleteId,{method:'DELETE'});gToast('Deleted.');closeSupDelModallogActivity('DELETE','Suppliers','Deleted supplier');();loadSup();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteSup(){try{await fetch(API+'/suppliers/'+supDeleteId,{method:'DELETE'});gToast('Deleted.');closeSupDelModal();logActivity('DELETE','Suppliers','Deleted supplier');loadSup();}catch{gToast('Delete failed','error');}}
 
 // ── GOODS RECEIVED ──────────────────────────────────────────
 async function loadGR(){try{const r=await fetch(API+'/goods-received');grData=await r.json();if(!poData||!poData.length){const p=await fetch(API+'/purchase-orders');poData=await p.json();}renderGR();}catch{document.getElementById('gr-body').innerHTML='<tr><td colspan="9"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -3831,7 +3831,7 @@ async function saveGR(){
 }
 function openGRDelModal(id,name){grDeleteId=id;document.getElementById('gr-del-name').textContent=name;document.getElementById('gr-del-modal').classList.add('open');}
 function closeGRDelModal(){document.getElementById('gr-del-modal').classList.remove('open');}
-async function confirmDeleteGR(){try{await fetch(API+'/goods-received/'+grDeleteId,{method:'DELETE'});gToast('Deleted.');closeGRDelModallogActivity('DELETE','Goods Received','Deleted goods received record');();loadGR();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteGR(){try{await fetch(API+'/goods-received/'+grDeleteId,{method:'DELETE'});gToast('Deleted.');closeGRDelModal();logActivity('DELETE','Goods Received','Deleted goods received record');loadGR();}catch{gToast('Delete failed','error');}}
 
 // ── STOCK TRANSFERS ─────────────────────────────────────────
 const ST_PAGE_SIZE=50;let stPage=1;
@@ -3871,7 +3871,7 @@ async function saveST(){
 }
 function openSTDelModal(id,name){stDeleteId=id;document.getElementById('st-del-name').textContent=name;document.getElementById('st-del-modal').classList.add('open');}
 function closeSTDelModal(){document.getElementById('st-del-modal').classList.remove('open');}
-async function confirmDeleteST(){try{await fetch(API+'/stock-transfers/'+stDeleteId,{method:'DELETE'});gToast('Deleted.');closeSTDelModallogActivity('DELETE','Stock Transfers','Deleted stock transfer');();loadST();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteST(){try{await fetch(API+'/stock-transfers/'+stDeleteId,{method:'DELETE'});gToast('Deleted.');closeSTDelModal();logActivity('DELETE','Stock Transfers','Deleted stock transfer');loadST();}catch{gToast('Delete failed','error');}}
 
 // ── PULLOUT RECEIPTS ─────────────────────────────────────────
 async function loadPull(){try{const r=await fetch(API+'/pullout-receipts');pullData=await r.json();renderPull();}catch{document.getElementById('pull-body').innerHTML='<tr><td colspan="13"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -3891,7 +3891,7 @@ async function savePull(){
 }
 function openPullDelModal(id,name){pullDeleteId=id;document.getElementById('pull-del-name').textContent=name;document.getElementById('pull-del-modal').classList.add('open');}
 function closePullDelModal(){document.getElementById('pull-del-modal').classList.remove('open');}
-async function confirmDeletePull(){try{await fetch(API+'/pullout-receipts/'+pullDeleteId,{method:'DELETE'});gToast('Deleted.');closePullDelModallogActivity('DELETE','Pullout Receipts','Deleted pullout receipt');();loadPull();}catch{gToast('Delete failed','error');}}
+async function confirmDeletePull(){try{await fetch(API+'/pullout-receipts/'+pullDeleteId,{method:'DELETE'});gToast('Deleted.');closePullDelModal();logActivity('DELETE','Pullout Receipts','Deleted pullout receipt');loadPull();}catch{gToast('Delete failed','error');}}
 
 // ── TRANSMITTAL RECEIPTS ──────────────────────────────────────
 async function loadTrmit(){try{const r=await fetch(API+'/transmittal-receipts');trmitData=await r.json();renderTrmit();}catch{document.getElementById('trmit-body').innerHTML='<tr><td colspan="13"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -3911,7 +3911,7 @@ async function saveTrmit(){
 }
 function openTrmitDelModal(id,name){trmitDeleteId=id;document.getElementById('trmit-del-name').textContent=name;document.getElementById('trmit-del-modal').classList.add('open');}
 function closeTrmitDelModal(){document.getElementById('trmit-del-modal').classList.remove('open');}
-async function confirmDeleteTrmit(){try{await fetch(API+'/transmittal-receipts/'+trmitDeleteId,{method:'DELETE'});gToast('Deleted.');closeTrmitDelModallogActivity('DELETE','Transmittal Receipts','Deleted transmittal receipt');();loadTrmit();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteTrmit(){try{await fetch(API+'/transmittal-receipts/'+trmitDeleteId,{method:'DELETE'});gToast('Deleted.');closeTrmitDelModal();logActivity('DELETE','Transmittal Receipts','Deleted transmittal receipt');loadTrmit();}catch{gToast('Delete failed','error');}}
 
 // ── REPORTS ──────────────────────────────────────────────────
 async function loadIR(){
@@ -4060,7 +4060,7 @@ function closeTQModal(){document.getElementById('tq-modal').classList.remove('op
 async function saveTQ(){const fd=new FormData();fd.append('quote_number',document.getElementById('tq-f-qno').value.trim());fd.append('trucking_service',document.getElementById('tq-f-service').value.trim());fd.append('date_of_activity',document.getElementById('tq-f-date').value);fd.append('status',document.getElementById('tq-f-status').value);fd.append('sites',document.getElementById('tq-f-sites').value.trim());fd.append('total_amount',document.getElementById('tq-f-amount').value||0);const fi=document.getElementById('tq-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('quote_number')||!fd.get('trucking_service')){gToast('Quote number and service required.','error');return;}try{const url=tqEditId?API+'/logistics/trucking/'+tqEditId:API+'/logistics/trucking';const res=await fetch(url,{method:tqEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(tqEditId?'Updated!':'Added!');logActivity(tqEditId?'UPDATE':'CREATE','Logistics - Trucking',tqEditId?'Updated trucking quotation':'Added trucking quotation');closeTQModal();loadTQ();}catch(err){gToast(err.message,'error');}}
 function openTQDelModal(id,name){tqDeleteId=id;document.getElementById('tq-del-name').textContent=name;document.getElementById('tq-del-modal').classList.add('open');}
 function closeTQDelModal(){document.getElementById('tq-del-modal').classList.remove('open');}
-async function confirmDeleteTQ(){try{await fetch(API+'/logistics/trucking/'+tqDeleteId,{method:'DELETE'});gToast('Deleted.');closeTQDelModallogActivity('DELETE','Logistics - Trucking','Deleted trucking quotation');();loadTQ();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteTQ(){try{await fetch(API+'/logistics/trucking/'+tqDeleteId,{method:'DELETE'});gToast('Deleted.');closeTQDelModal();logActivity('DELETE','Logistics - Trucking','Deleted trucking quotation');loadTQ();}catch{gToast('Delete failed','error');}}
 
 // Manpower
 async function loadMP(){try{const r=await fetch(API+'/logistics/manpower');mpData=await r.json();renderMP();}catch{document.getElementById('mp-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -4077,7 +4077,7 @@ function closeMPModal(){document.getElementById('mp-modal').classList.remove('op
 async function saveMP(){const fd=new FormData();fd.append('location',document.getElementById('mp-f-loc').value.trim());fd.append('machine_type',document.getElementById('mp-f-mtype').value.trim());fd.append('manpower_quantity',document.getElementById('mp-f-mpqty').value||0);fd.append('unit_price',document.getElementById('mp-f-up').value||0);fd.append('purpose',document.getElementById('mp-f-purpose').value.trim());fd.append('remarks',document.getElementById('mp-f-remarks').value.trim());const fi=document.getElementById('mp-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('location')||!fd.get('machine_type')){gToast('Location and machine type required.','error');return;}try{const url=mpEditId?API+'/logistics/manpower/'+mpEditId:API+'/logistics/manpower';const res=await fetch(url,{method:mpEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(mpEditId?'Updated!':'Added!');logActivity(mpEditId?'UPDATE':'CREATE','Logistics - Manpower',mpEditId?'Updated manpower request':'Added manpower request');closeMPModal();loadMP();}catch(err){gToast(err.message,'error');}}
 function openMPDelModal(id,name){mpDeleteId=id;document.getElementById('mp-del-name').textContent=name;document.getElementById('mp-del-modal').classList.add('open');}
 function closeMPDelModal(){document.getElementById('mp-del-modal').classList.remove('open');}
-async function confirmDeleteMP(){try{await fetch(API+'/logistics/manpower/'+mpDeleteId,{method:'DELETE'});gToast('Deleted.');closeMPDelModallogActivity('DELETE','Logistics - Manpower','Deleted manpower request');();loadMP();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteMP(){try{await fetch(API+'/logistics/manpower/'+mpDeleteId,{method:'DELETE'});gToast('Deleted.');closeMPDelModal();logActivity('DELETE','Logistics - Manpower','Deleted manpower request');loadMP();}catch{gToast('Delete failed','error');}}
 
 // Sites Activity
 async function loadSA(){try{const r=await fetch(API+'/logistics/sites-activity');saData=await r.json();renderSA();}catch{document.getElementById('sa-body').innerHTML='<tr><td colspan="9"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -4093,7 +4093,7 @@ function closeSAModal(){document.getElementById('sa-modal').classList.remove('op
 async function saveSA(){const fd=new FormData();fd.append('site_name',document.getElementById('sa-f-site').value.trim());fd.append('activity_type',document.getElementById('sa-f-type').value);fd.append('activity_date',document.getElementById('sa-f-date').value);fd.append('status',document.getElementById('sa-f-status').value);fd.append('location',document.getElementById('sa-f-loc').value.trim());fd.append('description',document.getElementById('sa-f-desc').value.trim());const fi=document.getElementById('sa-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('site_name')){gToast('Site name required.','error');return;}try{const url=saEditId?API+'/logistics/sites-activity/'+saEditId:API+'/logistics/sites-activity';const res=await fetch(url,{method:saEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(saEditId?'Updated!':'Added!');logActivity(saEditId?'UPDATE':'CREATE','Logistics - Sites Activity',saEditId?'Updated site activity':'Added site activity');closeSAModal();loadSA();}catch(err){gToast(err.message,'error');}}
 function openSADelModal(id,name){saDeleteId=id;document.getElementById('sa-del-name').textContent=name;document.getElementById('sa-del-modal').classList.add('open');}
 function closeSADelModal(){document.getElementById('sa-del-modal').classList.remove('open');}
-async function confirmDeleteSA(){try{await fetch(API+'/logistics/sites-activity/'+saDeleteId,{method:'DELETE'});gToast('Deleted.');closeSADelModallogActivity('DELETE','Logistics - Sites Activity','Deleted site activity');();loadSA();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteSA(){try{await fetch(API+'/logistics/sites-activity/'+saDeleteId,{method:'DELETE'});gToast('Deleted.');closeSADelModal();logActivity('DELETE','Logistics - Sites Activity','Deleted site activity');loadSA();}catch{gToast('Delete failed','error');}}
 
 // Waybills
 async function loadWB(){try{const r=await fetch(API+'/logistics/waybills');wbData=await r.json();renderWB();}catch{document.getElementById('wb-body').innerHTML='<tr><td colspan="8"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -4109,7 +4109,7 @@ function closeWBModal(){document.getElementById('wb-modal').classList.remove('op
 async function saveWB(){const fd=new FormData();fd.append('waybill_number',document.getElementById('wb-f-wno').value.trim());fd.append('date',document.getElementById('wb-f-date').value);fd.append('origin',document.getElementById('wb-f-origin').value.trim());fd.append('destination',document.getElementById('wb-f-dest').value.trim());fd.append('notes',document.getElementById('wb-f-notes').value.trim());const fi=document.getElementById('wb-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('waybill_number')){gToast('Waybill number required.','error');return;}try{const url=wbEditId?API+'/logistics/waybills/'+wbEditId:API+'/logistics/waybills';const res=await fetch(url,{method:wbEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(wbEditId?'Updated!':'Added!');logActivity(wbEditId?'UPDATE':'CREATE','Logistics - Waybills',wbEditId?'Updated waybill':'Added waybill');closeWBModal();loadWB();}catch(err){gToast(err.message,'error');}}
 function openWBDelModal(id,name){wbDeleteId=id;document.getElementById('wb-del-name').textContent=name;document.getElementById('wb-del-modal').classList.add('open');}
 function closeWBDelModal(){document.getElementById('wb-del-modal').classList.remove('open');}
-async function confirmDeleteWB(){try{await fetch(API+'/logistics/waybills/'+wbDeleteId,{method:'DELETE'});gToast('Deleted.');closeWBDelModallogActivity('DELETE','Logistics - Waybills','Deleted waybill');();loadWB();}catch{gToast('Delete failed','error');}}
+async function confirmDeleteWB(){try{await fetch(API+'/logistics/waybills/'+wbDeleteId,{method:'DELETE'});gToast('Deleted.');closeWBDelModal();logActivity('DELETE','Logistics - Waybills','Deleted waybill');loadWB();}catch{gToast('Delete failed','error');}}
 
 // ── ACTIVITY CALENDAR ────────────────────────────────────────
 const AC_CAT_COLOR={Work:'#6366f1',Meeting:'#f59e0b',Delivery:'#10b981',Maintenance:'#8b5cf6',Personal:'#ec4899',General:'#64748b',Pullout:'#f97316','PH Holiday':'#dc2626'};
@@ -4356,7 +4356,7 @@ async function confirmDeleteACTask(){
   try{
     const t=acTasksData.find(x=>x.id===acDeleteId);
     await fetch(API+'/calendar/tasks/'+acDeleteId,{method:'DELETE'});
-    gToast('Task deleted.');closeACDelModallogActivity('DELETE','Calendar','Deleted calendar task');();
+    gToast('Task deleted.');closeACDelModal();logActivity('DELETE','Calendar','Deleted calendar task');
     await loadACEvents();
     if(t&&acSelectedDate===t.task_date)acSelectDay(t.task_date);
   }catch{gToast('Delete failed.','error');}
