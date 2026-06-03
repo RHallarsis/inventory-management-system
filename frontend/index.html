@@ -2279,6 +2279,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
       <option value="UPDATE">Update</option>
       <option value="DELETE">Delete</option>
     </select>
+    <button class="page-add-btn" onclick="testActivityLog()" style="background:#0ea5e9">🔍 Test API</button>
     <button class="page-add-btn" onclick="clearActivityLogs()" style="background:#ef4444">🗑 Clear Logs</button>
     <span id="al-meta" style="font-size:12px;color:#64748b;margin-left:4px"></span>
   </div>
@@ -5262,6 +5263,31 @@ async function clearActivityLogs(){
     alData=[];renderActivityLogs();
     gToast('Activity logs cleared.');
   }catch{gToast('Failed to clear logs','error');}
+}
+
+async function testActivityLog(){
+  try{
+    const res=await fetch(API+'/activity-logs',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        username: (currentUser&&currentUser.name)||'TestUser',
+        role:     (currentUser&&currentUser.role)||'Admin',
+        action:   'CREATE',
+        section:  'Test',
+        description: 'API connection test'
+      })
+    });
+    const txt=await res.text();
+    if(res.ok){
+      gToast('✅ API works! Status: '+res.status);
+      loadActivityLogs();
+    } else {
+      gToast('❌ API error '+res.status+': '+txt.substring(0,100),'error');
+    }
+  }catch(e){
+    gToast('❌ Fetch failed: '+e.message,'error');
+  }
 }
 </script>
 </body>
