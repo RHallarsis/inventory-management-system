@@ -313,14 +313,13 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 }
 /* ── Mobile ── */
 @media(max-width:768px){
-  body{overflow-x:hidden;}
+  body{overflow:hidden;display:block!important;}
   .mob-menu-btn{display:flex;align-items:center;justify-content:center;}
-  /* Sidebar slides in over content */
-  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:200;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:4px 0 24px rgba(0,0,0,.4);}
-  .sidebar.mob-open{transform:translateX(0);}
-  /* Main takes full width */
-  .app-layout{flex-direction:column;}
-  main{width:100%;min-width:0;}
+  /* Sidebar pulled out of flow, slides in as overlay */
+  .sidebar{position:fixed!important;left:0;top:0;height:100vh!important;width:260px!important;min-width:0!important;z-index:200;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:4px 0 24px rgba(0,0,0,.4);}
+  .sidebar.mob-open{transform:translateX(0)!important;}
+  /* Main fills full screen */
+  main{display:flex;flex-direction:column;width:100vw;height:100vh;overflow:hidden;}
   /* Topbar adjustments */
   .topbar{padding:0 12px;gap:8px;}
   .topbar-title{font-size:14px;}
