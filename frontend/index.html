@@ -310,6 +310,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 @media(max-width:900px){
   .kpi-grid{grid-template-columns:repeat(2,1fr);}
   .charts-row{grid-template-columns:1fr;}
+  #topbar-date{display:none!important;}
 }
 /* ── Mobile ── */
 @media(max-width:768px){
@@ -324,7 +325,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
   .topbar{padding:0 12px;gap:8px;}
   .topbar-title{font-size:14px;}
   .topbar-right{font-size:11px;gap:6px;}
-  #topbar-date{display:none;}
+  #topbar-date{display:none!important;}
   /* Content padding */
   .content{padding:14px 12px;}
   /* KPI grid single column on small phones */
