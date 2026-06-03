@@ -21,13 +21,14 @@ router.get('/ph-holidays/:year', async (req, res) => {
   }
 });
 
-// Internal: fire Line broadcast if auto_notify is enabled (fire-and-forget)
+// Internal: fire Line broadcast if auto_notify is enabled AND task is High priority (fire-and-forget)
 async function notifyLine(db, task, action) {
   try {
+    if (task.priority !== 'High') return; // only notify for High priority tasks
     const cfg = await db.getOne('SELECT channel_token, auto_notify FROM line_config WHERE id=1');
     if (!cfg || !cfg.auto_notify || !cfg.channel_token) return;
     await broadcastLine(cfg.channel_token, buildCalendarMessage(task, action));
-    console.log('[LINE] Broadcast sent for ' + action + ': "' + task.title + '"');
+    console.log('[LINE] Broadcast sent for ' + action + ': "' + task.title + '" (High priority)');
   } catch (err) {
     console.error('[LINE] Broadcast error:', err.message);
   }
