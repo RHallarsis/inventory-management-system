@@ -415,7 +415,9 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 /* ── STAFF / VIEW-ONLY MODE ─────────────────────────────────────────────── */
 /* Hide Audit Log and Stock Movements nav items for staff */
 body.staff-mode .nav-item[data-page="auditlog"],
-body.staff-mode .nav-item[data-page="stockmovements"] { display:none !important; }
+body.staff-mode .nav-item[data-page="stockmovements"],
+body.staff-mode .nav-item[data-page="activitylogs"],
+body.viewer-mode .nav-item[data-page="activitylogs"] { display:none !important; }
 
 /* Hide every add / edit / delete control when staff is logged in */
 body.staff-mode .page-add-btn,
@@ -2260,9 +2262,9 @@ body.viewer-mode .line-notify-btn { display:none !important; }
       <div><div class="ph-title">Account Activity Logs</div><div class="ph-sub">Track every action performed by each account across all sections</div></div>
     </div>
   </div>
-  <div class="page-toolbar" style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-    <input id="al-search" placeholder="Search user or description…" oninput="renderActivityLogs()" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"/>
-    <select id="al-filter-section" onchange="renderActivityLogs()" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px">
+  <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+    <input id="al-search" placeholder="🔍 Search user or description…" oninput="renderActivityLogs()" style="flex:1;min-width:150px;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"/>
+    <select id="al-filter-section" onchange="renderActivityLogs()" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;max-width:180px">
       <option value="">All Sections</option>
       <option>Inventory Items</option><option>Categories</option><option>Spare Parts</option>
       <option>Machine Monitoring</option><option>Local Purchases</option><option>Purchase Orders</option>
@@ -2273,27 +2275,29 @@ body.viewer-mode .line-notify-btn { display:none !important; }
       <option>Calendar</option><option>Commercial Invoices</option><option>Packing Lists</option>
       <option>User Management</option>
     </select>
-    <select id="al-filter-action" onchange="renderActivityLogs()" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px">
+    <select id="al-filter-action" onchange="renderActivityLogs()" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px">
       <option value="">All Actions</option>
       <option value="CREATE">Create</option>
       <option value="UPDATE">Update</option>
       <option value="DELETE">Delete</option>
     </select>
-    <button class="page-add-btn" onclick="loadActivityLogs()" style="background:#22c55e">↻ Refresh</button>
-    <button class="page-add-btn" onclick="testActivityLog()" style="background:#0ea5e9">🔍 Test API</button>
-    <button class="page-add-btn" onclick="clearActivityLogs()" style="background:#ef4444">🗑 Clear Logs</button>
-    <span id="al-meta" style="font-size:12px;color:#64748b;margin-left:4px"></span>
   </div>
-  <div class="page-tbl-wrap">
-    <table class="page-table">
+  <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+    <button class="page-add-btn" onclick="loadActivityLogs()" style="background:#22c55e;padding:7px 14px;font-size:12px">↻ Refresh</button>
+    <button class="page-add-btn" onclick="testActivityLog()" style="background:#0ea5e9;padding:7px 14px;font-size:12px">🔍 Test API</button>
+    <button class="page-add-btn" onclick="clearActivityLogs()" style="background:#ef4444;padding:7px 14px;font-size:12px">🗑 Clear Logs</button>
+    <span id="al-meta" style="font-size:12px;color:#64748b"></span>
+  </div>
+  <div class="page-tbl-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+    <table class="page-table" style="min-width:650px">
       <thead><tr>
-        <th>#</th>
-        <th>Date &amp; Time</th>
-        <th>User</th>
-        <th>Role</th>
-        <th>Action</th>
-        <th>Section</th>
-        <th>Description</th>
+        <th style="width:40px">#</th>
+        <th style="min-width:130px">Date &amp; Time</th>
+        <th style="min-width:120px">User</th>
+        <th style="min-width:70px">Role</th>
+        <th style="min-width:80px">Action</th>
+        <th style="min-width:140px">Section</th>
+        <th style="min-width:180px">Description</th>
       </tr></thead>
       <tbody id="al-body"></tbody>
     </table>
@@ -3162,7 +3166,7 @@ function doLogout(){
 //   purchaseorders, suppliers, cipl, alerts, activitycalendar
 // Full CRUD pages: machinemonitoring, goodsreceived, stocktransfers,
 //   inventoryreport, purchasereport, logistics
-const STAFF_BLOCKED_PAGES = ['settings'];
+const STAFF_BLOCKED_PAGES = ['settings','activitylogs'];
 
 /**
  * Apply (or reset) role-based UI restrictions.
