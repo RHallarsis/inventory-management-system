@@ -351,6 +351,19 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
   .ac-summary-table-wrap table{
     min-width:500px;
   }
+  /* ── Activity Calendar mobile fixes ── */
+  .ac-wrapper{flex-direction:column;gap:14px;}
+  .ac-cal-card{min-width:0;width:100%;}
+  .ac-side{width:100%;flex-shrink:unset;}
+  /* Smaller calendar cells on mobile */
+  .ac-grid{grid-auto-rows:70px;}
+  .ac-cell{height:70px;padding:3px 4px;}
+  .ac-day-num{font-size:11px;}
+  .ac-dot{width:5px;height:5px;}
+  /* Summary KPI cards: 2 columns on mobile */
+  .ac-summary-kpis{grid-template-columns:repeat(2,1fr);}
+  .ac-summary-search{width:100%;box-sizing:border-box;}
+  .ac-summary-head{flex-direction:column;align-items:flex-start;gap:8px;}
   /* Modals full screen on mobile */
   .g-modal{width:95vw!important;max-width:95vw!important;margin:10px auto;max-height:90vh;overflow-y:auto;}
   .g-modal-body{padding:14px;}
