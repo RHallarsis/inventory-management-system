@@ -4820,19 +4820,21 @@ function renderGoodsReceivedPanel(data){
       <svg width="13" height="13" viewBox="0 0 24 24" fill="#94a3b8"><path d="M13 3a9 9 0 1 0 .001 18.001A9 9 0 0 0 13 3zm0 16a7 7 0 1 1 .001-14.001A7 7 0 0 1 13 19zm.5-11H12v6l5.25 3.15.75-1.23-4.5-2.67V8z"/></svg>
       <span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px">Recent Receipts</span>
     </div>
-    <table style="width:100%;border-collapse:collapse">
-      <thead>
-        <tr style="background:#f8fafc;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9">
-          <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">GR #</th>
-          <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">PO #</th>
-          <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Supplier</th>
-          <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Date Received</th>
-          <th style="padding:9px 14px;text-align:center;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Items</th>
-          <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Status</th>
-        </tr>
-      </thead>
-      <tbody>${recentRows}</tbody>
-    </table>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <table style="width:100%;min-width:560px;border-collapse:collapse">
+        <thead>
+          <tr style="background:#f8fafc;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9">
+            <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">GR #</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">PO #</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Supplier</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Date Received</th>
+            <th style="padding:9px 14px;text-align:center;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Items</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Status</th>
+          </tr>
+        </thead>
+        <tbody>${recentRows}</tbody>
+      </table>
+    </div>
   </div>`;
 }
 
