@@ -330,9 +330,27 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
   /* KPI grid single column on small phones */
   .kpi-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
   .kpi-value{font-size:20px;}
-  /* Tables scroll horizontally */
-  .page-tbl-wrap,.page-table-wrap,.table-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch;}
-  .page-tbl-wrap .page-table,.page-table-wrap .page-table{min-width:650px;}
+  /* Tables — ALL sections scroll horizontally */
+  .page-tbl-wrap,
+  .page-table-wrap,
+  .table-wrap,
+  .ac-summary-table-wrap{
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch;
+    max-width:100vw;
+  }
+  .page-tbl-wrap .page-table,
+  .page-table-wrap .page-table{
+    min-width:720px;
+    width:max-content;
+  }
+  .page-tbl-wrap .page-table th,
+  .page-tbl-wrap .page-table td{
+    white-space:nowrap;
+  }
+  .ac-summary-table-wrap table{
+    min-width:500px;
+  }
   /* Modals full screen on mobile */
   .g-modal{width:95vw!important;max-width:95vw!important;margin:10px auto;max-height:90vh;overflow-y:auto;}
   .g-modal-body{padding:14px;}
