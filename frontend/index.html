@@ -3028,9 +3028,18 @@ function logActivity(action, section, description){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({username:uname,role:urole,action:String(action||''),section:String(section||''),description:String(description||'')})
     }).then(function(r){
-      if(!r.ok)r.text().then(function(t){console.warn('[ActivityLog] POST failed:',r.status,t);});
-    }).catch(function(e){console.warn('[ActivityLog] fetch error:',e.message);});
-  }catch(e){console.warn('[ActivityLog] error:',e.message);}
+      if(!r.ok){r.text().then(function(t){
+        console.warn('[ActivityLog] POST failed:',r.status,t);
+        gToast('Activity log error '+r.status+': '+t.substring(0,80),'error');
+      });}
+    }).catch(function(e){
+      console.warn('[ActivityLog] fetch error:',e.message);
+      gToast('Activity log fetch failed: '+e.message,'error');
+    });
+  }catch(e){
+    console.warn('[ActivityLog] error:',e.message);
+    gToast('Activity log error: '+e.message,'error');
+  }
 }
 
 let invData=[],catData=[],smData=[],irData=[],mmData=[],poData=[],supData=[],grData=[],stData=[],pullData=[],trmitData=[],tqData=[],mpData=[],saData=[],wbData=[],lpData=[],ciData=[],plData=[];
