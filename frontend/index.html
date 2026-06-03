@@ -2546,45 +2546,58 @@ body.viewer-mode .line-notify-btn { display:none !important; }
   </div>
 </div>
 <!-- PO Supplier Email Preview Modal -->
+<style>
+#po-notify-modal .g-modal{max-width:720px;width:95vw}
+.pn-field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pn-label{font-weight:600;color:#666;min-width:75px;flex-shrink:0;font-size:0.85rem}
+.pn-input{flex:1;min-width:0;border:1px solid #ccc;border-radius:6px;padding:7px 10px;font-size:0.85rem;outline:none;box-sizing:border-box;width:100%}
+.pn-value{color:#333;font-size:0.85rem;word-break:break-word;flex:1;min-width:0}
+.pn-attach-badge{background:#fff3e0;color:#6b2e0a;border:1px solid #f5c88a;border-radius:12px;padding:3px 10px;font-size:0.8rem;font-weight:600;word-break:break-all;white-space:normal;display:inline-block;max-width:100%}
+@media(max-width:480px){
+  .pn-label{min-width:48px;font-size:0.8rem}
+  .pn-input{font-size:0.82rem;padding:6px 8px}
+  .pn-value{font-size:0.82rem}
+  #po-notify-modal .g-modal-head span{font-size:0.95rem}
+  #po-notify-modal .g-modal-foot{flex-wrap:wrap;gap:8px}
+  #po-notify-modal .g-modal-foot button{flex:1;min-width:120px}
+}
+</style>
 <div class="g-modal-overlay" id="po-notify-modal">
-  <div class="g-modal" style="max-width:720px;width:95%">
+  <div class="g-modal">
     <div class="g-modal-head" style="background:#6b2e0a;color:#fff">
       <span>✉ Supplier Email Preview</span>
       <button class="g-modal-close" style="color:#fff" onclick="closePONotifyModal()">&#215;</button>
     </div>
     <div class="g-modal-body" style="padding:0">
-      <div style="background:#f8f8f8;border-bottom:1px solid #ddd;padding:14px 20px;font-size:0.85rem;display:grid;gap:8px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-weight:600;color:#666;min-width:75px">To:</span>
-          <input id="po-notify-to" type="text" placeholder="supplier@email.com"
-            style="flex:1;border:1px solid #ccc;border-radius:6px;padding:6px 10px;font-size:0.85rem;outline:none"/>
+      <div style="background:#f8f8f8;border-bottom:1px solid #ddd;padding:12px 16px;display:grid;gap:10px">
+        <div class="pn-field">
+          <span class="pn-label">To:</span>
+          <input id="po-notify-to" type="text" placeholder="supplier@email.com" class="pn-input"/>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-weight:600;color:#666;min-width:75px">CC:</span>
-          <input id="po-notify-cc" type="text" placeholder="cc@email.com, another@email.com"
-            style="flex:1;border:1px solid #ccc;border-radius:6px;padding:6px 10px;font-size:0.85rem;outline:none"/>
+        <div class="pn-field">
+          <span class="pn-label">CC:</span>
+          <input id="po-notify-cc" type="text" placeholder="cc@email.com, another@email.com" class="pn-input"/>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-weight:600;color:#666;min-width:75px">BCC:</span>
-          <input id="po-notify-bcc" type="text" placeholder="bcc@email.com, another@email.com"
-            style="flex:1;border:1px solid #ccc;border-radius:6px;padding:6px 10px;font-size:0.85rem;outline:none"/>
+        <div class="pn-field">
+          <span class="pn-label">BCC:</span>
+          <input id="po-notify-bcc" type="text" placeholder="bcc@email.com, another@email.com" class="pn-input"/>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-weight:600;color:#666;min-width:75px">Subject:</span>
-          <span id="po-notify-subject" style="color:#333;font-size:0.85rem"></span>
+        <div class="pn-field">
+          <span class="pn-label">Subject:</span>
+          <span id="po-notify-subject" class="pn-value"></span>
         </div>
-        <div id="po-notify-attachment-row" style="display:none;align-items:center;gap:8px">
-          <span style="font-weight:600;color:#666;min-width:75px">Attachment:</span>
-          <span id="po-notify-attachment-name" style="background:#fff3e0;color:#6b2e0a;border:1px solid #f5c88a;border-radius:12px;padding:2px 10px;font-size:0.8rem;font-weight:600">📎</span>
+        <div id="po-notify-attachment-row" class="pn-field" style="display:none">
+          <span class="pn-label">Attach:</span>
+          <span id="po-notify-attachment-name" class="pn-attach-badge">📎</span>
         </div>
       </div>
-      <div style="padding:20px;max-height:400px;overflow-y:auto;background:#fff">
-        <div id="po-notify-body"></div>
+      <div style="padding:16px;max-height:45vh;overflow-y:auto;background:#fff">
+        <div id="po-notify-body" style="font-size:0.85rem"></div>
       </div>
     </div>
     <div class="g-modal-foot" style="justify-content:flex-end;gap:10px;border-top:2px solid #6b2e0a">
       <button class="g-btn g-btn-cancel" onclick="closePONotifyModal()">Cancel</button>
-      <button id="po-notify-send-btn" class="g-btn g-btn-save" style="background:#6b2e0a;min-width:140px" onclick="sendPONotification()">✉ Send Email</button>
+      <button id="po-notify-send-btn" class="g-btn g-btn-save" style="background:#6b2e0a;min-width:130px" onclick="sendPONotification()">✉ Send Email</button>
     </div>
   </div>
 </div>
