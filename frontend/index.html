@@ -3018,16 +3018,18 @@ const API=window.location.origin+'/api';
 let currentUser=null;
 // ── Activity Logger ──────────────────────────────────────────────────────────
 function logActivity(action, section, description){
-  if(!currentUser) return;
-  fetch(API+'/activity-logs',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      username: currentUser.name||currentUser.email||'Unknown',
-      role:     currentUser.role||'',
-      action, section, description
-    })
-  }).catch(()=>{});
+  try{
+    const uname=(currentUser&&(currentUser.name||currentUser.email))||'Unknown';
+    const urole=(currentUser&&currentUser.role)||'';
+    console.log('[ActivityLog]',action,section,'|',uname);
+    fetch(API+'/activity-logs',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:uname,role:urole,action:String(action||''),section:String(section||''),description:String(description||'')})
+    }).then(function(r){
+      if(!r.ok)r.text().then(function(t){console.warn('[ActivityLog] POST failed:',r.status,t);});
+    }).catch(function(e){console.warn('[ActivityLog] fetch error:',e.message);});
+  }catch(e){console.warn('[ActivityLog] error:',e.message);}
 }
 
 let invData=[],catData=[],smData=[],irData=[],mmData=[],poData=[],supData=[],grData=[],stData=[],pullData=[],trmitData=[],tqData=[],mpData=[],saData=[],wbData=[],lpData=[],ciData=[],plData=[];
@@ -5211,9 +5213,14 @@ let alData=[];
 async function loadActivityLogs(){
   try{
     const r=await fetch(API+'/activity-logs?limit=500');
+    if(!r.ok){const e=await r.json();throw new Error(e.error||'Failed');}
     alData=await r.json();
+    console.log('[ActivityLog] Loaded',alData.length,'entries');
     renderActivityLogs();
-  }catch{document.getElementById('al-body').innerHTML='<tr><td colspan="7"><div class="no-results">Failed to load.</div></td></tr>';}
+  }catch(e){
+    console.error('[ActivityLog] Load error:',e.message);
+    document.getElementById('al-body').innerHTML='<tr><td colspan="7"><div class="no-results">Error: '+e.message+'</div></td></tr>';
+  }
 }
 function renderActivityLogs(){
   const q=(document.getElementById('al-search').value||'').toLowerCase();
