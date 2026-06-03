@@ -300,8 +300,63 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 /* SUPPLIER AVATAR */
 .sup-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
 /* RESPONSIVE */
-@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.charts-row{grid-template-columns:1fr;}}
-@media(max-width:640px){.sidebar{display:none;}}
+/* ── Mobile hamburger button ── */
+.mob-menu-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--text);margin-right:4px;}
+.mob-menu-btn svg{width:22px;height:22px;fill:currentColor;display:block;}
+/* ── Sidebar overlay ── */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:199;backdrop-filter:blur(2px);}
+.sidebar-overlay.open{display:block;}
+/* ── Tablet ── */
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .charts-row{grid-template-columns:1fr;}
+}
+/* ── Mobile ── */
+@media(max-width:768px){
+  body{overflow-x:hidden;}
+  .mob-menu-btn{display:flex;align-items:center;justify-content:center;}
+  /* Sidebar slides in over content */
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:200;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:4px 0 24px rgba(0,0,0,.4);}
+  .sidebar.mob-open{transform:translateX(0);}
+  /* Main takes full width */
+  .app-layout{flex-direction:column;}
+  main{width:100%;min-width:0;}
+  /* Topbar adjustments */
+  .topbar{padding:0 12px;gap:8px;}
+  .topbar-title{font-size:14px;}
+  .topbar-right{font-size:11px;gap:6px;}
+  #topbar-date{display:none;}
+  /* Content padding */
+  .content{padding:14px 12px;}
+  /* KPI grid single column on small phones */
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+  .kpi-value{font-size:20px;}
+  /* Tables scroll horizontally */
+  .page-table-wrap,.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;}
+  .page-table{min-width:600px;}
+  /* Modals full screen on mobile */
+  .g-modal{width:95vw!important;max-width:95vw!important;margin:10px auto;max-height:90vh;overflow-y:auto;}
+  .g-modal-body{padding:14px;}
+  /* Forms: single column on mobile */
+  .g-modal-body [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;}
+  .g-modal-body [style*="grid-template-columns:1fr 1fr 1fr"]{grid-template-columns:1fr 1fr!important;}
+  /* Page hero compact */
+  .page-hero{padding:14px 16px;}
+  .ph-title{font-size:16px;}
+  .ph-sub{font-size:11px;}
+  /* Section toolbar */
+  .page-toolbar{flex-wrap:wrap;gap:8px;}
+  .page-toolbar input,.page-toolbar select{font-size:13px;}
+  /* Action buttons touch-friendly */
+  .page-act-btn{padding:6px 12px;font-size:12px;}
+  /* Charts */
+  .charts-row{grid-template-columns:1fr;gap:12px;}
+  .chart-box{padding:14px;}
+}
+@media(max-width:420px){
+  .kpi-grid{grid-template-columns:1fr;}
+  .topbar-right .staff-viewonly-badge,.topbar-right .viewer-badge{display:none;}
+}
 /* ── STAFF / VIEW-ONLY MODE ─────────────────────────────────────────────── */
 /* Hide Audit Log and Stock Movements nav items for staff */
 body.staff-mode .nav-item[data-page="auditlog"],
@@ -1229,6 +1284,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 <!-- TOAST -->
 <div class="toast-container" id="toast-container"></div>
 <!-- SIDEBAR -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobSidebar()"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <img src="/images/bg-logo.png" alt="Logo" class="sidebar-logo-img"/>
@@ -1305,6 +1361,9 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 <!-- MAIN -->
 <main>
   <div class="topbar">
+    <button class="mob-menu-btn" id="mob-menu-btn" onclick="toggleMobSidebar()" aria-label="Menu">
+      <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+    </button>
     <div class="topbar-title" id="topbar-title">Dashboard</div>
     <div class="topbar-right" id="topbar-right">
       <span class="staff-viewonly-badge" id="staff-viewonly-badge">
@@ -4990,6 +5049,26 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script src="/ua.js?v=3"></script>
+<script src="/ua.js?v=3">
+// ── Mobile sidebar ────────────────────────────────────────────────────────
+function toggleMobSidebar(){
+  var sb=document.getElementById('sidebar');
+  var ov=document.getElementById('sidebar-overlay');
+  var open=sb.classList.toggle('mob-open');
+  if(open){ov.classList.add('open');document.body.style.overflow='hidden';}
+  else{ov.classList.remove('open');document.body.style.overflow='';}
+}
+function closeMobSidebar(){
+  var sb=document.getElementById('sidebar');
+  var ov=document.getElementById('sidebar-overlay');
+  sb.classList.remove('mob-open');
+  ov.classList.remove('open');
+  document.body.style.overflow='';
+}
+// Close sidebar when a nav item is tapped on mobile
+document.querySelectorAll('.nav-item').forEach(function(el){
+  el.addEventListener('click',function(){if(window.innerWidth<=768)closeMobSidebar();});
+});
+</script>
 </body>
 </html>
