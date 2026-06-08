@@ -2631,6 +2631,199 @@ body.viewer-mode .line-notify-btn { display:none !important; }
   #po-notify-modal .g-modal-foot{flex-wrap:wrap;gap:8px}
   #po-notify-modal .g-modal-foot button{flex:1;min-width:120px}
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE OVERHAUL
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Global: prevent horizontal overflow on all screens ── */
+*{box-sizing:border-box;}
+html,body{overflow-x:hidden;max-width:100vw;}
+img,svg,canvas{max-width:100%;}
+
+/* ── Tablet (≤1024px) ── */
+@media(max-width:1024px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .charts-row{grid-template-columns:1fr;}
+  .content{padding:18px;}
+  .ac-summary-kpis{grid-template-columns:repeat(3,1fr);}
+}
+
+/* ── Small tablet / large phone (≤900px) ── */
+@media(max-width:900px){
+  .content{padding:14px;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:12px;}
+  .kpi-card{padding:14px;}
+  .kpi-value{font-size:22px;}
+  .charts-row{grid-template-columns:1fr;gap:12px;}
+  /* Machine monitoring table overflow */
+  .mm-table{min-width:580px;}
+  #page-machine .page-tbl-wrap,
+  #page-machine-monitoring .page-tbl-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch;}
+  /* Activity calendar KPIs */
+  .ac-summary-kpis{grid-template-columns:repeat(3,1fr);gap:10px;}
+  /* Settings */
+  .settings-card{padding:16px;}
+}
+
+/* ── Mobile (≤768px) — main breakpoint ── */
+@media(max-width:768px){
+  /* ─ Layout ─ */
+  .content{padding:10px 8px;}
+
+  /* ─ Page hero strip ─ */
+  .page-hero{padding:10px 14px;border-radius:10px;margin-bottom:12px;}
+  .ph-icon{width:34px;height:34px;border-radius:9px;}
+  .ph-icon svg{width:18px;height:18px;}
+  .ph-title{font-size:13px;font-weight:800;}
+  .ph-sub{font-size:11px;-webkit-line-clamp:1;}
+  .ph-right{gap:6px;}
+
+  /* ─ KPI cards ─ */
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
+  .kpi-card{padding:12px 10px;border-radius:10px;}
+  .kpi-value{font-size:20px;}
+  .kpi-label{font-size:10px;}
+  .kpi-sub{font-size:10px;}
+  .sm-kpi-card{padding:10px 12px;gap:10px;}
+  .sm-kpi-icon{width:36px;height:36px;border-radius:8px;}
+
+  /* ─ Charts ─ */
+  .charts-row{grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+  .chart-card,.chart-box{padding:12px;border-radius:10px;}
+  .chart-title{font-size:12px;margin-bottom:8px;}
+
+  /* ─ Section labels ─ */
+  .section-label{font-size:10px;margin-top:14px;margin-bottom:8px;}
+
+  /* ─ Toolbar ─ */
+  .page-toolbar{flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .page-toolbar .search-input{flex:1 1 140px;min-width:0;font-size:13px;}
+  .page-toolbar select.search-input{flex:0 0 auto;min-width:100px;font-size:12px;}
+  .page-toolbar .table-meta{font-size:10px;order:99;width:100%;}
+  .page-add-btn{order:2;margin-left:auto;padding:8px 12px;font-size:12px;border-radius:8px;white-space:nowrap;gap:4px;}
+
+  /* ─ Tables ─ */
+  .page-tbl-wrap,.page-table-wrap,.table-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch;border-radius:10px;}
+  .page-tbl-wrap .page-table,.page-table-wrap .page-table{min-width:580px;width:max-content;}
+  .page-table th,.page-table td{padding:8px 10px;font-size:11px;white-space:nowrap;}
+  .page-table th{font-size:10px;letter-spacing:.2px;}
+  .mm-table{min-width:560px;}
+  .mm-table th,.mm-table td{padding:7px 10px;font-size:11px;}
+  .ac-summary-table-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch;}
+  .ac-summary-table-wrap table{min-width:440px;}
+
+  /* ─ Action buttons in tables ─ */
+  .btn-edit,.btn-del,.page-act-btn{
+    padding:5px 8px;font-size:11px;
+    min-height:28px;border-radius:5px;
+    display:inline-flex;align-items:center;justify-content:center;
+  }
+
+  /* ─ Tabs ─ */
+  .log-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;white-space:nowrap;gap:0;margin-bottom:10px;}
+  .log-tabs::-webkit-scrollbar{display:none;}
+  .log-tab{padding:8px 12px;font-size:12px;flex-shrink:0;}
+
+  /* ─ Modals — full-width bottom sheet ─ */
+  .g-modal-overlay{align-items:flex-end!important;padding:0!important;overflow-y:auto!important;}
+  .g-modal{width:100vw!important;max-width:100vw!important;margin:0!important;
+    border-radius:18px 18px 0 0!important;max-height:94vh!important;overflow-y:auto!important;}
+  .g-modal-head{padding:12px 16px 10px;font-size:14px;}
+  .g-modal-body{padding:12px 16px;overflow-y:auto!important;}
+  .g-modal-foot{padding:10px 16px;position:sticky;bottom:0;
+    background:var(--bg-card);z-index:2;border-top:1px solid var(--border);
+    display:flex;gap:8px;}
+  .g-modal-foot .g-btn{flex:1;text-align:center;padding:10px;}
+  /* Form grids → single column */
+  .g-form-grid,.g-modal-body [style*="grid-template-columns:1fr 1fr"],
+  .g-modal-body [style*="grid-template-columns: 1fr 1fr"]{grid-template-columns:1fr!important;}
+  /* Inputs — prevent iOS zoom */
+  .g-modal-body input,.g-modal-body select,.g-modal-body textarea{
+    font-size:16px!important;padding:10px 12px!important;border-radius:8px!important;}
+  .search-input{font-size:13px;padding:8px 10px;}
+
+  /* ─ Toast — centered at bottom ─ */
+  .toast-container{right:50%!important;transform:translateX(50%)!important;
+    bottom:16px!important;width:92vw;max-width:360px;}
+  .toast{font-size:12px;padding:10px 14px;border-radius:9px;}
+
+  /* ─ Settings ─ */
+  .settings-card{padding:12px;}
+  .settings-card h3{font-size:13px;margin-bottom:10px;}
+  .ua-header{flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+  .ua-header .ua-add-btn{width:100%;justify-content:center;}
+  .ua-row{padding:10px 12px;gap:8px;}
+
+  /* ─ Alert sections ─ */
+  .alert-section{margin-bottom:10px;}
+  .alert-section-head{padding:10px 12px;font-size:12px;}
+
+  /* ─ Activity Calendar ─ */
+  .ac-wrapper{flex-direction:column;gap:12px;}
+  .ac-cal-card{min-width:0;width:100%;}
+  .ac-side{width:100%;flex-shrink:unset;}
+  .ac-grid{grid-auto-rows:58px;}
+  .ac-cell{height:58px;padding:3px 4px;}
+  .ac-day-num{font-size:10px;}
+  .ac-dot{width:5px;height:5px;}
+  .ac-summary-kpis{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .ac-kpi{padding:10px 12px;}
+  .ac-kpi-value{font-size:20px;}
+  .ac-kpi-label{font-size:10px;}
+  .ac-summary-head{flex-direction:column;align-items:flex-start;gap:8px;padding:10px 14px;}
+  .ac-summary-search{width:100%;box-sizing:border-box;}
+
+  /* ─ Login ─ */
+  .login-box{padding:24px 18px;margin:0 12px;max-width:100%;}
+  .login-logo h1{font-size:18px;}
+
+  /* ─ Line Notify ─ */
+  .line-notify-btn{width:100%;justify-content:center;}
+
+  /* ─ Report sections ─ */
+  #sm-gen-date{display:block;margin-top:2px;}
+
+  /* ─ Machine monitoring area headers ─ */
+  .mm-group-header td,.mm-area-header td{font-size:10px;padding:5px 10px;}
+}
+
+/* ── Small phones (≤480px) ── */
+@media(max-width:480px){
+  .content{padding:8px 6px;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:6px;}
+  .kpi-card{padding:10px 8px;border-radius:9px;}
+  .kpi-value{font-size:18px;}
+  .kpi-label{font-size:9px;}
+  .page-hero{padding:8px 10px;}
+  .ph-title{font-size:12px;}
+  /* Tables: tighter */
+  .page-table th,.page-table td{padding:6px 8px;font-size:10px;}
+  /* Badges: compact */
+  [class^="badge-"],[class*=" badge-"]{padding:2px 6px;font-size:10px;}
+  .log-tab{padding:7px 10px;font-size:11px;}
+  /* Charts: more compact header */
+  .chart-card{padding:10px;}
+  /* Modal footer stacked on very small */
+  .g-modal-foot{flex-wrap:wrap;}
+  /* Pagination */
+  .pag-btn{min-width:30px;min-height:30px;font-size:11px;padding:5px 8px;}
+  /* Activity calendar KPIs: single col */
+  .ac-summary-kpis{grid-template-columns:1fr 1fr;}
+  .ac-kpi-value{font-size:18px;}
+}
+
+/* ── Very small phones (≤380px) ── */
+@media(max-width:380px){
+  .content{padding:6px 4px;}
+  .kpi-grid{grid-template-columns:1fr;}
+  .kpi-card{padding:10px 12px;}
+  .page-hero{border-radius:8px;}
+  .ph-icon{display:none;}
+  .g-modal-foot{flex-direction:column;}
+  .g-modal-foot .g-btn{width:100%;justify-content:center;}
+  .ac-summary-kpis{grid-template-columns:1fr;}
+}
 </style>
 <div class="g-modal-overlay" id="po-notify-modal">
   <div class="g-modal">
@@ -5147,150 +5340,4 @@ function renderAuditLog(){
   b.innerHTML=rows.length?rows.map((r,i)=>{
     const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
     const col=AC[r.action]||'#64748b';
-    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.user_name||'—')+'</strong><br><span style="font-size:11px;color:#94a3b8">'+esc(r.user_email||'')+'</span></td><td><span style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">'+(r.action||'—')+'</span></td><td>'+esc(r.entity||'—')+(r.entity_id?' #'+r.entity_id:'')+'</td><td style="font-size:12px;max-width:300px">'+esc(r.details||'—')+'</td></tr>';
-  }).join(''):'<tr><td colspan="6"><div class="no-results">No audit entries found.</div></td></tr>';
-}
-
-// ── STOCK MOVEMENTS ──────────────────────────────────────────────
-let smovData=[];
-async function loadStockMovements(){
-  try{
-    const r=await fetch(API+'/stock-movements?limit=200');
-    smovData=await r.json();
-    renderStockMovements();
-  }catch(e){const b=document.getElementById('sm2-body');if(b)b.innerHTML='<tr><td colspan="9"><div class="no-results">Could not load stock movements.</div></td></tr>';}
-}
-function renderStockMovements(){
-  const q=((document.getElementById('sm2-search')||{}).value||'').toLowerCase();
-  const rows=(smovData||[]).filter(r=>!q||(r.product_name||'').toLowerCase().includes(q)||(r.reason||'').toLowerCase().includes(q));
-  const meta=document.getElementById('sm2-meta');
-  if(meta)meta.textContent=rows.length+' movements';
-  const b=document.getElementById('sm2-body');
-  if(!b)return;
-  b.innerHTML=rows.length?rows.map((r,i)=>{
-    const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
-    const chg=+r.change_qty||0;
-    const chgHtml=chg>0?'<span style="color:#10b981;font-weight:700">+'+chg+'</span>':'<span style="color:#ef4444;font-weight:700">'+chg+'</span>';
-    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.product_name||'—')+'</strong></td><td style="font-size:12px;color:#64748b">'+esc(r.product_code||'')+'</td><td style="text-align:center">'+(r.prev_qty!=null?r.prev_qty:'—')+'</td><td style="text-align:center">'+chgHtml+'</td><td style="text-align:center;font-weight:700">'+(r.new_qty!=null?r.new_qty:'—')+'</td><td style="font-size:12px">'+esc(r.reason||'—')+'</td><td style="font-size:12px;color:#64748b">'+esc(r.user_name||'System')+'</td></tr>';
-  }).join(''):'<tr><td colspan="9"><div class="no-results">No stock movements yet.</div></td></tr>';
-}
-
-// ╔═══════════════════════════════════════════════════════════════
-// BOOT — runs after DOM is ready
-// ╚═══════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  initApp();
-  loadACEvents();
-  loadLineConfig();
-  setTimeout(loadDashboardCharts, 1500);
-});
-</script>
-<script src="/chart.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script src="/ua.js?v=3"></script>
-<script>
-// ── Mobile sidebar ────────────────────────────────────────────────────────
-function toggleMobSidebar(){
-  var sb=document.getElementById('sidebar');
-  var ov=document.getElementById('sidebar-overlay');
-  var open=sb.classList.toggle('mob-open');
-  if(open){ov.classList.add('open');document.body.style.overflow='hidden';}
-  else{ov.classList.remove('open');document.body.style.overflow='';}
-}
-function closeMobSidebar(){
-  var sb=document.getElementById('sidebar');
-  var ov=document.getElementById('sidebar-overlay');
-  sb.classList.remove('mob-open');
-  ov.classList.remove('open');
-  document.body.style.overflow='';
-}
-// Close sidebar when a nav item is tapped on mobile
-document.querySelectorAll('.nav-item').forEach(function(el){
-  el.addEventListener('click',function(){if(window.innerWidth<=768)closeMobSidebar();});
-});
-
-// ── Activity Logs ────────────────────────────────────────────────────────────
-let alData=[];
-async function loadActivityLogs(){
-  const tbody=document.getElementById('al-body');
-  if(tbody)tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:#94a3b8">Loading…</td></tr>';
-  try{
-    const ctrl=new AbortController();
-    const t=setTimeout(()=>ctrl.abort(),10000);
-    const r=await fetch(API+'/activity-logs?limit=500',{signal:ctrl.signal});
-    clearTimeout(t);
-    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||'Server error '+r.status);}
-    alData=await r.json();
-    console.log('[ActivityLog] Loaded',alData.length,'entries');
-    renderActivityLogs();
-  }catch(e){
-    console.error('[ActivityLog] Load error:',e.message);
-    if(tbody)tbody.innerHTML='<tr><td colspan="7"><div class="no-results">Failed to load: '+esc(e.message)+'</div></td></tr>';
-  }
-}
-function renderActivityLogs(){
-  const q=(document.getElementById('al-search').value||'').toLowerCase();
-  const sec=document.getElementById('al-filter-section').value;
-  const act=document.getElementById('al-filter-action').value;
-  const rows=alData.filter(r=>
-    (!q||(r.username||'').toLowerCase().includes(q)||(r.description||'').toLowerCase().includes(q))&&
-    (!sec||r.section===sec)&&
-    (!act||r.action===act)
-  );
-  document.getElementById('al-meta').textContent=`Showing ${rows.length} of ${alData.length} entries`;
-  const actionBadge={
-    'CREATE':'<span style="background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">CREATE</span>',
-    'UPDATE':'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">UPDATE</span>',
-    'DELETE':'<span style="background:#fee2e2;color:#b91c1c;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">DELETE</span>',
-  };
-  document.getElementById('al-body').innerHTML=rows.map((r,i)=>{
-    const dt=r.created_at?new Date(r.created_at).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'}):'—';
-    return `<tr>
-      <td>${i+1}</td>
-      <td style="white-space:nowrap;font-size:12px;color:#64748b">${dt}</td>
-      <td><strong>${esc(r.username||'—')}</strong></td>
-      <td><span style="font-size:11px;color:#7c3aed;font-weight:600">${esc(r.role||'—')}</span></td>
-      <td>${actionBadge[r.action]||esc(r.action)}</td>
-      <td style="font-size:12px">${esc(r.section||'—')}</td>
-      <td style="max-width:260px">${esc(r.description||'—')}</td>
-    </tr>`;
-  }).join('')||'<tr><td colspan="7"><div class="no-results">No activity logs found.</div></td></tr>';
-}
-async function clearActivityLogs(){
-  if(!confirm('Clear all activity logs? This cannot be undone.'))return;
-  try{
-    await fetch(API+'/activity-logs',{method:'DELETE'});
-    alData=[];renderActivityLogs();
-    gToast('Activity logs cleared.');
-  }catch{gToast('Failed to clear logs','error');}
-}
-
-async function testActivityLog(){
-  try{
-    const res=await fetch(API+'/activity-logs',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        username: (currentUser&&currentUser.name)||'TestUser',
-        role:     (currentUser&&currentUser.role)||'Admin',
-        action:   'CREATE',
-        section:  'Test',
-        description: 'API connection test'
-      })
-    });
-    const txt=await res.text();
-    if(res.ok){
-      gToast('✅ API works! Status: '+res.status);
-      loadActivityLogs();
-    } else {
-      gToast('❌ API error '+res.status+': '+txt.substring(0,100),'error');
-    }
-  }catch(e){
-    gToast('❌ Fetch failed: '+e.message,'error');
-  }
-}
-</script>
-</body>
-</html>                                                       
+    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.user_name||'—')+'</strong><br><span style="font-size:11px;color:#94a3b8">'+esc(r.user_email||'')+'</span></t
