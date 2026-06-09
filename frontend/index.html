@@ -2694,6 +2694,8 @@ img,svg,canvas{max-width:100%;}
 
 /* ── Mobile (≤768px) — main breakpoint ── */
 @media(max-width:768px){
+  /* ─ Topbar: force visible for hamburger menu ─ */
+  .topbar{display:flex!important;padding:0 10px!important;gap:6px!important;height:50px!important;}
   /* ─ Layout ─ */
   .content{padding:10px 8px;}
 
@@ -5485,71 +5487,4 @@ function renderActivityLogs(){
       <td style="font-size:12px">${esc(r.section||'—')}</td>
       <td style="max-width:260px">${esc(r.description||'—')}</td>
     </tr>`;
-  }).join('')||'<tr><td colspan="7"><div class="no-results">No activity logs found.</div></td></tr>';
-  // Pagination controls
-  const pg=document.getElementById('al-pagination');
-  if(!pg)return;
-  if(totalPages<=1){pg.innerHTML='';return;}
-  let btns=`<button class="al-pg-btn" onclick="alGoToPage(${alPage-1})" ${alPage===1?'disabled':''}>‹ Prev</button>`;
-  const range=[];
-  for(let p=1;p<=totalPages;p++){
-    if(p===1||p===totalPages||Math.abs(p-alPage)<=2)range.push(p);
-    else if(range[range.length-1]!=='…')range.push('…');
-  }
-  range.forEach(p=>{
-    if(p==='…')btns+=`<span class="al-pg-ellipsis">…</span>`;
-    else btns+=`<button class="al-pg-btn${p===alPage?' active':''}" onclick="alGoToPage(${p})">${p}</button>`;
-  });
-  btns+=`<button class="al-pg-btn" onclick="alGoToPage(${alPage+1})" ${alPage===totalPages?'disabled':''}>Next ›</button>`;
-  pg.innerHTML=btns;
-}
-function alGoToPage(p){
-  const q=(document.getElementById('al-search').value||'').toLowerCase();
-  const sec=document.getElementById('al-filter-section').value;
-  const act=document.getElementById('al-filter-action').value;
-  const rows=alData.filter(r=>
-    (!q||(r.username||'').toLowerCase().includes(q)||(r.description||'').toLowerCase().includes(q))&&
-    (!sec||r.section===sec)&&
-    (!act||r.action===act)
-  );
-  const totalPages=Math.max(1,Math.ceil(rows.length/50));
-  alPage=Math.max(1,Math.min(p,totalPages));
-  renderActivityLogs();
-  document.getElementById('page-activitylogs').scrollIntoView({behavior:'smooth',block:'start'});
-}
-async function clearActivityLogs(){
-  if(!confirm('Clear all activity logs? This cannot be undone.'))return;
-  try{
-    await fetch(API+'/activity-logs',{method:'DELETE'});
-    alData=[];renderActivityLogs();
-    gToast('Activity logs cleared.');
-  }catch{gToast('Failed to clear logs','error');}
-}
-
-async function testActivityLog(){
-  try{
-    const res=await fetch(API+'/activity-logs',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        username: (currentUser&&currentUser.name)||'TestUser',
-        role:     (currentUser&&currentUser.role)||'Admin',
-        action:   'CREATE',
-        section:  'Test',
-        description: 'API connection test'
-      })
-    });
-    const txt=await res.text();
-    if(res.ok){
-      gToast('✅ API works! Status: '+res.status);
-      loadActivityLogs();
-    } else {
-      gToast('❌ API error '+res.status+': '+txt.substring(0,100),'error');
-    }
-  }catch(e){
-    gToast('❌ Fetch failed: '+e.message,'error');
-  }
-}
-</script>
-</body>
-</html>
+  }).join('')||'<tr><td colspan="7"><div class="no-results">No activity logs found.</di
