@@ -5456,15 +5456,30 @@ document.addEventListener('DOMContentLoaded', () => {
 function toggleMobSidebar(){
   var sb=document.getElementById('sidebar');
   var ov=document.getElementById('sidebar-overlay');
-  if(!sb||!ov)return;
-  var isOpen=sb.classList.contains('mob-open');
+  if(!sb||!ov){console.error('[mob] sidebar or overlay not found');return;}
+  var isOpen=sb.getAttribute('data-mob-open')==='1';
+  console.log('[mob] toggle, isOpen='+isOpen);
   if(isOpen){
-    sb.classList.remove('mob-open');
-    ov.classList.remove('open');
+    sb.style.setProperty('transform','translateX(-100%)','important');
+    ov.style.display='none';
+    sb.setAttribute('data-mob-open','0');
     document.body.style.overflow='';
   } else {
-    sb.classList.add('mob-open');
-    ov.classList.add('open');
+    sb.style.setProperty('position','fixed','important');
+    sb.style.setProperty('top','0','important');
+    sb.style.setProperty('left','0','important');
+    sb.style.setProperty('width','260px','important');
+    sb.style.setProperty('height','100vh','important');
+    sb.style.setProperty('z-index','9999','important');
+    sb.style.setProperty('transform','translateX(0)','important');
+    sb.style.setProperty('transition','transform .28s ease','important');
+    sb.style.setProperty('overflow-y','auto','important');
+    ov.style.setProperty('display','block','important');
+    ov.style.setProperty('position','fixed','important');
+    ov.style.setProperty('inset','0','important');
+    ov.style.setProperty('z-index','9998','important');
+    ov.style.setProperty('background','rgba(0,0,0,.55)','important');
+    sb.setAttribute('data-mob-open','1');
     document.body.style.overflow='hidden';
   }
 }
@@ -5472,10 +5487,18 @@ function closeMobSidebar(){
   var sb=document.getElementById('sidebar');
   var ov=document.getElementById('sidebar-overlay');
   if(!sb||!ov)return;
-  sb.classList.remove('mob-open');
-  ov.classList.remove('open');
+  sb.style.setProperty('transform','translateX(-100%)','important');
+  ov.style.display='none';
+  sb.setAttribute('data-mob-open','0');
   document.body.style.overflow='';
 }
+// Belt-and-suspenders: also wire button via addEventListener
+document.addEventListener('DOMContentLoaded',function(){
+  var btn=document.getElementById('mob-menu-btn');
+  if(btn){btn.addEventListener('click',function(e){e.stopPropagation();toggleMobSidebar();});}
+  var ov=document.getElementById('sidebar-overlay');
+  if(ov){ov.addEventListener('click',closeMobSidebar);}
+});
 // Close sidebar when a nav item is tapped on mobile
 document.querySelectorAll('.nav-item').forEach(function(el){
   el.addEventListener('click',function(){if(window.innerWidth<=768)closeMobSidebar();});
@@ -5489,34 +5512,4 @@ async function loadActivityLogs(){
   try{
     const ctrl=new AbortController();
     const t=setTimeout(()=>ctrl.abort(),10000);
-    const r=await fetch(API+'/activity-logs?limit=500',{signal:ctrl.signal});
-    clearTimeout(t);
-    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||'Server error '+r.status);}
-    alData=await r.json();
-    console.log('[ActivityLog] Loaded',alData.length,'entries');
-    renderActivityLogs();
-  }catch(e){
-    console.error('[ActivityLog] Load error:',e.message);
-    if(tbody)tbody.innerHTML='<tr><td colspan="7"><div class="no-results">Failed to load: '+esc(e.message)+'</div></td></tr>';
-  }
-}
-function renderActivityLogs(){
-  const q=(document.getElementById('al-search').value||'').toLowerCase();
-  const sec=document.getElementById('al-filter-section').value;
-  const act=document.getElementById('al-filter-action').value;
-  const rows=alData.filter(r=>
-    (!q||(r.username||'').toLowerCase().includes(q)||(r.description||'').toLowerCase().includes(q))&&
-    (!sec||r.section===sec)&&
-    (!act||r.action===act)
-  );
-  const perPage=50;
-  const totalPages=Math.max(1,Math.ceil(rows.length/perPage));
-  if(alPage>totalPages)alPage=totalPages;
-  const start=(alPage-1)*perPage;
-  const pageRows=rows.slice(start,start+perPage);
-  const end=Math.min(start+perPage,rows.length);
-  document.getElementById('al-meta').textContent=rows.length
-    ?`Showing ${start+1}–${end} of ${rows.length} entries`
-    :`Showing 0 of ${alData.length} entries`;
-  const actionBadge={
-    'CREATE':'<span style="background:#dcfce7;color:#15803d;padding:2px 10px;bord
+    const r=await fetch(API+'/activity-logs?limit=500',{signal:
