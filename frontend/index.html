@@ -5339,5 +5339,151 @@ function renderAuditLog(){
   if(!b)return;
   b.innerHTML=rows.length?rows.map((r,i)=>{
     const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
-    const col=AC[r.action]||'#64748b';
-    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.user_name||'—')+'</strong><br><span style="font-size:11px;color:#94a3b8">'+esc(r.user_email||'')+'</span></t
+
+    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.user_name||'—')+'</strong><br><span style="font-size:11px;color:#94a3b8">'+esc(r.user_email||'')+'</span></td><td><span style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">'+(r.action||'—')+'</span></td><td>'+esc(r.entity||'—')+(r.entity_id?' #'+r.entity_id:'')+'</td><td style="font-size:12px;max-width:300px">'+esc(r.details||'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6"><div class="no-results">No audit entries found.</div></td></tr>';
+}
+
+// ── STOCK MOVEMENTS ──────────────────────────────────────────────
+let smovData=[];
+async function loadStockMovements(){
+  try{
+    const r=await fetch(API+'/stock-movements?limit=200');
+    smovData=await r.json();
+    renderStockMovements();
+  }catch(e){const b=document.getElementById('sm2-body');if(b)b.innerHTML='<tr><td colspan="9"><div class="no-results">Could not load stock movements.</div></td></tr>';}
+}
+function renderStockMovements(){
+  const q=((document.getElementById('sm2-search')||{}).value||'').toLowerCase();
+  const rows=(smovData||[]).filter(r=>!q||(r.product_name||'').toLowerCase().includes(q)||(r.reason||'').toLowerCase().includes(q));
+  const meta=document.getElementById('sm2-meta');
+  if(meta)meta.textContent=rows.length+' movements';
+  const b=document.getElementById('sm2-body');
+  if(!b)return;
+  b.innerHTML=rows.length?rows.map((r,i)=>{
+    const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
+    const chg=+r.change_qty||0;
+    const chgHtml=chg>0?'<span style="color:#10b981;font-weight:700">+'+chg+'</span>':'<span style="color:#ef4444;font-weight:700">'+chg+'</span>';
+    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.product_name||'—')+'</strong></td><td style="font-size:12px;color:#64748b">'+esc(r.product_code||'')+'</td><td style="text-align:center">'+(r.prev_qty!=null?r.prev_qty:'—')+'</td><td style="text-align:center">'+chgHtml+'</td><td style="text-align:center;font-weight:700">'+(r.new_qty!=null?r.new_qty:'—')+'</td><td style="font-size:12px">'+esc(r.reason||'—')+'</td><td style="font-size:12px;color:#64748b">'+esc(r.user_name||'System')+'</td></tr>';
+  }).join(''):'<tr><td colspan="9"><div class="no-results">No stock movements yet.</div></td></tr>';
+}
+
+// ╔═══════════════════════════════════════════════════════════════
+// BOOT — runs after DOM is ready
+// ╚═══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initApp();
+  loadACEvents();
+  loadLineConfig();
+  setTimeout(loadDashboardCharts, 1500);
+});
+</script>
+<script src="/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="/ua.js?v=3"></script>
+<script>
+// ── Mobile sidebar ────────────────────────────────────────────────────────
+function toggleMobSidebar(){
+  var sb=document.getElementById('sidebar');
+  var ov=document.getElementById('sidebar-overlay');
+  var open=sb.classList.toggle('mob-open');
+  if(open){ov.classList.add('open');document.body.style.overflow='hidden';}
+  else{ov.classList.remove('open');document.body.style.overflow='';}
+}
+function closeMobSidebar(){
+  var sb=document.getElementById('sidebar');
+  var ov=document.getElementById('sidebar-overlay');
+  sb.classList.remove('mob-open');
+  ov.classList.remove('open');
+  document.body.style.overflow='';
+}
+// Close sidebar when a nav item is tapped on mobile
+document.querySelectorAll('.nav-item').forEach(function(el){
+  el.addEventListener('click',function(){if(window.innerWidth<=768)closeMobSidebar();});
+});
+
+// ── Activity Logs ────────────────────────────────────────────────────────────
+let alData=[];
+async function loadActivityLogs(){
+  const tbody=document.getElementById('al-body');
+  if(tbody)tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:#94a3b8">Loading…</td></tr>';
+  try{
+    const ctrl=new AbortController();
+    const t=setTimeout(()=>ctrl.abort(),10000);
+    const r=await fetch(API+'/activity-logs?limit=500',{signal:ctrl.signal});
+    clearTimeout(t);
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||'Server error '+r.status);}
+    alData=await r.json();
+    console.log('[ActivityLog] Loaded',alData.length,'entries');
+    renderActivityLogs();
+  }catch(e){
+    console.error('[ActivityLog] Load error:',e.message);
+    if(tbody)tbody.innerHTML='<tr><td colspan="7"><div class="no-results">Failed to load: '+esc(e.message)+'</div></td></tr>';
+  }
+}
+function renderActivityLogs(){
+  const q=(document.getElementById('al-search').value||'').toLowerCase();
+  const sec=document.getElementById('al-filter-section').value;
+  const act=document.getElementById('al-filter-action').value;
+  const rows=alData.filter(r=>
+    (!q||(r.username||'').toLowerCase().includes(q)||(r.description||'').toLowerCase().includes(q))&&
+    (!sec||r.section===sec)&&
+    (!act||r.action===act)
+  );
+  document.getElementById('al-meta').textContent=`Showing ${rows.length} of ${alData.length} entries`;
+  const actionBadge={
+    'CREATE':'<span style="background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">CREATE</span>',
+    'UPDATE':'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">UPDATE</span>',
+    'DELETE':'<span style="background:#fee2e2;color:#b91c1c;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">DELETE</span>',
+  };
+  document.getElementById('al-body').innerHTML=rows.map((r,i)=>{
+    const dt=r.created_at?new Date(r.created_at).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'}):'—';
+    return `<tr>
+      <td>${i+1}</td>
+      <td style="white-space:nowrap;font-size:12px;color:#64748b">${dt}</td>
+      <td><strong>${esc(r.username||'—')}</strong></td>
+      <td><span style="font-size:11px;color:#7c3aed;font-weight:600">${esc(r.role||'—')}</span></td>
+      <td>${actionBadge[r.action]||esc(r.action)}</td>
+      <td style="font-size:12px">${esc(r.section||'—')}</td>
+      <td style="max-width:260px">${esc(r.description||'—')}</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="7"><div class="no-results">No activity logs found.</div></td></tr>';
+}
+async function clearActivityLogs(){
+  if(!confirm('Clear all activity logs? This cannot be undone.'))return;
+  try{
+    await fetch(API+'/activity-logs',{method:'DELETE'});
+    alData=[];renderActivityLogs();
+    gToast('Activity logs cleared.');
+  }catch{gToast('Failed to clear logs','error');}
+}
+
+async function testActivityLog(){
+  try{
+    const res=await fetch(API+'/activity-logs',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        username: (currentUser&&currentUser.name)||'TestUser',
+        role:     (currentUser&&currentUser.role)||'Admin',
+        action:   'CREATE',
+        section:  'Test',
+        description: 'API connection test'
+      })
+    });
+    const txt=await res.text();
+    if(res.ok){
+      gToast('✅ API works! Status: '+res.status);
+      loadActivityLogs();
+    } else {
+      gToast('❌ API error '+res.status+': '+txt.substring(0,100),'error');
+    }
+  }catch(e){
+    gToast('❌ Fetch failed: '+e.message,'error');
+  }
+}
+</script>
+</body>
+</html>                                                       
