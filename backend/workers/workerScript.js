@@ -1,9 +1,11 @@
 /**
- * workerScript.js — Worker Thread Entry Point
+ * workerScript.js — Pooled Worker Thread Entry Point
  *
- * Runs inside a dedicated OS thread spawned by jobQueue.js.
- * Receives { type, payload } via workerData, does the CPU work,
- * then posts the result back with parentPort.postMessage().
+ * Runs inside a long-lived OS thread spawned once by jobQueue.js and
+ * REUSED across many jobs (a persistent "team" member). It waits in a
+ * message loop: the pool posts { jobId, type, payload }, the worker runs
+ * the matching handler, then posts back { jobId, ok, result } or
+ * { jobId, ok:false, error }. The thread then idles, ready for the next job.
  *
  * Supported job types:
  *  - low-stock-check      Scan products for low / out-of-stock alerts.
@@ -14,7 +16,7 @@
 
 'use strict';
 
-const { workerData, parentPort } = require('worker_threads');
+const { parentPort } = require('worker_threads');
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -200,17 +202,42 @@ const handlers = {
   'report-summary':     handleReportSummary,
 };
 
-const { type, payload } = workerData;
-
-const handler = handlers[type];
-if (!handler) {
-  throw new Error(`[workerScript] Unknown job type: "${type}"`);
+if (!parentPort) {
+  throw new Error('[workerScript] Must be run as a worker thread.');
 }
 
-try {
-  const result = handler(payload);
-  parentPort.postMessage(result);
-} catch (err) {
-  // Re-throw so the Worker 'error' event fires in jobQueue.js
-  throw err;
-}
+// Persistent message loop: one message == one job. The worker stays
+// alive between jobs so the pool can reuse it (no per-job thread spawn).
+parentPort.on('message', (msg) => {
+  // Graceful stop signal from the pool.
+  if (msg && msg.__stop) {
+    process.exit(0);
+    return;
+  }
+
+  const { jobId, type, payload } = msg || {};
+  const handler = handlers[type];
+
+  if (!handler) {
+    parentPort.postMessage({
+      jobId,
+      ok: false,
+      error: `Unknown job type: "${type}"`,
+    });
+    return;
+  }
+
+  try {
+    const result = handler(payload || {});
+    parentPort.postMessage({ jobId, ok: true, result });
+  } catch (err) {
+    parentPort.postMessage({
+      jobId,
+      ok: false,
+      error: err && err.message ? err.message : String(err),
+    });
+  }
+});
+
+// Tell the pool this worker is up and idle.
+parentPort.postMessage({ __ready: true });

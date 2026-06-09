@@ -1,39 +1,214 @@
-# Inventory Management Web App
+# Inventory Management Web App — Project Memory
 
-## Project Overview
-This is an inventory management web application with a dashboard designed to present outputs to management.
+Auto-loaded by Claude Code when working in this folder. Single source of truth for project context.
 
-## Purpose
-- Track and manage inventory items
-- Display key inventory metrics and KPIs on a management dashboard
-- Provide real-time visibility into stock levels, movements, and alerts
+## 1. Identity
 
-## Tech Stack
-> Update this section as the project stack is decided or evolves.
+- **Owner:** Rogen Hallarsis (rogen.hallarsis29@gmail.com)
+- **Project root:** `E:\Projects\Inventory Management Web App\`
+- **Purpose:** Inventory management web app with a management dashboard. Track stock, surface KPIs, generate reports for leadership.
+- **Audience:** Internal — warehouse staff, managers, admins.
 
-- Frontend: (e.g. React, Vue, plain HTML/CSS/JS)
-- Backend: (e.g. Node.js, Python/Flask, PHP)
-- Database: (e.g. MySQL, PostgreSQL, SQLite)
+## 2. Live Deployments
 
-## Key Features (Planned)
-- Dashboard with inventory summary and charts
-- Product/item management (add, edit, delete)
-- Stock level tracking and low-stock alerts
-- Reports for management review
-- User authentication
+| Environment | URL | Config file |
+|---|---|---|
+| Railway (primary) | https://pgi-ims.up.railway.app/ | `railway.toml` |
+| Render (backup) | (see Render dashboard) | `render.yaml` |
 
-## Project Structure
-> Update as folders and files are added.
+Railway runs `npm start` → `node backend/server.js` per `package.json`.
+
+## 3. Tech Stack (actual, detected)
+
+- **Frontend:** Plain HTML + CSS + JS, Chart.js (`frontend/index.html`, `frontend/chart.min.js`)
+- **Backend:** Node.js ≥18, Express 4 (currently `frontend/server.js`)
+- **Database:** PostgreSQL via `pg` (prod), `sql.js` SQLite fallback (local)
+- **Email:** Nodemailer + Resend
+- **File uploads:** Multer
+- **CORS:** `cors` package
+
+
+## 4. Project Structure
 
 ```
 Inventory Management Web App/
-├── CLAUDE.md          # This file — project context for Claude Code
-├── frontend/          # UI files
-├── backend/           # Server/API files
-└── database/          # DB schema and migrations
+├── .claude/              # Local Claude settings (NOT committed)
+├── .git/
+├── .gitignore
+├── package.json          # Node deps + start scripts
+├── railway.toml          # Railway deploy config
+├── render.yaml           # Render deploy config
+├── CLAUDE.md             # This file
+├── SKILLS-REFERENCE.md   # Plugin quick-lookup
+├── CHEATSHEET.md         # One-page commands & URLs
+├── backend/              # (empty — server code lives in frontend/ for now)
+├── frontend/             # ⚠ Contains BOTH UI and server code
+│   ├── server.js         # Express app entry
+│   ├── db.js             # DB connection
+│   ├── database.js
+│   ├── audit.js
+│   ├── routes/           # API endpoints
+│   ├── services/         # Business logic
+│   ├── utils/
+│   ├── workers/
+│   ├── data/             # Local SQLite (gitignored)
+│   ├── uploads/          # Multer dest (gitignored)
+│   ├── index.html        # Main UI
+│   ├── chart.min.js
+│   └── package.json      # Frontend-scope deps
+└── Reports/              # Generated reports output
 ```
 
-## Notes for Claude Code
-- This app is being built for management reporting purposes
-- Prioritize clean, readable code and a professional dashboard UI
-- Follow REST API conventions for the backend
+### Known structural quirk
+Server code (`server.js`, `routes/`, `services/`, `db.js`) currently lives **inside `frontend/`** instead of `backend/`. The `backend/` folder exists but is empty. Refactoring is on the TODO list — use the `code-refactoring` skill when ready.
+
+### Scaffolding cruft to consider cleaning
+The root contains ~40 `.bat` files (`check_*.bat`, `fix_*.bat`, `push-*.bat`, `do-*.bat`, etc.) and the frontend contains one-off helpers (`_check.js`, `_check2.js`, `fix_double_exports.js`, `fix_chartjs_local.js`, etc.). Use `codebase-cleanup` + `shell-scripting` to consolidate.
+
+## 5. Key Features
+
+Built / in progress:
+- Express API with routes, services, workers
+- Postgres + SQLite fallback
+- File uploads (Multer)
+- Email notifications (Nodemailer + Resend)
+- Dashboard UI with Chart.js
+- Audit logging hooks (`audit.js`)
+- Render + Railway deploys
+
+Planned:
+- Stock tracking (products, categories, suppliers, locations, movements)
+- Role-based access (admin, warehouse, manager)
+- Low-stock alerts & reorder points
+- Excel/PDF exports for management
+
+
+## 6. Installed Plugins — 65 total, 1,460 capabilities
+
+Across 5 marketplaces: `claude-code-workflows`, `superpowers-marketplace`, `everything-claude-code`, `awesome-claude-skills`, `ui-ux-pro-max-skill`, `anthropic-agent-skills`.
+
+Skill picks organized by use case:
+
+### Planning & Architecture
+`writing-plans`, `brainstorming`, `architecture-decision-records`, `c4-architecture`, `product-capability`
+
+### Database (Postgres)
+`database-design`, `postgres-patterns`, `database-migrations`, `database-cloud-optimization`
+
+### Backend (Node / Express)
+`api-scaffolding`, `api-design`, `backend-development`, `backend-patterns`, `backend-api-security`, `api-testing-observability`
+
+### Frontend / Dashboard
+`dashboard-builder`, `ui-ux-pro-max`, `ui-design`, `frontend-design`, `frontend-patterns`, `theme-factory`, `data-visualization`, `frontend-mobile-development`, `multi-platform-apps`
+
+### Inventory Domain
+`inventory-demand-planning`, `returns-reverse-logistics`, `carrier-relationship-management`, `logistics-exception-management`, `quality-nonconformance`
+
+### Audit & Validation
+`signed-audit-trails` *(critical — every stock movement)*, `data-validation-suite`
+
+### Reports for Management
+`xlsx`, `pdf`, `docx`, `business-analytics`
+
+### Testing & QA
+`tdd-workflows`, `unit-testing`, `e2e-testing`, `webapp-testing`, `qa-orchestra`, `performance-testing-review`
+
+### Security & Compliance
+`security-review`, `security-scanning`, `security-compliance`, `protect-mcp`
+
+### Performance
+`application-performance`, `database-cloud-optimization`
+
+### Deployment & Ops (Railway/Render)
+`deployment-strategies`, `deployment-validation`, `cicd-automation`, `cloud-infrastructure`, `kubernetes-operations`, `docker-patterns`
+
+### Observability & Incident
+`observability-monitoring`, `incident-response`, `distributed-debugging`
+
+### Code Quality
+`code-refactoring`, `codebase-cleanup`, `code-documentation`, `documentation-generation`, `documentation-standards`, `dependency-management`
+
+### Errors & Debugging
+`debugging` *(reach for this first)*, `error-diagnostics`, `error-debugging`, `problem-solving`, `root-cause-analysis`
+
+### Workflow & Git
+`git-pr-workflows`, `team-collaboration`, `shell-scripting` *(matches .bat-file workflow)*, `web-scripting`
+
+### Agentic / Meta
+`agent-orchestration`, `agent-teams`, `context-management`
+
+### Language Patterns
+`javascript-typescript`
+
+### AI / Advanced
+`llm-application-dev`, `machine-learning-ops`, `meigen-ai-design`
+
+### Accessibility & Integration
+`accessibility-compliance`, `payment-processing`, `customer-sales-automation`, `data-engineering`, `framework-migration`
+
+## 7. Top 10 Daily Skills
+
+1. `debugging` — when stuck
+2. `signed-audit-trails` — stock movement logging
+3. `database-design` / `postgres-patterns` — schema decisions
+4. `api-scaffolding` — new endpoints
+5. `dashboard-builder` — UI work
+6. `xlsx` / `pdf` — management reports
+7. `tdd-workflows` — for stock logic
+8. `security-review` — auth & data integrity
+9. `git-pr-workflows` — daily commits
+10. `code-refactoring` — for the frontend/→backend/ cleanup
+
+
+## 8. Recurring Commands
+
+```bash
+# Run locally
+npm start                          # → node backend/server.js
+npm run dev                        # → node --watch backend/server.js
+
+# Deploy
+git add . && git commit -m "..." && git push   # Railway auto-redeploys
+```
+
+Many existing `.bat` helpers at root: `push-update.bat`, `push-to-render.bat`, `restart-server.bat`, etc.
+
+## 9. Working Style Preferences
+
+- **Auto-deploy after every task** — after completing ANY code change, always run `git add . && git commit -m "<description>" && git push` so Railway redeploys automatically. No exceptions unless the user explicitly says not to push.
+- **Plan before coding** — use `writing-plans`
+- **TDD for stock logic** — quantities, reorder points, audit trails
+- **Reports must be exportable** — managers expect `.xlsx` and `.pdf`
+- **Accessibility default** — use `ui-ux-pro-max`, target WCAG AA
+- **Audit everything inventory** — every adjustment, transfer, count needs `signed-audit-trails`
+- **Don't push secrets** — `.env` is in `.gitignore`, keep it that way
+
+## 10. Open TODOs (running list)
+
+- [ ] Move `server.js`, `routes/`, `services/`, `db.js`, `db.js`, `audit.js` from `frontend/` → `backend/`
+- [ ] Consolidate 40+ `.bat` scripts into 3–5 organized ones
+- [ ] Delete dead `_check.js`, `_check2.js`, `fix_*.js`, `test_*.js` after auditing
+- [ ] Add `.claude/` and `*.bak` to `.gitignore`
+- [ ] Wire `signed-audit-trails` into stock-mutation routes
+- [ ] Decide: Render or Railway as primary (currently both configured)
+- [ ] Add e2e test suite (`webapp-testing`, `e2e-testing`)
+
+## 10b. Installed Skill Library (1,141 skills)
+
+Four external skill repos are installed into `.claude/skills/` (project-scoped):
+superpowers (14), ui-ux-pro-max (7), everything-claude-code (260),
+awesome-claude-skills (28 + 832 Composio/Rube automation stubs).
+
+- **Full list:** `SKILLS-INDEX.md` (alphabetical, tagged by source)
+- **Manifest:** `.claude/skills/_INSTALLED_SKILLS.tsv`
+- **Make global (any session/folder):** run `install-skills-globally.bat` once →
+  copies them to `%USERPROFILE%\.claude\skills\`. Restart Claude Code after.
+- **Note:** the `*-automation` / `connect` skills require the **Rube MCP** connector to function.
+
+## 11. Quick References
+
+- Plugin lookup table: `SKILLS-REFERENCE.md`
+- Cheatsheet (URLs, commands): `CHEATSHEET.md`
+- Global user memory: `C:\Users\ADMIN\.claude\CLAUDE.md`
+- Claude Code binary: `C:\Users\ADMIN\AppData\Roaming\npm\claude.cmd`
+- Git binary: `C:\Users\ADMIN\PortableGit\PortableGit\cmd\git.exe`
