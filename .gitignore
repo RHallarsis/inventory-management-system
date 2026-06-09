@@ -19,3 +19,12 @@ Thumbs.db
 
 # Environment
 .env
+.env.*
+!.env.example
+
+# Credentials (NEVER commit these)
+.git-credentials
+*.pem
+*.key
+*.p12
+*.pfx
