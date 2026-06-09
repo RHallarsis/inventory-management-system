@@ -5453,18 +5453,39 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="/ua.js?v=3"></script>
 <script>
 // ── Mobile sidebar ────────────────────────────────────────────────────────
+function _applyMobSidebarStyles(sb, ov){
+  sb.style.cssText='position:fixed!important;left:0!important;top:0!important;'+
+    'height:100vh!important;width:260px!important;min-width:0!important;'+
+    'z-index:9999!important;transition:transform .28s ease!important;'+
+    'will-change:transform;overflow-y:auto;';
+  ov.style.cssText='position:fixed!important;inset:0!important;z-index:9998!important;'+
+    'background:rgba(0,0,0,.55)!important;backdrop-filter:blur(2px);';
+}
 function toggleMobSidebar(){
   var sb=document.getElementById('sidebar');
   var ov=document.getElementById('sidebar-overlay');
-  var open=sb.classList.toggle('mob-open');
-  if(open){ov.classList.add('open');document.body.style.overflow='hidden';}
-  else{ov.classList.remove('open');document.body.style.overflow='';}
+  if(!sb||!ov)return;
+  _applyMobSidebarStyles(sb,ov);
+  var isOpen=sb.getAttribute('data-mob-open')==='1';
+  if(isOpen){
+    sb.style.transform='translateX(-100%)';
+    ov.style.display='none';
+    sb.setAttribute('data-mob-open','0');
+    document.body.style.overflow='';
+  } else {
+    sb.style.transform='translateX(0)';
+    ov.style.display='block';
+    sb.setAttribute('data-mob-open','1');
+    document.body.style.overflow='hidden';
+  }
 }
 function closeMobSidebar(){
   var sb=document.getElementById('sidebar');
   var ov=document.getElementById('sidebar-overlay');
-  sb.classList.remove('mob-open');
-  ov.classList.remove('open');
+  if(!sb||!ov)return;
+  sb.style.transform='translateX(-100%)';
+  ov.style.display='none';
+  sb.setAttribute('data-mob-open','0');
   document.body.style.overflow='';
 }
 // Close sidebar when a nav item is tapped on mobile
@@ -5496,19 +5517,4 @@ function renderActivityLogs(){
   const sec=document.getElementById('al-filter-section').value;
   const act=document.getElementById('al-filter-action').value;
   const rows=alData.filter(r=>
-    (!q||(r.username||'').toLowerCase().includes(q)||(r.description||'').toLowerCase().includes(q))&&
-    (!sec||r.section===sec)&&
-    (!act||r.action===act)
-  );
-  const perPage=50;
-  const totalPages=Math.max(1,Math.ceil(rows.length/perPage));
-  if(alPage>totalPages)alPage=totalPages;
-  const start=(alPage-1)*perPage;
-  const pageRows=rows.slice(start,start+perPage);
-  const end=Math.min(start+perPage,rows.length);
-  document.getElementById('al-meta').textContent=rows.length
-    ?`Showing ${start+1}–${end} of ${rows.length} entries`
-    :`Showing 0 of ${alData.length} entries`;
-  const actionBadge={
-    'CREATE':'<span style="background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">CREATE</span>',
-    'UPDATE':'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border
+    (!q||(r.username||'').toLowerCase().in
