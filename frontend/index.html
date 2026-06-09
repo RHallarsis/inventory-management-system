@@ -331,7 +331,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
   .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 10px;}
 
   /* Topbar */
-  .topbar{display:flex;padding:0 10px;gap:6px;height:50px;}
+  .topbar{display:flex!important;padding:0 10px!important;gap:6px!important;height:50px!important;align-items:center!important;}
   .topbar-title{display:none;}
   .topbar-right{display:none;}
 
@@ -5521,9 +5521,4 @@ async function testActivityLog(){
       gToast('❌ API error '+res.status+': '+txt.substring(0,100),'error');
     }
   }catch(e){
-    gToast('❌ Fetch failed: '+e.message,'error');
-  }
-}
-</script>
-</body>
-</html>
+    gToast('�
