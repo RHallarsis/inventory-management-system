@@ -1290,8 +1290,28 @@ body.viewer-mode .line-notify-btn { display:none !important; }
     if(statEl)statEl.textContent='Ready!';
     setTimeout(function(){
       if(scr)scr.classList.add('ls-out');
-      var lg=document.getElementById('login-overlay');
-      if(lg)lg.style.display='flex';
+      var saved=localStorage.getItem('currentUser');
+      if(saved){
+        try{
+          currentUser=JSON.parse(saved);
+          document.getElementById('user-name').textContent=currentUser.name;
+          document.getElementById('user-role').textContent=currentUser.role;
+          document.getElementById('user-avatar').textContent=ini(currentUser.name);
+          applyRoleAccess(currentUser.role);
+          document.getElementById('set-name').value=currentUser.name||'';
+          document.getElementById('set-email').value=currentUser.email||'';
+          document.getElementById('set-role').value=currentUser.role||'';
+          if(currentUser.role==='Admin'){loadLineConfig();loadUsers();}
+          initApp();
+        }catch(e){
+          localStorage.removeItem('currentUser');
+          var lg=document.getElementById('login-overlay');
+          if(lg)lg.style.display='flex';
+        }
+      }else{
+        var lg=document.getElementById('login-overlay');
+        if(lg)lg.style.display='flex';
+      }
       setTimeout(function(){if(scr)scr.classList.add('ls-done');},450);
     },200);
   },3000);
@@ -2236,18 +2256,18 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 <div id="page-auditlog" class="page-section">
   <div class="page-hero h-slate"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8zm0-4h5v2H8z"/></svg></div><div><div class="ph-title">Audit Log</div><div class="ph-sub">Complete history of all actions performed in the system by users</div></div></div></div>
   <div class="page-toolbar">
-    <input class="search-input" id="al-search" placeholder="Filter by user, action or entity..." oninput="renderAuditLog()"/>
+    <input class="search-input" id="audit-search" placeholder="Filter by user, action or entity..." oninput="renderAuditLog()"/>
     <button class="page-add-btn" onclick="loadAuditLog()" style="background:#6366f1">&#8635; Refresh</button>
-    <span class="table-meta" id="al-meta"></span>
+    <span class="table-meta" id="audit-meta"></span>
   </div>
   <div class="page-tbl-wrap">
     <table class="page-table">
       <thead><tr><th>#</th><th>Date &amp; Time</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
-      <tbody id="al-body"></tbody>
+      <tbody id="audit-body"></tbody>
     </table>
   </div>
   <div style="text-align:center;margin-top:12px">
-    <button class="page-add-btn" id="al-load-more" onclick="loadMoreAudit()" style="background:#64748b;display:none">Load More</button>
+    <button class="page-add-btn" id="audit-load-more" onclick="loadMoreAudit()" style="background:#64748b;display:none">Load More</button>
   </div>
 </div>
 <!-- ===== STOCK MOVEMENTS ===== -->
@@ -3279,6 +3299,7 @@ async function doLogin(){
     try{d=await r.json();}catch(_){document.getElementById('login-err').textContent=`Server error (HTTP ${r.status}) — routes may not be loaded.`;return;}
     if(!r.ok){document.getElementById('login-err').textContent=d.error||'Login failed.';return;}
     currentUser=d.user;
+    localStorage.setItem('currentUser',JSON.stringify(currentUser));
     document.getElementById('login-overlay').style.display='none';
     document.getElementById('user-name').textContent=currentUser.name;
     document.getElementById('user-role').textContent=currentUser.role;
@@ -3345,6 +3366,7 @@ async function doSettingsChangePassword(){
 }
 function doLogout(){
   currentUser=null;
+  localStorage.removeItem('currentUser');
   applyRoleAccess(null); // reset all role restrictions
   document.getElementById('login-overlay').style.display='flex';
   document.getElementById('l-pass').value='';
@@ -5322,24 +5344,24 @@ async function loadAuditLog(reset){
     const d=await r.json();
     auditData=[...auditData,...(d.rows||[])];
     auditOffset=auditData.length;
-    const mb=document.getElementById('al-load-more');
+    const mb=document.getElementById('audit-load-more');
     if(mb)mb.style.display=(auditData.length<(d.total||0))?'inline-flex':'none';
     renderAuditLog();
-  }catch(e){const b=document.getElementById('al-body');if(b)b.innerHTML='<tr><td colspan="6"><div class="no-results">Could not load audit log.</div></td></tr>';}
+  }catch(e){const b=document.getElementById('audit-body');if(b)b.innerHTML='<tr><td colspan="6"><div class="no-results">Could not load audit log.</div></td></tr>';}
 }
 function loadMoreAudit(){loadAuditLog(false);}
 function renderAuditLog(){
-  const q=(document.getElementById('al-search')||{}).value||'';
+  const q=(document.getElementById('audit-search')||{}).value||'';
   const ql=q.toLowerCase();
   const rows=auditData.filter(r=>!ql||(r.user_name||'').toLowerCase().includes(ql)||(r.action||'').toLowerCase().includes(ql)||(r.entity||'').toLowerCase().includes(ql)||(r.details||'').toLowerCase().includes(ql));
-  const meta=document.getElementById('al-meta');
+  const meta=document.getElementById('audit-meta');
   if(meta)meta.textContent='Showing '+rows.length+' of '+auditData.length+' entries';
   const AC={CREATE:'#10b981',UPDATE:'#f59e0b',DELETE:'#ef4444',SEND_ALERT:'#6366f1'};
-  const b=document.getElementById('al-body');
+  const b=document.getElementById('audit-body');
   if(!b)return;
   b.innerHTML=rows.length?rows.map((r,i)=>{
     const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
-
+    const col=AC[r.action]||'#64748b';
     return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.user_name||'—')+'</strong><br><span style="font-size:11px;color:#94a3b8">'+esc(r.user_email||'')+'</span></td><td><span style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">'+(r.action||'—')+'</span></td><td>'+esc(r.entity||'—')+(r.entity_id?' #'+r.entity_id:'')+'</td><td style="font-size:12px;max-width:300px">'+esc(r.details||'—')+'</td></tr>';
   }).join(''):'<tr><td colspan="6"><div class="no-results">No audit entries found.</div></td></tr>';
 }
@@ -5486,4 +5508,4 @@ async function testActivityLog(){
 }
 </script>
 </body>
-</html>                                                       
+</html>

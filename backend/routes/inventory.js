@@ -896,7 +896,7 @@ router.delete('/pullout-receipts/:id', async (req, res) => {
 router.get('/transmittal-receipts', async (_req, res) => {
   try {
     const { db } = await dbPromise;
-    res.json(await db.getAll('SELECT * FROM transmittal_receipts ORDER BY transfer_no ASC'));
+    res.json(await db.getAll('SELECT * FROM transmittal_receipts ORDER BY transfer_date DESC'));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
