@@ -5453,33 +5453,37 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="/ua.js?v=3"></script>
 <script>
 // ── Mobile sidebar ────────────────────────────────────────────────────────
+// Inject a dynamic stylesheet — real CSS !important beats all inline conflicts
+(function(){
+  var s=document.createElement('style');
+  s.textContent=
+    '#sidebar[data-mob-open="1"]{'+
+      'transform:translateX(0)!important;'+
+      'position:fixed!important;left:0!important;top:0!important;'+
+      'width:260px!important;height:100vh!important;'+
+      'z-index:9999!important;overflow-y:auto!important;'+
+      'transition:transform .28s cubic-bezier(.4,0,.2,1)!important;'+
+    '}'+
+    '#sidebar-overlay[data-mob-open="1"]{'+
+      'display:block!important;position:fixed!important;'+
+      'inset:0!important;z-index:9998!important;'+
+      'background:rgba(0,0,0,.55)!important;'+
+    '}';
+  document.head.appendChild(s);
+})();
+
 function toggleMobSidebar(){
   var sb=document.getElementById('sidebar');
   var ov=document.getElementById('sidebar-overlay');
-  if(!sb||!ov){console.error('[mob] sidebar or overlay not found');return;}
+  if(!sb||!ov)return;
   var isOpen=sb.getAttribute('data-mob-open')==='1';
-  console.log('[mob] toggle, isOpen='+isOpen);
   if(isOpen){
-    sb.style.setProperty('transform','translateX(-100%)','important');
-    ov.style.display='none';
     sb.setAttribute('data-mob-open','0');
+    ov.setAttribute('data-mob-open','0');
     document.body.style.overflow='';
   } else {
-    sb.style.setProperty('position','fixed','important');
-    sb.style.setProperty('top','0','important');
-    sb.style.setProperty('left','0','important');
-    sb.style.setProperty('width','260px','important');
-    sb.style.setProperty('height','100vh','important');
-    sb.style.setProperty('z-index','9999','important');
-    sb.style.setProperty('transform','translateX(0)','important');
-    sb.style.setProperty('transition','transform .28s ease','important');
-    sb.style.setProperty('overflow-y','auto','important');
-    ov.style.setProperty('display','block','important');
-    ov.style.setProperty('position','fixed','important');
-    ov.style.setProperty('inset','0','important');
-    ov.style.setProperty('z-index','9998','important');
-    ov.style.setProperty('background','rgba(0,0,0,.55)','important');
     sb.setAttribute('data-mob-open','1');
+    ov.setAttribute('data-mob-open','1');
     document.body.style.overflow='hidden';
   }
 }
@@ -5487,20 +5491,26 @@ function closeMobSidebar(){
   var sb=document.getElementById('sidebar');
   var ov=document.getElementById('sidebar-overlay');
   if(!sb||!ov)return;
-  sb.style.setProperty('transform','translateX(-100%)','important');
-  ov.style.display='none';
   sb.setAttribute('data-mob-open','0');
+  ov.setAttribute('data-mob-open','0');
   document.body.style.overflow='';
 }
-// Belt-and-suspenders: also wire button via addEventListener
-document.addEventListener('DOMContentLoaded',function(){
+// Wire events — script is at bottom so DOM is ready; use touchstart for instant response
+(function(){
   var btn=document.getElementById('mob-menu-btn');
-  if(btn){btn.addEventListener('click',function(e){e.stopPropagation();toggleMobSidebar();});}
+  if(btn){
+    btn.addEventListener('touchstart',function(e){e.preventDefault();toggleMobSidebar();},{passive:false});
+    btn.addEventListener('click',toggleMobSidebar);
+  }
   var ov=document.getElementById('sidebar-overlay');
-  if(ov){ov.addEventListener('click',closeMobSidebar);}
-});
+  if(ov){
+    ov.addEventListener('touchstart',function(e){e.preventDefault();closeMobSidebar();},{passive:false});
+    ov.addEventListener('click',closeMobSidebar);
+  }
+})();
 // Close sidebar when a nav item is tapped on mobile
 document.querySelectorAll('.nav-item').forEach(function(el){
+  el.addEventListener('touchstart',function(){if(window.innerWidth<=768)closeMobSidebar();},{passive:true});
   el.addEventListener('click',function(){if(window.innerWidth<=768)closeMobSidebar();});
 });
 
@@ -5512,4 +5522,4 @@ async function loadActivityLogs(){
   try{
     const ctrl=new AbortController();
     const t=setTimeout(()=>ctrl.abort(),10000);
-    const r=await fetch(API+'/activity-logs?limit=500',{signal:
+    const r=await 
