@@ -194,6 +194,7 @@ Many existing `.bat` helpers at root: `push-update.bat`, `push-to-render.bat`, `
 - **TDD for stock logic** — quantities, reorder points, audit trails
 - **Reports must be exportable** — managers expect `.xlsx` and `.pdf`
 - **Accessibility default** — use `ui-ux-pro-max`, target WCAG AA
+- **Mobile-first** — every UI change must be responsive and work on mobile phones. Touch-friendly tap targets, readable font sizes, no horizontal scroll, stacked layouts on small screens.
 - **Audit everything inventory** — every adjustment, transfer, count needs `signed-audit-trails`
 - **Don't push secrets** — `.env` is in `.gitignore`, keep it that way
 
@@ -223,6 +224,4 @@ awesome-claude-skills (28 + 832 Composio/Rube automation stubs).
 
 - Plugin lookup table: `SKILLS-REFERENCE.md`
 - Cheatsheet (URLs, commands): `CHEATSHEET.md`
-- Global user memory: `C:\Users\ADMIN\.claude\CLAUDE.md`
-- Claude Code binary: `C:\Users\ADMIN\AppData\Roaming\npm\claude.cmd`
-- Git binary: `C:\Users\ADMIN\PortableGit\PortableGit\cmd\git.exe`
+- Gl
