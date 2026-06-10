@@ -65,6 +65,16 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .page-table tr:hover td{background:#f8fafc;}
 .page-table tfoot td{background:var(--sidebar-bg);color:#fff;font-weight:700;padding:10px 14px;}
 .no-results{text-align:center;color:var(--text-2);padding:30px;font-size:13px;}
+/* Compact Delivery Receipts table */
+#st-table{font-size:12px;}
+#st-table th{padding:7px 10px;font-size:10.5px;letter-spacing:.3px;}
+#st-table td{padding:6px 10px;}
+#st-table td:first-child{width:36px;text-align:center;color:var(--text-2);font-size:11px;}
+#st-table td:nth-child(2){font-weight:600;white-space:nowrap;color:var(--primary);}
+#st-table td:nth-child(5){white-space:nowrap;color:var(--text-2);font-size:11px;}
+#st-table td:nth-child(8){font-size:11px;color:var(--text-2);}
+#st-table .page-act-btn{padding:3px 8px;font-size:10px;}
+#st-table tr:hover td{background:#f5f7ff;}
 /* TABLE TOOLBAR */
 .page-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
 .search-input{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:var(--bg-card);color:var(--text);min-width:180px;}
@@ -1796,8 +1806,8 @@ body.viewer-mode .line-notify-btn { display:none !important; }
     <button class="page-add-btn" onclick="openSTModal()">+ Add Transfer</button>
   </div>
   <div class="page-tbl-wrap">
-    <table class="page-table">
-      <thead><tr><th>#</th><th>Transfer No.</th><th>From</th><th>To</th><th>Date</th><th>Items Definition</th><th>Status</th><th>Transferred By</th><th>File</th><th>Actions</th></tr></thead>
+    <table class="page-table" id="st-table">
+      <thead><tr><th>#</th><th>Transfer No.</th><th>From</th><th>To</th><th>Date</th><th>Items</th><th>Status</th><th>By</th><th>File</th><th>Actions</th></tr></thead>
       <tbody id="st-body"></tbody>
     </table>
   </div>
@@ -4152,8 +4162,19 @@ function renderST(){
   const start=(stPage-1)*ST_PAGE_SIZE;
   const pageRows=rows.slice(start,start+ST_PAGE_SIZE);
   document.getElementById('st-meta').textContent=`Showing ${start+1}–${Math.min(start+ST_PAGE_SIZE,total)} of ${total}`;
-  document.getElementById('st-body').innerHTML=pageRows.map((r,i)=>`<tr><td>${start+i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||'—'}</td><td>${badge(r.status)}</td><td>${r.transferred_by||'—'}</td><td>${fileLink(r)}</td>
-    <td><button class="page-act-btn btn-edit" onclick="openSTModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSTDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="10"><div class="no-results">No transfers.</div></td></tr>';
+  const trunc=(s,n=22)=>s&&s.length>n?`<span title="${s}">${s.slice(0,n)}…</span>`:s||'—';
+  document.getElementById('st-body').innerHTML=pageRows.map((r,i)=>`<tr>
+    <td>${start+i+1}</td>
+    <td><strong>${r.transfer_no}</strong></td>
+    <td>${trunc(r.source_location)}</td>
+    <td>${trunc(r.destination_location)}</td>
+    <td>${r.transfer_date||'—'}</td>
+    <td>${trunc(r.items_count,20)}</td>
+    <td>${badge(r.status)}</td>
+    <td>${r.transferred_by||'—'}</td>
+    <td>${fileLink(r)}</td>
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openSTModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSTDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td>
+  </tr>`).join('')||'<tr><td colspan="10"><div class="no-results">No transfers.</div></td></tr>';
   // pagination controls
   const pg=document.getElementById('st-pagination');
   if(totalPages<=1){pg.innerHTML='';return;}
@@ -5531,24 +5552,4 @@ function toggleMobSidebar(){
 }
 function closeMobSidebar(){
   var sb=document.getElementById('sidebar');
-  var ov=document.getElementById('sidebar-overlay');
-  if(!sb||!ov)return;
-  sb.setAttribute('data-mob-open','0');
-  ov.setAttribute('data-mob-open','0');
-  document.body.style.overflow='';
-}
-// Wire touchstart (instant on mobile) + click fallback
-(function(){
-  var btn=document.getElementById('mob-menu-btn');
-  if(btn){
-    btn.addEventListener('touchstart',function(e){e.preventDefault();toggleMobSidebar();},{passive:false});
-    btn.addEventListener('click',toggleMobSidebar);
-  }
-  var ov=document.getElementById('sidebar-overlay');
-  if(ov){
-    ov.addEventListener('touchstart',function(e){e.preventDefault();closeMobSidebar();},{passive:false});
-    ov.addEventListener('click',closeMobSidebar);
-  }
-})();
-// Close sidebar when a nav item is tapped on mobile
-document.querySelectorAll('.n
+  var ov=document.getElementById(
