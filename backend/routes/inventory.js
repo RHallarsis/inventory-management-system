@@ -827,7 +827,7 @@ const trmitUpload = multer({ storage: trmitStorage, limits: { fileSize: 20 * 102
 router.get('/pullout-receipts', async (_req, res) => {
   try {
     const { db } = await dbPromise;
-    res.json(await db.getAll('SELECT * FROM pullout_receipts ORDER BY transfer_date DESC'));
+    res.json(await db.getAll("SELECT * FROM pullout_receipts ORDER BY CAST(SPLIT_PART(transfer_no, '-', 2) AS INTEGER) DESC"));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
