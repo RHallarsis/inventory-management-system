@@ -1,6 +1,10 @@
 const express = require('express');
+const crypto  = require('crypto');
 const { dbPromise } = require('../database');
 const router = express.Router();
+
+// Session timeout: 4 hours of inactivity
+const SESSION_TIMEOUT_MS = 4 * 60 * 60 * 1000;
 
 // POST /api/auth/login
 router.post('/auth/login', async (req, res) => {
@@ -13,7 +17,7 @@ router.post('/auth/login', async (req, res) => {
     const { db } = await dbPromise;
 
     const user = await db.getOne(
-      `SELECT id, name, email, role, status FROM users
+      `SELECT id, name, email, role, status, session_token, session_at FROM users
        WHERE (LOWER(name) = LOWER(?) OR LOWER(email) = LOWER(?))
          AND password = ?`,
       [identifier, identifier, password]
@@ -27,7 +31,61 @@ router.post('/auth/login', async (req, res) => {
       return res.status(403).json({ error: 'Your account is inactive. Contact your administrator.' });
     }
 
-    res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    // Single-session check: block if an active session exists within the timeout window
+    if (user.session_token && user.session_at) {
+      const idleMs = Date.now() - new Date(user.session_at).getTime();
+      if (idleMs < SESSION_TIMEOUT_MS) {
+        return res.status(409).json({
+          error: 'This account is already logged in on another device. Please sign out from that device first, or wait for the session to expire automatically.',
+          code: 'SESSION_ACTIVE'
+        });
+      }
+    }
+
+    // Issue a new session token
+    const token = crypto.randomBytes(32).toString('hex');
+    await db.run(
+      `UPDATE users SET session_token=$1, session_at=NOW() WHERE id=$2`,
+      [token, user.id]
+    );
+
+    res.json({
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      session_token: token
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/logout — clears the session token
+router.post('/auth/logout', async (req, res) => {
+  try {
+    const { user_id, session_token } = req.body;
+    if (!user_id || !session_token) return res.json({ ok: true });
+    const { db } = await dbPromise;
+    await db.run(
+      `UPDATE users SET session_token=NULL, session_at=NULL WHERE id=$1 AND session_token=$2`,
+      [user_id, session_token]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/heartbeat — keeps session alive; returns 401 if taken over
+router.post('/auth/heartbeat', async (req, res) => {
+  try {
+    const { user_id, session_token } = req.body;
+    if (!user_id || !session_token) return res.status(400).json({ error: 'Missing params' });
+    const { db } = await dbPromise;
+    const user = await db.getOne(`SELECT session_token FROM users WHERE id=$1`, [user_id]);
+    if (!user || user.session_token !== session_token) {
+      return res.status(401).json({ error: 'SESSION_INVALIDATED' });
+    }
+    await db.run(`UPDATE users SET session_at=NOW() WHERE id=$1`, [user_id]);
+    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

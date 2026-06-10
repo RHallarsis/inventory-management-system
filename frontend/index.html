@@ -3274,31 +3274,97 @@ function gToast(msg,type='success'){
 }
 
 // ── AUTH ─────────────────────────────────────────────────────
+// ── Single-session state ─────────────────────────────────────────────────────
+let _sessionToken=null, _heartbeatTimer=null;
+function _saveSession(user,token){
+  _sessionToken=token;
+  try{localStorage.setItem('ims_session',JSON.stringify({user,token}));}catch(_){}
+}
+function _clearSession(){
+  _sessionToken=null;
+  try{localStorage.removeItem('ims_session');}catch(_){}
+  if(_heartbeatTimer){clearInterval(_heartbeatTimer);_heartbeatTimer=null;}
+}
+function _startHeartbeat(userId){
+  if(_heartbeatTimer)clearInterval(_heartbeatTimer);
+  _heartbeatTimer=setInterval(async()=>{
+    if(!_sessionToken||!currentUser)return;
+    try{
+      const r=await fetch(API+'/auth/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({user_id:userId,session_token:_sessionToken})});
+      if(r.status===401){
+        _clearSession();
+        currentUser=null;
+        applyRoleAccess(null);
+        document.getElementById('login-overlay').style.display='flex';
+        document.getElementById('l-pass').value='';
+        document.getElementById('login-err').style.cssText='color:#b91c1c;background:#fee2e2;border:1px solid #fca5a5;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:8px';
+        document.getElementById('login-err').textContent='⚠️ Your session was ended because this account logged in from another device.';
+      }
+    }catch(_){}
+  },60000);
+}
+async function _resumeSession(){
+  try{
+    const saved=localStorage.getItem('ims_session');
+    if(!saved)return;
+    const {user,token}=JSON.parse(saved);
+    if(!user||!token)return;
+    const r=await fetch(API+'/auth/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user_id:user.id,session_token:token})});
+    if(r.ok){
+      _sessionToken=token;
+      currentUser=user;
+      document.getElementById('login-overlay').style.display='none';
+      document.getElementById('user-name').textContent=user.name;
+      document.getElementById('user-role').textContent=user.role;
+      document.getElementById('user-avatar').textContent=ini(user.name);
+      applyRoleAccess(user.role);
+      document.getElementById('set-name').value=user.name||'';
+      document.getElementById('set-email').value=user.email||'';
+      document.getElementById('set-role').value=user.role||'';
+      if(user.role==='Admin'){loadLineConfig();loadUsers();}
+      _startHeartbeat(user.id);
+      initApp();
+    }else{
+      _clearSession();
+    }
+  }catch(_){_clearSession();}
+}
+
 async function doLogin(){
   const id=document.getElementById('l-user').value.trim();
   const pw=document.getElementById('l-pass').value;
-  document.getElementById('login-err').textContent='';
-  if(!id||!pw){document.getElementById('login-err').textContent='Please enter username and password.';return;}
+  const errEl=document.getElementById('login-err');
+  errEl.textContent='';errEl.style.cssText='';
+  if(!id||!pw){errEl.textContent='Please enter username and password.';return;}
   try{
     const r=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:id,password:pw})});
     let d;
-    try{d=await r.json();}catch(_){document.getElementById('login-err').textContent=`Server error (HTTP ${r.status}) — routes may not be loaded.`;return;}
-    if(!r.ok){document.getElementById('login-err').textContent=d.error||'Login failed.';return;}
+    try{d=await r.json();}catch(_){errEl.textContent=`Server error (HTTP ${r.status}) — routes may not be loaded.`;return;}
+    if(!r.ok){
+      if(r.status===409){
+        errEl.style.cssText='color:#92400e;background:#fef3c7;border:1px solid #fcd34d;padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:8px;line-height:1.5';
+        errEl.innerHTML='🔒 <strong>Account already active on another device.</strong><br>'+esc(d.error||'Please sign out from the other device first.');
+      }else{
+        errEl.textContent=d.error||'Login failed.';
+      }
+      return;
+    }
     currentUser=d.user;
+    _saveSession(d.user, d.session_token);
+    _startHeartbeat(d.user.id);
     document.getElementById('login-overlay').style.display='none';
     document.getElementById('user-name').textContent=currentUser.name;
     document.getElementById('user-role').textContent=currentUser.role;
     document.getElementById('user-avatar').textContent=ini(currentUser.name);
-    // Apply role-based UI restrictions (Staff = view-only, Admin = full access)
     applyRoleAccess(currentUser.role);
-    // Populate profile fields for all users
     document.getElementById('set-name').value=currentUser.name||'';
     document.getElementById('set-email').value=currentUser.email||'';
     document.getElementById('set-role').value=currentUser.role||'';
-    // Admin-only settings
     if(currentUser.role==='Admin'){loadLineConfig();loadUsers();}
     initApp();
-  }catch(e){document.getElementById('login-err').textContent='Cannot connect to server. ('+e.message+')';}
+  }catch(e){errEl.textContent='Cannot connect to server. ('+e.message+')';}
 }
 // ── Change Password (from login page) ────────────────────────────────────
 function toggleCPForm(show){
@@ -3349,12 +3415,21 @@ async function doSettingsChangePassword(){
     gToast('Password updated successfully!');
   }catch(e){msg.textContent='Cannot connect to server.';}
 }
-function doLogout(){
+async function doLogout(){
+  // Clear session on server so the account can log in elsewhere
+  if(currentUser&&_sessionToken){
+    try{
+      await fetch(API+'/auth/logout',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({user_id:currentUser.id,session_token:_sessionToken})});
+    }catch(_){}
+  }
+  _clearSession();
   currentUser=null;
-  applyRoleAccess(null); // reset all role restrictions
+  applyRoleAccess(null);
   document.getElementById('login-overlay').style.display='flex';
   document.getElementById('l-pass').value='';
-  document.getElementById('login-err').textContent='';
+  const errEl=document.getElementById('login-err');
+  errEl.textContent='';errEl.style.cssText='';
 }
 
 // ── ROLE-BASED ACCESS CONTROL ────────────────────────────────
@@ -5386,9 +5461,11 @@ function renderStockMovements(){
 // BOOT — runs after DOM is ready
 // ╚═══════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  initApp();
+  // Try to restore an existing session before showing the login screen
+  _resumeSession().then(() => {
+    if(!currentUser) initApp();
+  });
   loadACEvents();
-  loadLineConfig();
   setTimeout(loadDashboardCharts, 1500);
 });
 </script>

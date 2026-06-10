@@ -302,6 +302,8 @@ const dbPromise = (async () => {
   // Migrations
   await db.run(`ALTER TABLE calendar_tasks ADD COLUMN IF NOT EXISTS task_time TEXT DEFAULT NULL`);
   await db.run(`ALTER TABLE calendar_tasks ADD COLUMN IF NOT EXISTS task_end_date TEXT DEFAULT NULL`);
+  await db.run(`ALTER TABLE users ADD COLUMN IF NOT EXISTS session_token TEXT DEFAULT NULL`);
+  await db.run(`ALTER TABLE users ADD COLUMN IF NOT EXISTS session_at TIMESTAMPTZ DEFAULT NULL`);
 
   await db.run(`
     CREATE TABLE IF NOT EXISTS line_config (
