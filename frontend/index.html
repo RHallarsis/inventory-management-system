@@ -4082,7 +4082,7 @@ async function loadSQ(){try{const r=await fetch(API+'/supplier-quotations');sqDa
 function renderSQ(){
   const q=(document.getElementById('sq-search').value||'').toLowerCase();
   const ft=document.getElementById('sq-filter').value;
-  const rows=sqData.filter(r=>(!q||(r.quote_number||'').toLowerCase().includes(q)||(r.supplier||'').toLowerCase().includes(q)||(r.contact_person||'').toLowerCase().includes(q))&&(!ft||r.status===ft));
+  const rows=sqData.filter(r=>(!q||(r.quote_number||'').toLowerCase().includes(q)||(r.supplier||'').toLowerCase().includes(q)||(r.contact_person||'').toLowerCase().includes(q))&&(!ft||r.status===ft)).sort((a,b)=>(b.quote_number||'').localeCompare(a.quote_number||''));
   document.getElementById('sq-meta').textContent=rows.length+' record'+(rows.length===1?'':'s');
   document.getElementById('sq-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${esc(r.quote_number)}</strong></td><td>${esc(r.supplier)||'—'}</td><td>${esc(r.contact_person)||'—'}</td><td>${r.quote_date||'—'}</td><td>${r.valid_until||'—'}</td><td>${fmt(r.total_amount)}</td><td>${badge(r.status)}</td><td>${fileLink(r)}</td><td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openSQModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSQDelModal(${r.id},'${(r.quote_number||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="10"><div class="no-results">No supplier quotations found.</div></td></tr>';
 }
