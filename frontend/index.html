@@ -4129,7 +4129,7 @@ async function loadGR(){try{const r=await fetch(API+'/goods-received');grData=aw
 function renderGR(){
   const q=(document.getElementById('gr-search').value||'').toLowerCase();
   const grSeq=r=>parseInt((r.gr_number||'').split('-').pop())||0;
-  grData.sort((a,b)=>grSeq(a)-grSeq(b));
+  grData.sort((a,b)=>grSeq(b)-grSeq(a));
   const rows=q?grData.filter(r=>(r.gr_number||'').toLowerCase().includes(q)||(r.supplier||'').toLowerCase().includes(q)):grData;
   document.getElementById('gr-meta').textContent=`Showing ${rows.length} of ${grData.length}`;
   document.getElementById('gr-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.gr_number}</strong></td><td>${r.po_number||'—'}</td><td>${r.supplier}</td><td>${r.received_date||'—'}</td><td>${r.received_by||'—'}</td><td>${r.total_items||0}</td><td>${badge(r.status)}</td>
