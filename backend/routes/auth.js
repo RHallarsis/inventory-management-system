@@ -35,10 +35,14 @@ router.post('/auth/login', async (req, res) => {
     if (user.session_token && user.session_at) {
       const idleMs = Date.now() - new Date(user.session_at).getTime();
       if (idleMs < SESSION_TIMEOUT_MS) {
-        return res.status(409).json({
-          error: 'This account is already logged in on another device. Please sign out from that device first, or wait for the session to expire automatically.',
-          code: 'SESSION_ACTIVE'
-        });
+        // Allow force-login to override the existing session
+        if (!req.body.force) {
+          return res.status(409).json({
+            error: 'This account is already logged in on another device. Please sign out from that device first, or wait for the session to expire automatically.',
+            code: 'SESSION_ACTIVE'
+          });
+        }
+        // force=true: fall through and overwrite the session below
       }
     }
 
