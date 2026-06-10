@@ -58,7 +58,7 @@ router.get('/supplier-quotations/next-quote-number', async (_req, res) => {
 router.get('/supplier-quotations', async (_req, res) => {
   try {
     const { db } = await dbPromise;
-    const rows = await db.getAll('SELECT * FROM supplier_quotations ORDER BY created_at DESC');
+    const rows = await db.getAll('SELECT * FROM supplier_quotations ORDER BY quote_number ASC');
     res.json(rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
