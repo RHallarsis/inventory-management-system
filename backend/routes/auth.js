@@ -3,8 +3,8 @@ const crypto  = require('crypto');
 const { dbPromise } = require('../database');
 const router = express.Router();
 
-// Session timeout: 4 hours of inactivity
-const SESSION_TIMEOUT_MS = 4 * 60 * 60 * 1000;
+// Session timeout: 30 minutes of inactivity
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 
 // POST /api/auth/login
 router.post('/auth/login', async (req, res) => {
