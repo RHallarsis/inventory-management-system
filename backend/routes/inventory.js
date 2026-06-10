@@ -679,7 +679,7 @@ router.delete('/purchase-orders/:id', async (req, res) => {
 router.get('/goods-received', async (_req, res) => {
   try {
     const { db } = await dbPromise;
-    res.json(await db.getAll('SELECT * FROM goods_received ORDER BY received_date DESC'));
+    res.json(await db.getAll('SELECT * FROM goods_received ORDER BY id DESC'));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
