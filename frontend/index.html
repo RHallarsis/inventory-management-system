@@ -2266,8 +2266,8 @@ body.viewer-mode .line-notify-btn { display:none !important; }
     </div>
   </div>
   <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-    <input id="al-search" placeholder="🔍 Search user or description…" oninput="renderActivityLogs()" style="flex:1;min-width:150px;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"/>
-    <select id="al-filter-section" onchange="renderActivityLogs()" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;max-width:180px">
+    <input id="al-search" placeholder="🔍 Search user or description…" oninput="loadActivityLogs(1)" style="flex:1;min-width:150px;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"/>
+    <select id="al-filter-section" onchange="loadActivityLogs(1)" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;max-width:180px">
       <option value="">All Sections</option>
       <option>Inventory Items</option><option>Categories</option><option>Spare Parts</option>
       <option>Machine Monitoring</option><option>Local Purchases</option><option>Purchase Orders</option>
@@ -2278,7 +2278,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
       <option>Calendar</option><option>Commercial Invoices</option><option>Packing Lists</option>
       <option>User Management</option>
     </select>
-    <select id="al-filter-action" onchange="renderActivityLogs()" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px">
+    <select id="al-filter-action" onchange="loadActivityLogs(1)" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px">
       <option value="">All Actions</option>
       <option value="CREATE">Create</option>
       <option value="UPDATE">Update</option>
@@ -2305,6 +2305,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
       <tbody id="al-body"></tbody>
     </table>
   </div>
+  <div id="al-pagination" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:14px"></div>
 </div>
 <div id="page-stockmovements" class="page-section">
   <div class="page-hero h-teal"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M7 16l-4-4 4-4 1.41 1.41L6.83 11H21v2H6.83l1.58 1.59L7 16zm10-8l4 4-4 4-1.41-1.41L17.17 13H3v-2h14.17l-1.58-1.59L17 8z"/></svg></div><div><div class="ph-title">Stock Movements</div><div class="ph-sub">Track every inventory quantity change — additions, deductions &amp; adjustments</div></div></div></div>
@@ -5441,43 +5442,49 @@ document.querySelectorAll('.nav-item').forEach(function(el){
 });
 
 // ── Activity Logs ────────────────────────────────────────────────────────────
-let alData=[];
-async function loadActivityLogs(){
+let alPage=1, alTotal=0, alPageSize=50;
+async function loadActivityLogs(page){
+  alPage=page||1;
   const tbody=document.getElementById('al-body');
   if(tbody)tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:#94a3b8">Loading…</td></tr>';
   try{
     const ctrl=new AbortController();
     const t=setTimeout(()=>ctrl.abort(),10000);
-    const r=await fetch(API+'/activity-logs?limit=500',{signal:ctrl.signal});
+    const q=(document.getElementById('al-search').value||'').trim();
+    const sec=document.getElementById('al-filter-section').value;
+    const act=document.getElementById('al-filter-action').value;
+    let url=API+'/activity-logs?limit='+alPageSize+'&page='+alPage;
+    if(q)   url+='&user='+encodeURIComponent(q);
+    if(sec) url+='&section='+encodeURIComponent(sec);
+    if(act) url+='&action='+encodeURIComponent(act);
+    const r=await fetch(url,{signal:ctrl.signal});
     clearTimeout(t);
     if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||'Server error '+r.status);}
-    alData=await r.json();
-    console.log('[ActivityLog] Loaded',alData.length,'entries');
-    renderActivityLogs();
+    const data=await r.json();
+    alTotal=data.total||0;
+    alPageSize=data.pageSize||50;
+    console.log('[ActivityLog] Page',alPage,'–',data.rows.length,'of',alTotal,'entries');
+    renderActivityLogs(data.rows);
   }catch(e){
     console.error('[ActivityLog] Load error:',e.message);
     if(tbody)tbody.innerHTML='<tr><td colspan="7"><div class="no-results">Failed to load: '+esc(e.message)+'</div></td></tr>';
+    renderAlPagination();
   }
 }
-function renderActivityLogs(){
-  const q=(document.getElementById('al-search').value||'').toLowerCase();
-  const sec=document.getElementById('al-filter-section').value;
-  const act=document.getElementById('al-filter-action').value;
-  const rows=alData.filter(r=>
-    (!q||(r.username||'').toLowerCase().includes(q)||(r.description||'').toLowerCase().includes(q))&&
-    (!sec||r.section===sec)&&
-    (!act||r.action===act)
-  );
-  document.getElementById('al-meta').textContent=`Showing ${rows.length} of ${alData.length} entries`;
+function renderActivityLogs(rows){
+  const totalPages=Math.max(1,Math.ceil(alTotal/alPageSize));
+  const startRow=(alPage-1)*alPageSize;
+  document.getElementById('al-meta').textContent=
+    `Showing ${rows&&rows.length?startRow+1+' – '+(startRow+rows.length):0} of ${alTotal} entries (last 30 days)`;
   const actionBadge={
     'CREATE':'<span style="background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">CREATE</span>',
     'UPDATE':'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">UPDATE</span>',
     'DELETE':'<span style="background:#fee2e2;color:#b91c1c;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">DELETE</span>',
   };
-  document.getElementById('al-body').innerHTML=rows.map((r,i)=>{
+  document.getElementById('al-body').innerHTML=(rows&&rows.length?rows.map((r,i)=>{
     const dt=r.created_at?new Date(r.created_at).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'}):'—';
     return `<tr>
-      <td>${i+1}</td>
+      <td>${startRow+i+1}</td>
       <td style="white-space:nowrap;font-size:12px;color:#64748b">${dt}</td>
       <td><strong>${esc(r.username||'—')}</strong></td>
       <td><span style="font-size:11px;color:#7c3aed;font-weight:600">${esc(r.role||'—')}</span></td>
@@ -5485,7 +5492,32 @@ function renderActivityLogs(){
       <td style="font-size:12px">${esc(r.section||'—')}</td>
       <td style="max-width:260px">${esc(r.description||'—')}</td>
     </tr>`;
-  }).join('')||'<tr><td colspan="7"><div class="no-results">No activity logs found.</div></td></tr>';
+  }).join(''):'')||'<tr><td colspan="7"><div class="no-results">No activity logs found.</div></td></tr>';
+  renderAlPagination();
+}
+function renderAlPagination(){
+  const totalPages=Math.max(1,Math.ceil(alTotal/alPageSize));
+  const el=document.getElementById('al-pagination');
+  if(!el)return;
+  if(totalPages<=1){el.innerHTML='';return;}
+  // Build page number buttons (show up to 7 around current page)
+  let pages=[];
+  const delta=2;
+  for(let p=Math.max(1,alPage-delta);p<=Math.min(totalPages,alPage+delta);p++)pages.push(p);
+  if(pages[0]>1){if(pages[0]>2)pages.unshift('…');pages.unshift(1);}
+  if(pages[pages.length-1]<totalPages){if(pages[pages.length-1]<totalPages-1)pages.push('…');pages.push(totalPages);}
+  const btn=(label,page,disabled,active)=>
+    `<button onclick="${typeof page==='number'?'loadActivityLogs('+page+')':''}"
+      style="min-width:32px;padding:5px 10px;border-radius:6px;border:1px solid ${active?'#6366f1':'#e2e8f0'};
+      background:${active?'#6366f1':'#fff'};color:${active?'#fff':'#374151'};font-size:12px;font-weight:600;
+      cursor:${disabled||typeof page!=='number'?'default':'pointer'};opacity:${disabled?.45:1}"
+      ${disabled||typeof page!=='number'?'disabled':''}>
+      ${label}
+    </button>`;
+  el.innerHTML=
+    btn('‹ Prev', alPage-1, alPage<=1, false)+
+    pages.map(p=>typeof p==='number'?btn(p,p,false,p===alPage):btn('…','…',true,false)).join('')+
+    btn('Next ›', alPage+1, alPage>=totalPages, false);
 }
 async function clearActivityLogs(){
   if(!confirm('Clear all activity logs? This cannot be undone.'))return;

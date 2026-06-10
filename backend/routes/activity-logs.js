@@ -16,16 +16,35 @@ const router        = express.Router();
 router.get('/activity-logs', async (req, res) => {
   try {
     const { db } = await dbPromise;
-    const { user, section, action, limit = 500 } = req.query;
-    let sql    = 'SELECT * FROM user_activity_logs WHERE 1=1';
+
+    // Auto-purge logs older than 30 days
+    await db.run(`DELETE FROM user_activity_logs WHERE created_at < NOW() - INTERVAL '30 days'`);
+
+    const { user, section, action, limit = 50, page = 1 } = req.query;
+    const pageSize = Math.max(1, Math.min(200, +limit));
+    const offset   = (Math.max(1, +page) - 1) * pageSize;
+
+    let where  = 'WHERE 1=1';
     const params = [];
-    if (user)    { sql += ' AND LOWER(username) LIKE ?'; params.push('%' + user.toLowerCase() + '%'); }
-    if (section) { sql += ' AND section = ?';            params.push(section); }
-    if (action)  { sql += ' AND action = ?';             params.push(action); }
-    sql += ' ORDER BY created_at DESC LIMIT ?';
-    params.push(+limit);
-    const rows = await db.getAll(sql, params);
-    res.json(rows);
+    if (user)    { where += ' AND LOWER(username) LIKE $' + (params.length+1); params.push('%' + user.toLowerCase() + '%'); }
+    if (section) { where += ' AND section = $'            + (params.length+1); params.push(section); }
+    if (action)  { where += ' AND action = $'             + (params.length+1); params.push(action); }
+
+    // Total count for pagination
+    const countRow = await db.getOne(
+      `SELECT COUNT(*) AS total FROM user_activity_logs ${where}`,
+      params
+    );
+    const total = parseInt(countRow?.total ?? countRow?.count ?? 0, 10);
+
+    // Paged rows
+    const dataParams = [...params, pageSize, offset];
+    const rows = await db.getAll(
+      `SELECT * FROM user_activity_logs ${where} ORDER BY created_at DESC LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`,
+      dataParams
+    );
+
+    res.json({ rows, total, page: +page, pageSize });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
