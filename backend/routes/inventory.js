@@ -744,7 +744,7 @@ const stUpload = multer({ storage: stStorage, limits: { fileSize: 20 * 1024 * 10
 router.get('/stock-transfers', async (_req, res) => {
   try {
     const { db } = await dbPromise;
-    res.json(await db.getAll('SELECT * FROM stock_transfers ORDER BY transfer_date DESC'));
+    res.json(await db.getAll("SELECT * FROM stock_transfers ORDER BY CAST(SPLIT_PART(transfer_no, '-', 2) AS INTEGER) DESC"));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -1033,7 +1033,4 @@ router.delete('/machine-monitoring/:id', async (req, res) => {
     if (!ex) return res.status(404).json({ error: 'Record not found' });
     await db.run('DELETE FROM machine_monitoring WHERE id = ?', [+req.params.id]);
     res.status(204).end();
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-module.exports = router;
+  } catch (err) { res.stat
