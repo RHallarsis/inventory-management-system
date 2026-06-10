@@ -224,4 +224,6 @@ awesome-claude-skills (28 + 832 Composio/Rube automation stubs).
 
 - Plugin lookup table: `SKILLS-REFERENCE.md`
 - Cheatsheet (URLs, commands): `CHEATSHEET.md`
-- Gl
+- Global user memory: `C:\Users\ADMIN\.claude\CLAUDE.md`
+- Claude Code binary: `C:\Users\ADMIN\AppData\Roaming\npm\claude.cmd`
+- Git binary: `C:\Users\ADMIN\PortableGit\PortableGit\cmd\git.exe`
