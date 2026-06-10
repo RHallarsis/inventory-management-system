@@ -3358,22 +3358,20 @@ async function _resumeSession(){
   }catch(_){_clearSession();}
 }
 
-async function doLogin(force){
+async function doLogin(){
   const id=document.getElementById('l-user').value.trim();
   const pw=document.getElementById('l-pass').value;
   const errEl=document.getElementById('login-err');
   errEl.textContent='';errEl.style.cssText='';
   if(!id||!pw){errEl.textContent='Please enter username and password.';return;}
   try{
-    const r=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:id,password:pw,force:!!force})});
+    const r=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:id,password:pw})});
     let d;
     try{d=await r.json();}catch(_){errEl.textContent=`Server error (HTTP ${r.status}) — routes may not be loaded.`;return;}
     if(!r.ok){
       if(r.status===409){
         errEl.style.cssText='color:#92400e;background:#fef3c7;border:1px solid #fcd34d;padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:8px;line-height:1.5';
-        errEl.innerHTML='🔒 <strong>Account already active on another device.</strong><br>'
-          +esc(d.error||'Please sign out from the other device first.')
-          +'<br><button onclick="doLogin(true)" style="margin-top:10px;width:100%;padding:8px;border-radius:6px;border:1px solid #d97706;background:#f59e0b;color:#fff;font-weight:700;font-size:12px;cursor:pointer">⚡ Sign In Anyway (End Other Session)</button>';
+        errEl.innerHTML='🔒 <strong>Account already active on another device.</strong><br>'+esc(d.error||'Please sign out from the other device first.');
       }else{
         errEl.textContent=d.error||'Login failed.';
       }
@@ -5496,6 +5494,17 @@ document.addEventListener('DOMContentLoaded', () => {
   loadACEvents();
   setTimeout(loadDashboardCharts, 1500);
 });
+
+// ── Clear session when tab/browser is closed ─────────────────────────────────
+function _sendLogoutBeacon(){
+  if(!currentUser||!_sessionToken)return;
+  const payload=JSON.stringify({user_id:currentUser.id,session_token:_sessionToken});
+  // sendBeacon is fire-and-forget, works even during page unload
+  navigator.sendBeacon(API+'/auth/logout',new Blob([payload],{type:'application/json'}));
+  _clearSession();
+}
+window.addEventListener('pagehide', _sendLogoutBeacon);   // covers tab close, navigate away, mobile
+window.addEventListener('beforeunload', _sendLogoutBeacon); // covers desktop browser close
 </script>
 <script src="/chart.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
