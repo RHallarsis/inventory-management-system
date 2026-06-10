@@ -175,7 +175,21 @@ Many existing `.bat` helpers at root: `push-update.bat`, `push-to-render.bat`, `
 
 ## 9. Working Style Preferences
 
-- **Auto-deploy after every task** — after completing ANY code change, always run `git add . && git commit -m "<description>" && git push` so Railway redeploys automatically. No exceptions unless the user explicitly says not to push.
+- **Auto-deploy after every task** — after completing ANY code change, deploy by double-clicking `smart-push.bat` in File Explorer (E:\Projects\Inventory Management Web App\smart-push.bat). NEVER attempt raw git commands from the Linux sandbox — they fail due to index lock conflicts with the Windows git process.
+
+- **Git push workflow (CRITICAL):**
+  1. Write/edit the file using the Edit/Write tools
+  2. Open File Explorer to `E:\Projects\Inventory Management Web App\`
+  3. Double-click `smart-push.bat` — it handles everything automatically:
+     - Removes stale `index.lock` / `HEAD.lock` files
+     - Configures git to never open an editor (`core.editor = cmd /c exit 0`)
+     - Sets `pull.rebase false` to avoid unstaged-change conflicts
+     - Completes any in-progress merge with `--no-edit`
+     - Pulls remote changes without prompting
+     - Pushes with upstream tracking set
+  4. Wait ~1 min for Railway to redeploy
+
+- **If index.lock blocks from Linux sandbox** — do NOT try `rm`, Python delete, or any Linux-side workaround. Go straight to File Explorer → double-click `smart-push.bat` (Windows process has full permission to delete the lock file).
 - **Plan before coding** — use `writing-plans`
 - **TDD for stock logic** — quantities, reorder points, audit trails
 - **Reports must be exportable** — managers expect `.xlsx` and `.pdf`

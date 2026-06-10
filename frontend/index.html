@@ -118,9 +118,9 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .toast.info{background:#6366f1;}
 @keyframes slideIn{from{transform:translateX(60px);opacity:0;}to{transform:translateX(0);opacity:1;}}
 /* LOGISTICS TABS */
-.log-tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--border);padding-bottom:0;}
-.log-tab{padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--text-2);border-bottom:2px solid transparent;margin-bottom:-2px;}
-.log-tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+.log-tabs{display:inline-flex;gap:3px;margin-bottom:16px;padding:4px;background:#f1f4f9;border-radius:12px;}
+.log-tab{padding:7px 16px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--text-2);border-bottom:none;margin-bottom:0;border-radius:9px;transition:color .15s,background .15s,box-shadow .15s;}
+.log-tab.active{background:#fff;color:var(--primary);box-shadow:0 1px 6px rgba(99,102,241,.15),0 1px 3px rgba(0,0,0,.08);}
 .log-panel{display:none;}
 .log-panel.active{display:block;}
 /* FILE LINK */
@@ -351,10 +351,10 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
   .charts-row{grid-template-columns:1fr;gap:10px;}
   .chart-box{padding:12px;}
 
-  /* Tabs — scrollable, no wrap */
-  .log-tabs{display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;scrollbar-width:none;margin-bottom:12px;}
+  /* Tabs — scrollable pill bar */
+  .log-tabs{display:inline-flex;gap:3px;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;scrollbar-width:none;margin-bottom:12px;max-width:100%;}
   .log-tabs::-webkit-scrollbar{display:none;}
-  .log-tab{padding:8px 14px;font-size:12px;font-weight:600;flex-shrink:0;}
+  .log-tab{padding:7px 13px;font-size:12px;font-weight:600;flex-shrink:0;}
 
   /* Toolbar — search full width, add button below */
   .page-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;}
@@ -914,15 +914,14 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 .badge-outofstock,.badge-cancelled,.badge-inactive{padding:4px 12px;font-size:11.5px;border-radius:20px;font-weight:700;}
 .badge-ordered,.badge-scheduled,.badge-delivery,.badge-pullout,.badge-approved{padding:4px 12px;font-size:11.5px;border-radius:20px;font-weight:700;}
 
-/* Logistics tabs */
-.log-tabs{border-bottom:2px solid #edf0f7;padding-bottom:0;}
-.log-tab{
-  padding:9px 18px;font-size:13px;font-weight:600;
-  border-radius:9px 9px 0 0;color:#94a3b8;
-  transition:color .15s,background .15s;
-}
-.log-tab:hover{color:#475569;background:#f8f9ff;}
-.log-tab.active{color:#6366f1;font-weight:700;background:#fafbff;}
+/* Logistics — compact table */
+#page-logistics .page-tbl-wrap{border-radius:12px;border:1px solid #edf0f7;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,.04);}
+#page-logistics .page-table th{padding:8px 11px;font-size:10.5px;letter-spacing:.5px;}
+#page-logistics .page-table td{padding:7px 11px;font-size:12.5px;}
+#page-logistics .page-table tr:hover td{background:#f5f7ff;}
+#page-logistics .log-file-link{display:inline-flex;align-items:center;gap:3px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:#6366f1;text-decoration:none;vertical-align:middle;}
+#page-logistics .log-file-link:hover{text-decoration:underline;}
+#page-logistics .page-act-btn{padding:4px 10px;font-size:11px;font-weight:600;border-radius:6px;}
 
 /* Settings card */
 .settings-card{
@@ -2727,9 +2726,9 @@ img,svg,canvas{max-width:100%;}
   }
 
   /* ─ Tabs ─ */
-  .log-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;white-space:nowrap;gap:0;margin-bottom:10px;}
+  .log-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;white-space:nowrap;gap:3px;margin-bottom:10px;}
   .log-tabs::-webkit-scrollbar{display:none;}
-  .log-tab{padding:8px 12px;font-size:12px;flex-shrink:0;}
+  .log-tab{padding:7px 12px;font-size:12px;flex-shrink:0;}
 
   /* ─ Modals — full-width bottom sheet ─ */
   .g-modal-overlay{align-items:flex-end!important;padding:0!important;overflow-y:auto!important;}
@@ -3259,7 +3258,7 @@ let acTasksData=[],acEditId=null,acDeleteId=null,acPickedColor='#6366f1',acCateg
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function fmt(n){return 'Php '+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2});}
 function badge(st){const k=(st||'').toLowerCase().replace(/\s+/g,'');return `<span class="badge-${k}">${esc(st)||'—'}</span>`;}
-function fileLink(r){return r&&r.file_name?`<a class="file-link" href="${window.location.origin}${esc(r.file_path)}" target="_blank">📎 ${esc(r.file_name.replace(/^\d+[-_]/,''))}</a>`:'<span style="color:var(--text-2);font-size:11px">—</span>';}
+function fileLink(r){if(!r||!r.file_name)return '<span style="color:var(--text-2);font-size:11px">—</span>';const name=esc(r.file_name.replace(/^\d+[-_]/,''));return `<a class="file-link log-file-link" href="${window.location.origin}${esc(r.file_path)}" target="_blank" title="${name}">📎 ${name}</a>`;}
 function ini(name){return (name||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();}
 function avatarColor(s){const colors=['#6366f1','#10b981','#f59e0b','#ec4899','#8b5cf6','#3b82f6'];let h=0;for(let c of s||'')h=(h<<5)-h+c.charCodeAt(0);return colors[Math.abs(h)%colors.length];}
 function localIso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
