@@ -60,11 +60,6 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 /* TABLES */
 .page-tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .page-table{width:100%;border-collapse:collapse;font-size:13px;}
-.al-pg-btn{padding:5px 11px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;font-size:12px;cursor:pointer;color:#374151;transition:background .15s}
-.al-pg-btn:hover:not(:disabled){background:#f1f5f9}
-.al-pg-btn.active{background:#4338ca;color:#fff;border-color:#4338ca;font-weight:700}
-.al-pg-btn:disabled{opacity:.4;cursor:default}
-.al-pg-ellipsis{padding:5px 4px;font-size:12px;color:#94a3b8;line-height:1}
 .page-table th{background:var(--sidebar-bg);color:#fff;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.4px;white-space:nowrap;}
 .page-table td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
 .page-table tr:hover td{background:#f8fafc;}
@@ -697,6 +692,12 @@ body.viewer-mode .line-notify-btn { display:none !important; }
   display:none;
   align-items:center;
 }
+/* Mobile: show topbar for hamburger */
+@media(max-width:768px){
+  .topbar{display:flex!important;padding:0 10px!important;height:50px!important;gap:6px!important;align-items:center!important;}
+  .topbar-title{display:none!important;}
+  .topbar-right{display:none!important;}
+}
 .topbar-title{
   font-size:18px;font-weight:800;color:#0f172a;
   letter-spacing:-.5px;
@@ -1295,28 +1296,8 @@ body.viewer-mode .line-notify-btn { display:none !important; }
     if(statEl)statEl.textContent='Ready!';
     setTimeout(function(){
       if(scr)scr.classList.add('ls-out');
-      var saved=localStorage.getItem('currentUser');
-      if(saved){
-        try{
-          currentUser=JSON.parse(saved);
-          document.getElementById('user-name').textContent=currentUser.name;
-          document.getElementById('user-role').textContent=currentUser.role;
-          document.getElementById('user-avatar').textContent=ini(currentUser.name);
-          applyRoleAccess(currentUser.role);
-          document.getElementById('set-name').value=currentUser.name||'';
-          document.getElementById('set-email').value=currentUser.email||'';
-          document.getElementById('set-role').value=currentUser.role||'';
-          if(currentUser.role==='Admin'){loadLineConfig();loadUsers();}
-          initApp();
-        }catch(e){
-          localStorage.removeItem('currentUser');
-          var lg=document.getElementById('login-overlay');
-          if(lg)lg.style.display='flex';
-        }
-      }else{
-        var lg=document.getElementById('login-overlay');
-        if(lg)lg.style.display='flex';
-      }
+      var lg=document.getElementById('login-overlay');
+      if(lg)lg.style.display='flex';
       setTimeout(function(){if(scr)scr.classList.add('ls-done');},450);
     },200);
   },3000);
@@ -2261,18 +2242,18 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 <div id="page-auditlog" class="page-section">
   <div class="page-hero h-slate"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8zm0-4h5v2H8z"/></svg></div><div><div class="ph-title">Audit Log</div><div class="ph-sub">Complete history of all actions performed in the system by users</div></div></div></div>
   <div class="page-toolbar">
-    <input class="search-input" id="audit-search" placeholder="Filter by user, action or entity..." oninput="renderAuditLog()"/>
+    <input class="search-input" id="al-search" placeholder="Filter by user, action or entity..." oninput="renderAuditLog()"/>
     <button class="page-add-btn" onclick="loadAuditLog()" style="background:#6366f1">&#8635; Refresh</button>
-    <span class="table-meta" id="audit-meta"></span>
+    <span class="table-meta" id="al-meta"></span>
   </div>
   <div class="page-tbl-wrap">
     <table class="page-table">
       <thead><tr><th>#</th><th>Date &amp; Time</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
-      <tbody id="audit-body"></tbody>
+      <tbody id="al-body"></tbody>
     </table>
   </div>
   <div style="text-align:center;margin-top:12px">
-    <button class="page-add-btn" id="audit-load-more" onclick="loadMoreAudit()" style="background:#64748b;display:none">Load More</button>
+    <button class="page-add-btn" id="al-load-more" onclick="loadMoreAudit()" style="background:#64748b;display:none">Load More</button>
   </div>
 </div>
 <!-- ===== STOCK MOVEMENTS ===== -->
@@ -2286,8 +2267,8 @@ body.viewer-mode .line-notify-btn { display:none !important; }
     </div>
   </div>
   <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-    <input id="al-search" placeholder="🔍 Search user or description…" oninput="alPage=1;renderActivityLogs()" style="flex:1;min-width:150px;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"/>
-    <select id="al-filter-section" onchange="alPage=1;renderActivityLogs()" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;max-width:180px">
+    <input id="al-search" placeholder="🔍 Search user or description…" oninput="renderActivityLogs()" style="flex:1;min-width:150px;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px"/>
+    <select id="al-filter-section" onchange="renderActivityLogs()" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;max-width:180px">
       <option value="">All Sections</option>
       <option>Inventory Items</option><option>Categories</option><option>Spare Parts</option>
       <option>Machine Monitoring</option><option>Local Purchases</option><option>Purchase Orders</option>
@@ -2298,7 +2279,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
       <option>Calendar</option><option>Commercial Invoices</option><option>Packing Lists</option>
       <option>User Management</option>
     </select>
-    <select id="al-filter-action" onchange="alPage=1;renderActivityLogs()" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px">
+    <select id="al-filter-action" onchange="renderActivityLogs()" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px">
       <option value="">All Actions</option>
       <option value="CREATE">Create</option>
       <option value="UPDATE">Update</option>
@@ -2325,7 +2306,6 @@ body.viewer-mode .line-notify-btn { display:none !important; }
       <tbody id="al-body"></tbody>
     </table>
   </div>
-  <div id="al-pagination" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:16px 0"></div>
 </div>
 <div id="page-stockmovements" class="page-section">
   <div class="page-hero h-teal"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M7 16l-4-4 4-4 1.41 1.41L6.83 11H21v2H6.83l1.58 1.59L7 16zm10-8l4 4-4 4-1.41-1.41L17.17 13H3v-2h14.17l-1.58-1.59L17 8z"/></svg></div><div><div class="ph-title">Stock Movements</div><div class="ph-sub">Track every inventory quantity change — additions, deductions &amp; adjustments</div></div></div></div>
@@ -3305,7 +3285,6 @@ async function doLogin(){
     try{d=await r.json();}catch(_){document.getElementById('login-err').textContent=`Server error (HTTP ${r.status}) — routes may not be loaded.`;return;}
     if(!r.ok){document.getElementById('login-err').textContent=d.error||'Login failed.';return;}
     currentUser=d.user;
-    localStorage.setItem('currentUser',JSON.stringify(currentUser));
     document.getElementById('login-overlay').style.display='none';
     document.getElementById('user-name').textContent=currentUser.name;
     document.getElementById('user-role').textContent=currentUser.role;
@@ -3372,7 +3351,6 @@ async function doSettingsChangePassword(){
 }
 function doLogout(){
   currentUser=null;
-  localStorage.removeItem('currentUser');
   applyRoleAccess(null); // reset all role restrictions
   document.getElementById('login-overlay').style.display='flex';
   document.getElementById('l-pass').value='';
@@ -5350,24 +5328,24 @@ async function loadAuditLog(reset){
     const d=await r.json();
     auditData=[...auditData,...(d.rows||[])];
     auditOffset=auditData.length;
-    const mb=document.getElementById('audit-load-more');
+    const mb=document.getElementById('al-load-more');
     if(mb)mb.style.display=(auditData.length<(d.total||0))?'inline-flex':'none';
     renderAuditLog();
-  }catch(e){const b=document.getElementById('audit-body');if(b)b.innerHTML='<tr><td colspan="6"><div class="no-results">Could not load audit log.</div></td></tr>';}
+  }catch(e){const b=document.getElementById('al-body');if(b)b.innerHTML='<tr><td colspan="6"><div class="no-results">Could not load audit log.</div></td></tr>';}
 }
 function loadMoreAudit(){loadAuditLog(false);}
 function renderAuditLog(){
-  const q=(document.getElementById('audit-search')||{}).value||'';
+  const q=(document.getElementById('al-search')||{}).value||'';
   const ql=q.toLowerCase();
   const rows=auditData.filter(r=>!ql||(r.user_name||'').toLowerCase().includes(ql)||(r.action||'').toLowerCase().includes(ql)||(r.entity||'').toLowerCase().includes(ql)||(r.details||'').toLowerCase().includes(ql));
-  const meta=document.getElementById('audit-meta');
+  const meta=document.getElementById('al-meta');
   if(meta)meta.textContent='Showing '+rows.length+' of '+auditData.length+' entries';
   const AC={CREATE:'#10b981',UPDATE:'#f59e0b',DELETE:'#ef4444',SEND_ALERT:'#6366f1'};
-  const b=document.getElementById('audit-body');
+  const b=document.getElementById('al-body');
   if(!b)return;
   b.innerHTML=rows.length?rows.map((r,i)=>{
     const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
-    const col=AC[r.action]||'#64748b';
+
     return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.user_name||'—')+'</strong><br><span style="font-size:11px;color:#94a3b8">'+esc(r.user_email||'')+'</span></td><td><span style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">'+(r.action||'—')+'</span></td><td>'+esc(r.entity||'—')+(r.entity_id?' #'+r.entity_id:'')+'</td><td style="font-size:12px;max-width:300px">'+esc(r.details||'—')+'</td></tr>';
   }).join(''):'<tr><td colspan="6"><div class="no-results">No audit entries found.</div></td></tr>';
 }
@@ -5413,27 +5391,50 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="/ua.js?v=3"></script>
 <script>
 // ── Mobile sidebar ────────────────────────────────────────────────────────
+// Inject dynamic stylesheet — overrides all CSS specificity conflicts
+(function(){
+  var s=document.createElement('style');
+  s.textContent=
+    '#sidebar[data-mob-open="1"]{transform:translateX(0)!important;position:fixed!important;left:0!important;top:0!important;width:260px!important;height:100vh!important;z-index:9999!important;overflow-y:auto!important;}'+
+    '#sidebar-overlay[data-mob-open="1"]{display:block!important;position:fixed!important;inset:0!important;z-index:9998!important;background:rgba(0,0,0,.55)!important;}';
+  document.head.appendChild(s);
+})();
 function toggleMobSidebar(){
   var sb=document.getElementById('sidebar');
   var ov=document.getElementById('sidebar-overlay');
-  var open=sb.classList.toggle('mob-open');
-  if(open){ov.classList.add('open');document.body.style.overflow='hidden';}
-  else{ov.classList.remove('open');document.body.style.overflow='';}
+  if(!sb||!ov)return;
+  var isOpen=sb.getAttribute('data-mob-open')==='1';
+  if(isOpen){sb.setAttribute('data-mob-open','0');ov.setAttribute('data-mob-open','0');document.body.style.overflow='';}
+  else{sb.setAttribute('data-mob-open','1');ov.setAttribute('data-mob-open','1');document.body.style.overflow='hidden';}
 }
 function closeMobSidebar(){
   var sb=document.getElementById('sidebar');
   var ov=document.getElementById('sidebar-overlay');
-  sb.classList.remove('mob-open');
-  ov.classList.remove('open');
+  if(!sb||!ov)return;
+  sb.setAttribute('data-mob-open','0');
+  ov.setAttribute('data-mob-open','0');
   document.body.style.overflow='';
 }
+// Wire touchstart (instant on mobile) + click fallback
+(function(){
+  var btn=document.getElementById('mob-menu-btn');
+  if(btn){
+    btn.addEventListener('touchstart',function(e){e.preventDefault();toggleMobSidebar();},{passive:false});
+    btn.addEventListener('click',toggleMobSidebar);
+  }
+  var ov=document.getElementById('sidebar-overlay');
+  if(ov){
+    ov.addEventListener('touchstart',function(e){e.preventDefault();closeMobSidebar();},{passive:false});
+    ov.addEventListener('click',closeMobSidebar);
+  }
+})();
 // Close sidebar when a nav item is tapped on mobile
 document.querySelectorAll('.nav-item').forEach(function(el){
   el.addEventListener('click',function(){if(window.innerWidth<=768)closeMobSidebar();});
 });
 
 // ── Activity Logs ────────────────────────────────────────────────────────────
-let alData=[], alPage=1;
+let alData=[];
 async function loadActivityLogs(){
   const tbody=document.getElementById('al-body');
   if(tbody)tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:#94a3b8">Loading…</td></tr>';
@@ -5460,24 +5461,16 @@ function renderActivityLogs(){
     (!sec||r.section===sec)&&
     (!act||r.action===act)
   );
-  const perPage=50;
-  const totalPages=Math.max(1,Math.ceil(rows.length/perPage));
-  if(alPage>totalPages)alPage=totalPages;
-  const start=(alPage-1)*perPage;
-  const pageRows=rows.slice(start,start+perPage);
-  const end=Math.min(start+perPage,rows.length);
-  document.getElementById('al-meta').textContent=rows.length
-    ?`Showing ${start+1}–${end} of ${rows.length} entries`
-    :`Showing 0 of ${alData.length} entries`;
+  document.getElementById('al-meta').textContent=`Showing ${rows.length} of ${alData.length} entries`;
   const actionBadge={
     'CREATE':'<span style="background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">CREATE</span>',
     'UPDATE':'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">UPDATE</span>',
     'DELETE':'<span style="background:#fee2e2;color:#b91c1c;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">DELETE</span>',
   };
-  document.getElementById('al-body').innerHTML=pageRows.map((r,i)=>{
+  document.getElementById('al-body').innerHTML=rows.map((r,i)=>{
     const dt=r.created_at?new Date(r.created_at).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'}):'—';
     return `<tr>
-      <td>${start+i+1}</td>
+      <td>${i+1}</td>
       <td style="white-space:nowrap;font-size:12px;color:#64748b">${dt}</td>
       <td><strong>${esc(r.username||'—')}</strong></td>
       <td><span style="font-size:11px;color:#7c3aed;font-weight:600">${esc(r.role||'—')}</span></td>
@@ -5486,36 +5479,6 @@ function renderActivityLogs(){
       <td style="max-width:260px">${esc(r.description||'—')}</td>
     </tr>`;
   }).join('')||'<tr><td colspan="7"><div class="no-results">No activity logs found.</div></td></tr>';
-  // Pagination controls
-  const pg=document.getElementById('al-pagination');
-  if(!pg)return;
-  if(totalPages<=1){pg.innerHTML='';return;}
-  let btns=`<button class="al-pg-btn" onclick="alGoToPage(${alPage-1})" ${alPage===1?'disabled':''}>‹ Prev</button>`;
-  const range=[];
-  for(let p=1;p<=totalPages;p++){
-    if(p===1||p===totalPages||Math.abs(p-alPage)<=2)range.push(p);
-    else if(range[range.length-1]!=='…')range.push('…');
-  }
-  range.forEach(p=>{
-    if(p==='…')btns+=`<span class="al-pg-ellipsis">…</span>`;
-    else btns+=`<button class="al-pg-btn${p===alPage?' active':''}" onclick="alGoToPage(${p})">${p}</button>`;
-  });
-  btns+=`<button class="al-pg-btn" onclick="alGoToPage(${alPage+1})" ${alPage===totalPages?'disabled':''}>Next ›</button>`;
-  pg.innerHTML=btns;
-}
-function alGoToPage(p){
-  const q=(document.getElementById('al-search').value||'').toLowerCase();
-  const sec=document.getElementById('al-filter-section').value;
-  const act=document.getElementById('al-filter-action').value;
-  const rows=alData.filter(r=>
-    (!q||(r.username||'').toLowerCase().includes(q)||(r.description||'').toLowerCase().includes(q))&&
-    (!sec||r.section===sec)&&
-    (!act||r.action===act)
-  );
-  const totalPages=Math.max(1,Math.ceil(rows.length/50));
-  alPage=Math.max(1,Math.min(p,totalPages));
-  renderActivityLogs();
-  document.getElementById('page-activitylogs').scrollIntoView({behavior:'smooth',block:'start'});
 }
 async function clearActivityLogs(){
   if(!confirm('Clear all activity logs? This cannot be undone.'))return;
