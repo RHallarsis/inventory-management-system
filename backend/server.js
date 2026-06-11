@@ -1,4 +1,5 @@
 'use strict';
+// deploy: 2026-06-11 force redeploy
 
 process.on('uncaughtException',  err    => console.error('[CRASH] uncaughtException:',  err.stack || err.message));
 process.on('unhandledRejection', reason => console.error('[CRASH] unhandledRejection:', reason));

@@ -1,3 +1,4 @@
+'use strict';
 const express = require('express');
 const crypto  = require('crypto');
 const { dbPromise } = require('../database');
@@ -31,16 +32,7 @@ router.post('/auth/login', async (req, res) => {
       return res.status(403).json({ error: 'Your account is inactive. Contact your administrator.' });
     }
 
-    // Single-session check: block if an active session exists within the timeout window
-    if (user.session_token && user.session_at) {
-      const idleMs = Date.now() - new Date(user.session_at).getTime();
-      if (idleMs < SESSION_TIMEOUT_MS) {
-        return res.status(409).json({
-          error: 'This account is already logged in on another device. Please sign out from that device first, or wait for the session to expire automatically.',
-          code: 'SESSION_ACTIVE'
-        });
-      }
-    }
+    // Single-session: new login always takes over — old session is kicked out automatically
 
     // Issue a new session token
     const token = crypto.randomBytes(32).toString('hex');
@@ -202,7 +194,6 @@ router.post('/auth/change-password', async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'No account found with that email address.' });
     }
-    // If currentPassword is supplied (Settings page flow), verify it first
     if (currentPassword !== undefined && currentPassword !== null && currentPassword !== '') {
       if (user.password !== currentPassword) {
         return res.status(401).json({ error: 'Current password is incorrect.' });
