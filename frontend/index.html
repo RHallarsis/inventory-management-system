@@ -1413,22 +1413,58 @@ body.viewer-mode .line-notify-btn { display:none !important; }
     </div>
     <div class="nav-item" data-page="machinemonitoring" onclick="showPage(&apos;machinemonitoring&apos;)">
       <svg viewBox="0 0 24 24"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg><span>Machine Monitoring</span></div>
-    <div class="nav-item" data-page="purchaseorders" onclick="showPage(&apos;purchaseorders&apos;)">
-      <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8v-2zm0-4h8v2H8v-2z"/></svg><span>Purchase Orders</span></div>
-        <div class="nav-item" data-page="supplierquotations" onclick="showPage(&apos;supplierquotations&apos;)">
-      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12zM7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg><span>Supplier Quotations</span></div>
-<div class="nav-item" data-page="suppliers" onclick="showPage(&apos;suppliers&apos;)">
-      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg><span>Suppliers</span></div>
-    <div class="nav-item" data-page="goodsreceived" onclick="showPage(&apos;goodsreceived&apos;)">
-      <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg><span>Goods Received</span></div>
-    <div class="nav-item" data-page="stocktransfers" onclick="showPage(&apos;stocktransfers&apos;)">
-      <svg viewBox="0 0 24 24"><path d="M17 4l4 4-4 4V9H3V7h14V4zm-4 13H3v-2h10v-3l4 4-4 4v-3z"/></svg><span>Delivery Receipts</span></div>
-    <div class="nav-item" data-page="pulloutreceipts" onclick="showPage(&apos;pulloutreceipts&apos;)">
-      <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/></svg><span>Pullout Receipts</span></div>
-    <div class="nav-item" data-page="transmittalreceipts" onclick="showPage(&apos;transmittalreceipts&apos;)">
-      <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg><span>Transmittal Receipts</span></div>
-    <div class="nav-item" data-page="cipl" onclick="showPage(&apos;cipl&apos;)">
-      <svg viewBox="0 0 24 24"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v1h12v-1l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11zM9 9h6v2H9zm0 4h6v2H9zm-2-4H6v2h1zm0 4H6v2h1z"/></svg><span>CI / PL</span></div>
+    <!-- Procurement Group -->
+    <div class="nav-item nav-group-header" id="proc-header" onclick="toggleNavGroup('proc')" style="justify-content:space-between;user-select:none">
+      <div style="display:flex;align-items:center;gap:10px">
+        <svg viewBox="0 0 24 24" style="width:17px;height:17px;fill:currentColor;flex-shrink:0"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+        <span>Procurement</span>
+      </div>
+      <svg id="proc-chevron" viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;transition:transform .2s;flex-shrink:0"><path d="M7 10l5 5 5-5z"/></svg>
+    </div>
+    <div id="proc-group" class="spm-group" style="display:none;padding-left:12px;overflow:hidden">
+      <div class="nav-item nav-sub-item" data-page="purchaseorders" onclick="showPage('purchaseorders')" style="font-size:12.5px;padding:7px 10px">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8v-2zm0-4h8v2H8v-2z"/></svg>
+        <span>Purchase Orders</span>
+      </div>
+      <div class="nav-item nav-sub-item" data-page="supplierquotations" onclick="showPage('supplierquotations')" style="font-size:12.5px;padding:7px 10px">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12zM7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>
+        <span>Supplier Quotations</span>
+      </div>
+      <div class="nav-item nav-sub-item" data-page="suppliers" onclick="showPage('suppliers')" style="font-size:12.5px;padding:7px 10px">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span>Suppliers</span>
+      </div>
+      <div class="nav-item nav-sub-item" data-page="goodsreceived" onclick="showPage('goodsreceived')" style="font-size:12.5px;padding:7px 10px">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        <span>Goods Received</span>
+      </div>
+    </div>
+    <!-- Documents Group -->
+    <div class="nav-item nav-group-header" id="docs-header" onclick="toggleNavGroup('docs')" style="justify-content:space-between;user-select:none">
+      <div style="display:flex;align-items:center;gap:10px">
+        <svg viewBox="0 0 24 24" style="width:17px;height:17px;fill:currentColor;flex-shrink:0"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-5 14H7v-2h8v2zm3-4H7v-2h11v2zm0-4H7V6h11v2z"/></svg>
+        <span>Documents</span>
+      </div>
+      <svg id="docs-chevron" viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;transition:transform .2s;flex-shrink:0"><path d="M7 10l5 5 5-5z"/></svg>
+    </div>
+    <div id="docs-group" class="spm-group" style="display:none;padding-left:12px;overflow:hidden">
+      <div class="nav-item nav-sub-item" data-page="stocktransfers" onclick="showPage('stocktransfers')" style="font-size:12.5px;padding:7px 10px">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor"><path d="M17 4l4 4-4 4V9H3V7h14V4zm-4 13H3v-2h10v-3l4 4-4 4v-3z"/></svg>
+        <span>Delivery Receipts</span>
+      </div>
+      <div class="nav-item nav-sub-item" data-page="pulloutreceipts" onclick="showPage('pulloutreceipts')" style="font-size:12.5px;padding:7px 10px">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/></svg>
+        <span>Pullout Receipts</span>
+      </div>
+      <div class="nav-item nav-sub-item" data-page="transmittalreceipts" onclick="showPage('transmittalreceipts')" style="font-size:12.5px;padding:7px 10px">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        <span>Transmittal Receipts</span>
+      </div>
+      <div class="nav-item nav-sub-item" data-page="cipl" onclick="showPage('cipl')" style="font-size:12.5px;padding:7px 10px">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v1h12v-1l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11zM9 9h6v2H9zm0 4h6v2H9zm-2-4H6v2h1zm0 4H6v2h1z"/></svg>
+        <span>CI / PL</span>
+      </div>
+    </div>
     <div class="nav-label">Reports</div>
     <div class="nav-item" data-page="inventoryreport" onclick="showPage(&apos;inventoryreport&apos;)">
       <svg viewBox="0 0 24 24"><path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zM20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg><span>Inventory Report</span></div>
@@ -3520,6 +3556,7 @@ function showPage(page){
   document.querySelectorAll('.page-section').forEach(el=>el.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  expandNavGroupForPage(page);
   const nav=document.querySelector(`.nav-item[data-page="${page}"]`);
   if(nav)nav.classList.add('active');
   document.getElementById('topbar-title').textContent=PAGE_TITLES[page]||page;
@@ -4879,6 +4916,27 @@ function toggleSPMGroup(el){
   const chev=el.querySelector('.spm-chevron');
   if(chev)chev.style.transform=isOpen?'rotate(0deg)':'rotate(180deg)';
 }
+function toggleNavGroup(id){
+  const grp=document.getElementById(id+'-group');
+  const chev=document.getElementById(id+'-chevron');
+  if(!grp)return;
+  const isOpen=grp.style.display!=='none';
+  grp.style.display=isOpen?'none':'block';
+  if(chev)chev.style.transform=isOpen?'rotate(0deg)':'rotate(180deg)';
+}
+function expandNavGroupForPage(page){
+  const procPages=['purchaseorders','supplierquotations','suppliers','goodsreceived'];
+  const docsPages=['stocktransfers','pulloutreceipts','transmittalreceipts','cipl'];
+  if(procPages.includes(page)){
+    const g=document.getElementById('proc-group');
+    const c=document.getElementById('proc-chevron');
+    if(g){g.style.display='block';if(c)c.style.transform='rotate(180deg)';}
+  } else if(docsPages.includes(page)){
+    const g=document.getElementById('docs-group');
+    const c=document.getElementById('docs-chevron');
+    if(g){g.style.display='block';if(c)c.style.transform='rotate(180deg)';}
+  }
+}
 
 // ════════════════════════════════════════════════════════════════
 // CI / PL  —  Commercial Invoice & Packing List
@@ -5500,193 +5558,4 @@ function renderStockMovements(){
     const ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
     const chg=+r.change_qty||0;
     const chgHtml=chg>0?'<span style="color:#10b981;font-weight:700">+'+chg+'</span>':'<span style="color:#ef4444;font-weight:700">'+chg+'</span>';
-    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.product_name||'—')+'</strong></td><td style="font-size:12px;color:#64748b">'+esc(r.product_code||'')+'</td><td style="text-align:center">'+(r.prev_qty!=null?r.prev_qty:'—')+'</td><td style="text-align:center">'+chgHtml+'</td><td style="text-align:center;font-weight:700">'+(r.new_qty!=null?r.new_qty:'—')+'</td><td style="font-size:12px">'+esc(r.reason||'—')+'</td><td style="font-size:12px;color:#64748b">'+esc(r.user_name||'System')+'</td></tr>';
-  }).join(''):'<tr><td colspan="9"><div class="no-results">No stock movements yet.</div></td></tr>';
-}
-
-// ╔═══════════════════════════════════════════════════════════════
-// BOOT — runs after DOM is ready
-// ╚═══════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  // Try to restore an existing session before showing the login screen
-  _resumeSession().then(() => {
-    if(!currentUser) initApp();
-  });
-  loadACEvents();
-  setTimeout(loadDashboardCharts, 1500);
-});
-
-// ── Clear session when tab/browser is closed ─────────────────────────────────
-function _sendLogoutBeacon(){
-  if(!currentUser||!_sessionToken)return;
-  const payload=JSON.stringify({user_id:currentUser.id,session_token:_sessionToken});
-  // sendBeacon is fire-and-forget, works even during page unload
-  navigator.sendBeacon(API+'/auth/logout',new Blob([payload],{type:'application/json'}));
-  _clearSession();
-}
-window.addEventListener('pagehide', _sendLogoutBeacon);   // covers tab close, navigate away, mobile
-window.addEventListener('beforeunload', _sendLogoutBeacon); // covers desktop browser close
-</script>
-<script src="/chart.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script src="/ua.js?v=3"></script>
-<script>
-// ── Mobile sidebar ────────────────────────────────────────────────────────
-// Inject dynamic stylesheet — overrides all CSS specificity conflicts
-(function(){
-  var s=document.createElement('style');
-  s.textContent=
-    '#sidebar[data-mob-open="1"]{transform:translateX(0)!important;position:fixed!important;left:0!important;top:0!important;width:260px!important;height:100vh!important;z-index:9999!important;overflow-y:auto!important;}'+
-    '#sidebar-overlay[data-mob-open="1"]{display:block!important;position:fixed!important;inset:0!important;z-index:9998!important;background:rgba(0,0,0,.55)!important;}';
-  document.head.appendChild(s);
-})();
-function toggleMobSidebar(){
-  var sb=document.getElementById('sidebar');
-  var ov=document.getElementById('sidebar-overlay');
-  if(!sb||!ov)return;
-  var isOpen=sb.getAttribute('data-mob-open')==='1';
-  if(isOpen){sb.setAttribute('data-mob-open','0');ov.setAttribute('data-mob-open','0');document.body.style.overflow='';}
-  else{sb.setAttribute('data-mob-open','1');ov.setAttribute('data-mob-open','1');document.body.style.overflow='hidden';}
-}
-function closeMobSidebar(){
-  var sb=document.getElementById('sidebar');
-  var ov=document.getElementById('sidebar-overlay');
-  if(!sb||!ov)return;
-  sb.setAttribute('data-mob-open','0');
-  ov.setAttribute('data-mob-open','0');
-  document.body.style.overflow='';
-}
-// Wire touchstart (instant on mobile) + click fallback
-(function(){
-  var btn=document.getElementById('mob-menu-btn');
-  if(btn){
-    btn.addEventListener('touchstart',function(e){e.preventDefault();toggleMobSidebar();},{passive:false});
-    btn.addEventListener('click',toggleMobSidebar);
-  }
-  var ov=document.getElementById('sidebar-overlay');
-  if(ov){
-    ov.addEventListener('touchstart',function(e){e.preventDefault();closeMobSidebar();},{passive:false});
-    ov.addEventListener('click',closeMobSidebar);
-  }
-})();
-// Close sidebar when a nav item is tapped on mobile
-document.querySelectorAll('.nav-item').forEach(function(el){
-  el.addEventListener('click',function(){if(window.innerWidth<=768)closeMobSidebar();});
-});
-
-// ── Activity Logs ────────────────────────────────────────────────────────────
-let alPage=1, alTotal=0, alPageSize=50;
-async function loadActivityLogs(page){
-  alPage=page||1;
-  const tbody=document.getElementById('al-body');
-  if(tbody)tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:#94a3b8">Loading…</td></tr>';
-  try{
-    const ctrl=new AbortController();
-    const t=setTimeout(()=>ctrl.abort(),10000);
-    const q=(document.getElementById('al-search').value||'').trim();
-    const sec=document.getElementById('al-filter-section').value;
-    const act=document.getElementById('al-filter-action').value;
-    let url=API+'/activity-logs?limit='+alPageSize+'&page='+alPage;
-    if(q)   url+='&user='+encodeURIComponent(q);
-    if(sec) url+='&section='+encodeURIComponent(sec);
-    if(act) url+='&action='+encodeURIComponent(act);
-    const r=await fetch(url,{signal:ctrl.signal});
-    clearTimeout(t);
-    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||'Server error '+r.status);}
-    const data=await r.json();
-    alTotal=data.total||0;
-    alPageSize=data.pageSize||50;
-    console.log('[ActivityLog] Page',alPage,'–',data.rows.length,'of',alTotal,'entries');
-    renderActivityLogs(data.rows);
-  }catch(e){
-    console.error('[ActivityLog] Load error:',e.message);
-    if(tbody)tbody.innerHTML='<tr><td colspan="7"><div class="no-results">Failed to load: '+esc(e.message)+'</div></td></tr>';
-    renderAlPagination();
-  }
-}
-function renderActivityLogs(rows){
-  const totalPages=Math.max(1,Math.ceil(alTotal/alPageSize));
-  const startRow=(alPage-1)*alPageSize;
-  document.getElementById('al-meta').textContent=
-    `Showing ${rows&&rows.length?startRow+1+' – '+(startRow+rows.length):0} of ${alTotal} entries (last 30 days)`;
-  const actionBadge={
-    'CREATE':'<span style="background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">CREATE</span>',
-    'UPDATE':'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">UPDATE</span>',
-    'DELETE':'<span style="background:#fee2e2;color:#b91c1c;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700">DELETE</span>',
-  };
-  document.getElementById('al-body').innerHTML=(rows&&rows.length?rows.map((r,i)=>{
-    const dt=r.created_at?new Date(r.created_at).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'}):'—';
-    return `<tr>
-      <td>${startRow+i+1}</td>
-      <td style="white-space:nowrap;font-size:12px;color:#64748b">${dt}</td>
-      <td><strong>${esc(r.username||'—')}</strong></td>
-      <td><span style="font-size:11px;color:#7c3aed;font-weight:600">${esc(r.role||'—')}</span></td>
-      <td>${actionBadge[r.action]||esc(r.action)}</td>
-      <td style="font-size:12px">${esc(r.section||'—')}</td>
-      <td style="max-width:260px">${esc(r.description||'—')}</td>
-    </tr>`;
-  }).join(''):'')||'<tr><td colspan="7"><div class="no-results">No activity logs found.</div></td></tr>';
-  renderAlPagination();
-}
-function renderAlPagination(){
-  const totalPages=Math.max(1,Math.ceil(alTotal/alPageSize));
-  const el=document.getElementById('al-pagination');
-  if(!el)return;
-  if(totalPages<=1){el.innerHTML='';return;}
-  // Build page number buttons (show up to 7 around current page)
-  let pages=[];
-  const delta=2;
-  for(let p=Math.max(1,alPage-delta);p<=Math.min(totalPages,alPage+delta);p++)pages.push(p);
-  if(pages[0]>1){if(pages[0]>2)pages.unshift('…');pages.unshift(1);}
-  if(pages[pages.length-1]<totalPages){if(pages[pages.length-1]<totalPages-1)pages.push('…');pages.push(totalPages);}
-  const btn=(label,page,disabled,active)=>
-    `<button onclick="${typeof page==='number'?'loadActivityLogs('+page+')':''}"
-      style="min-width:32px;padding:5px 10px;border-radius:6px;border:1px solid ${active?'#6366f1':'#e2e8f0'};
-      background:${active?'#6366f1':'#fff'};color:${active?'#fff':'#374151'};font-size:12px;font-weight:600;
-      cursor:${disabled||typeof page!=='number'?'default':'pointer'};opacity:${disabled?.45:1}"
-      ${disabled||typeof page!=='number'?'disabled':''}>
-      ${label}
-    </button>`;
-  el.innerHTML=
-    btn('‹ Prev', alPage-1, alPage<=1, false)+
-    pages.map(p=>typeof p==='number'?btn(p,p,false,p===alPage):btn('…','…',true,false)).join('')+
-    btn('Next ›', alPage+1, alPage>=totalPages, false);
-}
-async function clearActivityLogs(){
-  if(!confirm('Clear all activity logs? This cannot be undone.'))return;
-  try{
-    await fetch(API+'/activity-logs',{method:'DELETE'});
-    alData=[];renderActivityLogs();
-    gToast('Activity logs cleared.');
-  }catch{gToast('Failed to clear logs','error');}
-}
-
-async function testActivityLog(){
-  try{
-    const res=await fetch(API+'/activity-logs',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        username: (currentUser&&currentUser.name)||'TestUser',
-        role:     (currentUser&&currentUser.role)||'Admin',
-        action:   'CREATE',
-        section:  'Test',
-        description: 'API connection test'
-      })
-    });
-    const txt=await res.text();
-    if(res.ok){
-      gToast('✅ API works! Status: '+res.status);
-      loadActivityLogs();
-    } else {
-      gToast('❌ API error '+res.status+': '+txt.substring(0,100),'error');
-    }
-  }catch(e){
-    gToast('❌ Fetch failed: '+e.message,'error');
-  }
-}
-</script>
-</body>
-</html>
+    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+esc(r.product_name||'—')+'</strong></td><td style="font-size:12px;color
