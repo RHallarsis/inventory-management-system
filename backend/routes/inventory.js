@@ -1034,4 +1034,14 @@ router.put('/machine-monitoring/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/machine-monitoring/:id', async (req, re
+router.delete('/machine-monitoring/:id', async (req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const ex = await db.getOne('SELECT id FROM machine_monitoring WHERE id = ?', [+req.params.id]);
+    if (!ex) return res.status(404).json({ error: 'Record not found' });
+    await db.run('DELETE FROM machine_monitoring WHERE id = ?', [+req.params.id]);
+    res.status(204).end();
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+module.exports = router;
