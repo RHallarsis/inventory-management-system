@@ -1332,7 +1332,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
     setTimeout(function(){
       if(scr)scr.classList.add('ls-out');
       var lg=document.getElementById('login-overlay');
-      if(lg)lg.style.display='flex';
+      if(lg&&!window._ims_session_active)lg.style.display='flex';
       setTimeout(function(){if(scr)scr.classList.add('ls-done');},450);
     },200);
   },3000);
@@ -3387,6 +3387,7 @@ async function _resumeSession(){
     if(r.ok){
       _sessionToken=token;
       currentUser=user;
+      window._ims_session_active=true;
       document.getElementById('login-overlay').style.display='none';
       document.getElementById('user-name').textContent=user.name;
       document.getElementById('user-role').textContent=user.role;
@@ -3426,6 +3427,7 @@ async function doLogin(){
     currentUser=d.user;
     _saveSession(d.user, d.session_token);
     _startHeartbeat(d.user.id);
+    window._ims_session_active=true;
     document.getElementById('login-overlay').style.display='none';
     document.getElementById('user-name').textContent=currentUser.name;
     document.getElementById('user-role').textContent=currentUser.role;
