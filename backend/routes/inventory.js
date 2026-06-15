@@ -617,12 +617,7 @@ router.post('/purchase-orders/:id/notify-supplier', async (req, res) => {
     }
     // Use the email provided in the request body (from the editable To: field),
     // falling back to the supplier record in the DB.
-    // Strip display-name format "Name <email@domain.com>" → "email@domain.com"
-    const parseEmail = (raw = '') => {
-      const match = raw.trim().match(/<([^>]+)>/);
-      return match ? match[1].trim() : raw.trim();
-    };
-    let recipientEmail = parseEmail(req.body?.to || '');
+    let recipientEmail = (req.body?.to || '').trim();
     if (!recipientEmail) {
       const supplierRecord = await db.getOne(
         'SELECT email FROM suppliers WHERE LOWER(name) = LOWER(?)', [po.supplier]
@@ -1035,4 +1030,10 @@ router.delete('/machine-monitoring/:id', async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM machine_monitoring WHERE id = ?', [+req.params.id]);
-    if (!ex) return res.status(404).json({ err
+    if (!ex) return res.status(404).json({ error: 'Record not found' });
+    await db.run('DELETE FROM machine_monitoring WHERE id = ?', [+req.params.id]);
+    res.status(204).end();
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+module.exports = router;

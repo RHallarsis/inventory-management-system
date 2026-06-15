@@ -3587,6 +3587,7 @@ function showPage(page){
 function initApp(){
   initDashboard();
   loadAlertBadge();
+  loadACEvents();
 }
 async function initDashboard(){
   try{
@@ -5566,15 +5567,10 @@ function renderStockMovements(){
 // BOOT — runs after DOM is ready
 // ╚═══════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  // Try to restore an existing session; show login if none found
-  _resumeSession().then(() => {
-    if(!currentUser){
-      // No active session — the loading screen will reveal the login overlay
-      // (loading screen IIFE at top of page sets display:flex after 3s)
-    }
-  });
-  loadACEvents();
-  setTimeout(loadDashboardCharts, 1500);
+  // Try to restore an existing session before showing the login screen.
+  // All data-loading (dashboard, calendar, charts) happens inside initApp()
+  // which is called only after a session is confirmed — never before login.
+  _resumeSession();
 });
 
 // ── Clear session when tab/browser is closed ─────────────────────────────────
