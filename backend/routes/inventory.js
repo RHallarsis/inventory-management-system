@@ -568,7 +568,10 @@ router.get('/purchase-orders/:id/preview-email', async (req, res) => {
     const supplierRecord = await db.getOne(
       'SELECT email FROM suppliers WHERE LOWER(name) = LOWER(?)', [po.supplier]
     );
-    const supplierEmail = supplierRecord?.email || '';
+    // Strip display-name format "Name <email>" → plain email address
+    const rawEmail = supplierRecord?.email || '';
+    const emailMatch = rawEmail.match(/<([^>]+)>/);
+    const supplierEmail = emailMatch ? emailMatch[1].trim() : rawEmail.trim();
     // Build preview HTML inline (same as the email body)
     const fmt = (n) => Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 });
     const bodyHtml = `
@@ -617,7 +620,12 @@ router.post('/purchase-orders/:id/notify-supplier', async (req, res) => {
     }
     // Use the email provided in the request body (from the editable To: field),
     // falling back to the supplier record in the DB.
-    let recipientEmail = (req.body?.to || '').trim();
+    // Strip display-name format "Name <email@domain.com>" → "email@domain.com"
+    const parseEmail = (raw = '') => {
+      const match = raw.trim().match(/<([^>]+)>/);
+      return match ? match[1].trim() : raw.trim();
+    };
+    let recipientEmail = parseEmail(req.body?.to || '');
     if (!recipientEmail) {
       const supplierRecord = await db.getOne(
         'SELECT email FROM suppliers WHERE LOWER(name) = LOWER(?)', [po.supplier]
@@ -1026,14 +1034,4 @@ router.put('/machine-monitoring/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/machine-monitoring/:id', async (req, res) => {
-  try {
-    const { db } = await dbPromise;
-    const ex = await db.getOne('SELECT id FROM machine_monitoring WHERE id = ?', [+req.params.id]);
-    if (!ex) return res.status(404).json({ error: 'Record not found' });
-    await db.run('DELETE FROM machine_monitoring WHERE id = ?', [+req.params.id]);
-    res.status(204).end();
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-module.exports = router;
+router.delete('/machine-monitoring/:id', async (req, re
