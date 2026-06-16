@@ -1,0 +1,16 @@
+# Normalize line endings: store as LF in the repo, let Git auto-detect text vs binary.
+# Stops spurious CRLF-only "modified" churn on Windows.
+* text=auto
+
+# Explicitly treat common binary assets as binary (no EOL conversion)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
