@@ -3350,10 +3350,14 @@ function gToast(msg,type='success'){
 let _sessionToken=null, _heartbeatTimer=null;
 function _saveSession(user,token){
   _sessionToken=token;
-  try{localStorage.setItem('ims_session',JSON.stringify({user,token}));}catch(_){}
+  // sessionStorage: persists on refresh but clears when browser/tab is closed
+  try{sessionStorage.setItem('ims_session',JSON.stringify({user,token}));}catch(_){}
+  // Clean up any old localStorage entry from previous version
+  try{localStorage.removeItem('ims_session');}catch(_){}
 }
 function _clearSession(){
   _sessionToken=null;
+  try{sessionStorage.removeItem('ims_session');}catch(_){}
   try{localStorage.removeItem('ims_session');}catch(_){}
   if(_heartbeatTimer){clearInterval(_heartbeatTimer);_heartbeatTimer=null;}
 }
@@ -3378,7 +3382,7 @@ function _startHeartbeat(userId){
 }
 async function _resumeSession(){
   try{
-    const saved=localStorage.getItem('ims_session');
+    const saved=sessionStorage.getItem('ims_session');
     if(!saved)return;
     const {user,token}=JSON.parse(saved);
     if(!user||!token)return;
