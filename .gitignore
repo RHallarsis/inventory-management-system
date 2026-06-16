@@ -17,6 +17,10 @@ server-err.log
 .DS_Store
 Thumbs.db
 
+# Local Claude settings/skills (not for deploy; contains unreadable special files)
+.claude/
+*.bak
+
 # Environment
 .env
 .env.*

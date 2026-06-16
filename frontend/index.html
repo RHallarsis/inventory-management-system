@@ -265,6 +265,15 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .ac-sum-edit{background:#eff6ff;color:var(--primary);}
 .ac-sum-del{background:#fef2f2;color:var(--danger);}
 .ac-sum-empty{text-align:center;padding:24px;color:var(--text-2);font-size:13px;}
+.acs-pagination{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:12px 14px;border-top:1px solid var(--border);background:var(--bg-card);}
+.acs-pg-info{font-size:12px;color:var(--text-2);}
+.acs-pg-btns{display:flex;flex-wrap:wrap;gap:4px;}
+.acs-pg-btn{min-width:32px;font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--text-1);cursor:pointer;}
+.acs-pg-btn:hover:not(:disabled):not(.active){background:#f1f5f9;}
+.acs-pg-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.acs-pg-btn:disabled{opacity:.45;cursor:not-allowed;}
+.acs-pg-ellipsis{padding:5px 4px;color:var(--text-2);font-size:12px;}
+@media(max-width:640px){.acs-pagination{justify-content:center;}}
 /* LINE NOTIFY */
 .line-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;margin-left:8px;}
 .line-status.connected{background:#f0fdf4;color:#16a34a;}
@@ -2298,7 +2307,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
     <div class="ac-summary-table-wrap">
       <div class="ac-summary-head">
         <span class="ac-summary-title">&#128203; All Tasks This Month</span>
-        <input class="ac-summary-search" id="acs-search" placeholder="Search tasks..." oninput="renderACSummary()"/>
+        <input class="ac-summary-search" id="acs-search" placeholder="Search tasks..." oninput="acsPage=1;renderACSummary()"/>
       </div>
       <table class="ac-sum-tbl">
         <thead><tr>
@@ -2306,6 +2315,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
         </tr></thead>
         <tbody id="acs-body"><tr><td colspan="9" class="ac-sum-empty">No tasks yet.</td></tr></tbody>
       </table>
+      <div id="acs-pagination" class="acs-pagination"></div>
     </div>
   </div>
 </div>
@@ -4612,6 +4622,8 @@ function acSelectDay(iso){
 }
 
 // ── Summary ──────────────────────────────────────────────────
+let acsPage=1;
+const ACS_PAGE_SIZE=20;
 function renderACSummary(){
   const monthTasks=acTasksData.filter(t=>{
     const d=new Date(t.task_date);
@@ -4626,7 +4638,13 @@ function renderACSummary(){
   const rows=monthTasks.filter(t=>!q||t.title.toLowerCase().includes(q)||t.category.toLowerCase().includes(q)||(t.description||'').toLowerCase().includes(q));
   const STATUS_COLOR={Pending:'#f1f5f9|#64748b','In Progress':'#eff6ff|#3b82f6',Done:'#f0fdf4|#16a34a',Cancelled:'#fef2f2|#ef4444'};
   const PRI_COLOR={High:'#fef2f2|#ef4444',Medium:'#fffbeb|#d97706',Low:'#f0fdf4|#16a34a'};
-  document.getElementById('acs-body').innerHTML=rows.length?rows.map((t,i)=>{
+  const totalPages=Math.max(1,Math.ceil(rows.length/ACS_PAGE_SIZE));
+  if(acsPage>totalPages)acsPage=totalPages;
+  if(acsPage<1)acsPage=1;
+  const start=(acsPage-1)*ACS_PAGE_SIZE;
+  const pageRows=rows.slice(start,start+ACS_PAGE_SIZE);
+  document.getElementById('acs-body').innerHTML=pageRows.length?pageRows.map((t,idx)=>{
+    const i=start+idx;
     const dotColor=t.color||AC_CAT_COLOR[t.category]||'#6366f1';
     const [sBg,sFg]=(STATUS_COLOR[t.status]||'#f1f5f9|#64748b').split('|');
     const [pBg,pFg]=(PRI_COLOR[t.priority]||'#f1f5f9|#64748b').split('|');
@@ -4644,6 +4662,25 @@ function renderACSummary(){
       </td>
     </tr>`;
   }).join(''):'<tr><td colspan="9" class="ac-sum-empty">No tasks this month.</td></tr>';
+  renderACSPagination(rows.length,totalPages,start,pageRows.length);
+}
+function acsGoPage(p){acsPage=p;renderACSummary();}
+function renderACSPagination(total,totalPages,start,shown){
+  const el=document.getElementById('acs-pagination');
+  if(!el)return;
+  if(total<=ACS_PAGE_SIZE){el.innerHTML='';return;}
+  const from=total?start+1:0, to=start+shown;
+  let btns='';
+  btns+=`<button class="acs-pg-btn" ${acsPage<=1?'disabled':''} onclick="acsGoPage(${acsPage-1})">‹ Prev</button>`;
+  for(let p=1;p<=totalPages;p++){
+    if(p===1||p===totalPages||Math.abs(p-acsPage)<=1){
+      btns+=`<button class="acs-pg-btn ${p===acsPage?'active':''}" onclick="acsGoPage(${p})">${p}</button>`;
+    }else if(Math.abs(p-acsPage)===2){
+      btns+=`<span class="acs-pg-ellipsis">…</span>`;
+    }
+  }
+  btns+=`<button class="acs-pg-btn" ${acsPage>=totalPages?'disabled':''} onclick="acsGoPage(${acsPage+1})">Next ›</button>`;
+  el.innerHTML=`<div class="acs-pg-info">Showing ${from}–${to} of ${total}</div><div class="acs-pg-btns">${btns}</div>`;
 }
 
 // ── Modal ──────────────────────────────────────────────────────
