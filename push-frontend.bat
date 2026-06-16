@@ -20,7 +20,7 @@ git add backend/routes/inventory.js
 git diff --cached --quiet
 if errorlevel 1 (
     echo Committing ...
-    git commit -m "fix: switch session to sessionStorage so login page shows on new visits"
+    git commit -m "fix: only restore session on F5 reload, not fresh navigation — always show login on new visits"
 ) else (
     echo Nothing new to commit.
 )

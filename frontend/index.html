@@ -3369,6 +3369,7 @@ function _clearSession(){
   _sessionToken=null;
   try{sessionStorage.removeItem('ims_session');}catch(_){}
   try{localStorage.removeItem('ims_session');}catch(_){}
+  try{localStorage.removeItem('currentUser');}catch(_){}
   if(_heartbeatTimer){clearInterval(_heartbeatTimer);_heartbeatTimer=null;}
 }
 function _startHeartbeat(userId){
@@ -3392,6 +3393,11 @@ function _startHeartbeat(userId){
 }
 async function _resumeSession(){
   try{
+    // Only restore session on page reload (F5), not on fresh navigation.
+    // This prevents Chrome's "Continue where you left off" from auto-logging
+    // in users who expect to see the login page on a new visit.
+    const navType=(performance.getEntriesByType('navigation')[0]||{}).type;
+    if(navType!=='reload'){sessionStorage.removeItem('ims_session');return;}
     const saved=sessionStorage.getItem('ims_session');
     if(!saved)return;
     const {user,token}=JSON.parse(saved);
