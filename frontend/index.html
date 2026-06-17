@@ -3938,10 +3938,10 @@ const SM_METHOD_LINES=[
   'Net Available = On Hand + On Order.',
   'Reorder Qty = Reorder Point - Net Available (applied only when Net Available is below the Reorder Point).',
   'Order Now = YES when Net Available is below the Reorder Point; otherwise NO.',
-  'Order Qty to Taiwan = Reorder Qty rounded to the nearest 10 (for ordering in standard lots).'
+  'Order Qty to Taiwan = Reorder Qty rounded to the nearest 5 (for ordering in standard lots).'
 ];
-// Order Qty to Taiwan = Reorder Qty rounded to nearest 10
-function smTaiwanQty(r){return Math.round((r.rq||0)/10)*10;}
+// Order Qty to Taiwan = Reorder Qty rounded to nearest 5
+function smTaiwanQty(r){return Math.round((r.rq||0)/5)*5;}
 // Returns the computed rows currently in view (respects active tab + search box)
 function smReportRows(){
   const computed=smData.map(r=>({...r,...smCalc(r)}));
@@ -3962,7 +3962,7 @@ function smJustifyDetail(r){
   const rpStr=(Math.abs(raw-r.rp)<1e-9)?`${r.rp}`:`${+raw.toFixed(2)} -> ${r.rp} (rounded up)`;
   const base=`Reorder Point = ${mu} x (Lead ${lt} + Buffer ${buf} + Safety ${ss}) = ${rpStr}. Net Available = On Hand ${oh} + On Order ${oo} = ${r.net}.`;
   if(r.orderNow){
-    return `${base} Net Available (${r.net}) is below Reorder Point (${r.rp}), so Reorder Qty = ${r.rp} - ${r.net} = ${r.rq}. Order Qty to Taiwan = ${r.rq} rounded to nearest 10 = ${smTaiwanQty(r)}.`;
+    return `${base} Net Available (${r.net}) is below Reorder Point (${r.rp}), so Reorder Qty = ${r.rp} - ${r.net} = ${r.rq}. Order Qty to Taiwan = ${r.rq} rounded to nearest 5 = ${smTaiwanQty(r)}.`;
   }
   return `${base} Net Available (${r.net}) meets/exceeds Reorder Point (${r.rp}); no reorder required.`;
 }
