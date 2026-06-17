@@ -1693,7 +1693,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
   </div>
   <!-- Search & Table -->
   <div class="page-toolbar">
-    <input class="search-input" id="sm-search" placeholder="Search spare parts..." oninput="renderSM()"/>
+    <input class="search-input" id="sm-search" placeholder="Search spare parts..." oninput="smPage=1;renderSM()"/>
     <span class="table-meta" id="sm-meta"></span>
     <button class="page-add-btn" onclick="openSMModal()">+ Add Part</button>
   </div>
@@ -1719,6 +1719,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
       <tbody id="sm-body"></tbody>
     </table>
   </div>
+  <div id="sm-pagination" class="acs-pagination"></div>
 </div>
 <!-- ===== LOCAL PURCHASE MONITORING ===== -->
 <div id="page-localpurchase" class="page-section">
@@ -3823,6 +3824,8 @@ function smCalc(r){
   const orderNow=net<rp;
   return {rp,net,rq,orderNow};
 }
+let smPage=1;
+const SM_PAGE_SIZE=20;
 function renderSM(){
   // Set generated date
   const gd=document.getElementById('sm-gen-date');
@@ -3840,9 +3843,15 @@ function renderSM(){
   // Render table
   const q=(document.getElementById('sm-search').value||'').toLowerCase();
   const rows=q?computed.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.part_no||'').toLowerCase().includes(q)||(r.machine||'').toLowerCase().includes(q)):computed;
-  document.getElementById('sm-meta').textContent=`Showing ${rows.length} of ${smData.length}`;
-  document.getElementById('sm-body').innerHTML=rows.map((r,i)=>`<tr${r.orderNow?' style="background:rgba(254,226,226,.45)"':''}>
-    <td>${i+1}</td>
+  const total=rows.length;
+  const totalPages=Math.max(1,Math.ceil(total/SM_PAGE_SIZE));
+  if(smPage>totalPages)smPage=totalPages;
+  if(smPage<1)smPage=1;
+  const start=(smPage-1)*SM_PAGE_SIZE;
+  const pageRows=rows.slice(start,start+SM_PAGE_SIZE);
+  document.getElementById('sm-meta').textContent=`Showing ${total?start+1:0}–${start+pageRows.length} of ${total}`;
+  document.getElementById('sm-body').innerHTML=pageRows.map((r,i)=>`<tr${r.orderNow?' style="background:rgba(254,226,226,.45)"':''}>
+    <td>${start+i+1}</td>
     <td><strong>${esc(r.name)}</strong></td>
     <td>${esc(r.part_no)}</td>
     <td>${esc(r.machine)||'—'}</td>
@@ -3857,6 +3866,25 @@ function renderSM(){
     <td>${r.rq||0}</td>
     <td><span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;${r.orderNow?'background:#fee2e2;color:#991b1b;':'background:#d1fae5;color:#065f46;'}">${r.orderNow?'YES':'NO'}</span></td>
     <td><button class="page-act-btn btn-edit" onclick="openSMModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSMDelModal(${r.id},'${esc(r.name||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="15"><div class="no-results">No spare parts.</div></td></tr>';
+  renderSMPagination(total,totalPages,start,pageRows.length);
+}
+function smGoPage(p){smPage=p;renderSM();const w=document.querySelector('#page-stockmonitoring .page-tbl-wrap');if(w)w.scrollTop=0;}
+function renderSMPagination(total,totalPages,start,shown){
+  const el=document.getElementById('sm-pagination');
+  if(!el)return;
+  if(total<=SM_PAGE_SIZE){el.innerHTML='';return;}
+  const from=total?start+1:0, to=start+shown;
+  let btns='';
+  btns+=`<button class="acs-pg-btn" ${smPage<=1?'disabled':''} onclick="smGoPage(${smPage-1})">‹ Prev</button>`;
+  for(let p=1;p<=totalPages;p++){
+    if(p===1||p===totalPages||Math.abs(p-smPage)<=1){
+      btns+=`<button class="acs-pg-btn ${p===smPage?'active':''}" onclick="smGoPage(${p})">${p}</button>`;
+    }else if(Math.abs(p-smPage)===2){
+      btns+=`<span class="acs-pg-ellipsis">…</span>`;
+    }
+  }
+  btns+=`<button class="acs-pg-btn" ${smPage>=totalPages?'disabled':''} onclick="smGoPage(${smPage+1})">Next ›</button>`;
+  el.innerHTML=`<div class="acs-pg-info">Showing ${from}–${to} of ${total}</div><div class="acs-pg-btns">${btns}</div>`;
 }
 function openSMModal(id=null){smEditId=id;const r=id?smData.find(x=>x.id===id):null;document.getElementById('sm-modal-title').textContent=id?'Edit Spare Part':'Add Spare Part';['name','partno','machine','onhand','onorder','usage','lead','buffer','safety'].forEach(k=>{const map={name:r?.name,partno:r?.part_no,machine:r?.machine,onhand:r?.on_hand??0,onorder:r?.on_order??0,usage:r?.monthly_usage??0,lead:r?.lead_time??0,buffer:r?.buffer??3,safety:r?.safety_stock??1};document.getElementById('sm-f-'+k).value=map[k]??'';});document.getElementById('sm-modal').classList.add('open');}
 function closeSMModal(){document.getElementById('sm-modal').classList.remove('open');}

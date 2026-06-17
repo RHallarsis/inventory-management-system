@@ -175,6 +175,8 @@ Many existing `.bat` helpers at root: `push-update.bat`, `push-to-render.bat`, `
 
 ## 9. Working Style Preferences
 
+- **Every fix must go live** — every change must be visible on the live Railway app (https://pgi-ims.up.railway.app/) before the task is considered done. No local-only fixes.
+
 - **Auto-deploy after every task** — after completing ANY code change, deploy by double-clicking `smart-push.bat` in File Explorer (E:\Projects\Inventory Management Web App\smart-push.bat). NEVER attempt raw git commands from the Linux sandbox — they fail due to index lock conflicts with the Windows git process.
 
 - **Git push workflow (CRITICAL):**
