@@ -3937,8 +3937,11 @@ const SM_METHOD_LINES=[
   'Reorder Point (RP) = Monthly Usage x (Lead Time + Buffer + Safety Stock), all in months. Buffer default = 3 months.',
   'Net Available = On Hand + On Order.',
   'Reorder Qty = Reorder Point - Net Available (applied only when Net Available is below the Reorder Point).',
-  'Order Now = YES when Net Available is below the Reorder Point; otherwise NO.'
+  'Order Now = YES when Net Available is below the Reorder Point; otherwise NO.',
+  'Order Qty to Taiwan = Reorder Qty rounded to the nearest 10 (for ordering in standard lots).'
 ];
+// Order Qty to Taiwan = Reorder Qty rounded to nearest 10
+function smTaiwanQty(r){return Math.round((r.rq||0)/10)*10;}
 // Returns the computed rows currently in view (respects active tab + search box)
 function smReportRows(){
   const computed=smData.map(r=>({...r,...smCalc(r)}));
@@ -3951,11 +3954,17 @@ function smJustify(r){
     ? `Net Available (${r.net}) is below Reorder Point (${r.rp}). Action: reorder ${r.rq} unit(s).`
     : `Net Available (${r.net}) meets/exceeds Reorder Point (${r.rp}). No reorder needed.`;
 }
-// Compact one-line version for the PDF table
-function smJustifyShort(r){
-  return r.orderNow
-    ? `Reorder ${r.rq}: Net Avail ${r.net} < RP ${r.rp}`
-    : `OK: Net Avail ${r.net} ≥ RP ${r.rp}`;
+// Detailed justification showing the full computation per row
+function smJustifyDetail(r){
+  const mu=+(r.monthly_usage)||0, lt=+(r.lead_time)||0, buf=+(r.buffer)||3, ss=+(r.safety_stock)||1;
+  const oh=+(r.on_hand)||0, oo=+(r.on_order)||0;
+  const raw=mu*(lt+buf+ss);
+  const rpStr=(Math.abs(raw-r.rp)<1e-9)?`${r.rp}`:`${+raw.toFixed(2)} -> ${r.rp} (rounded up)`;
+  const base=`Reorder Point = ${mu} x (Lead ${lt} + Buffer ${buf} + Safety ${ss}) = ${rpStr}. Net Available = On Hand ${oh} + On Order ${oo} = ${r.net}.`;
+  if(r.orderNow){
+    return `${base} Net Available (${r.net}) is below Reorder Point (${r.rp}), so Reorder Qty = ${r.rp} - ${r.net} = ${r.rq}. Order Qty to Taiwan = ${r.rq} rounded to nearest 10 = ${smTaiwanQty(r)}.`;
+  }
+  return `${base} Net Available (${r.net}) meets/exceeds Reorder Point (${r.rp}); no reorder required.`;
 }
 function exportSMPdf(){
   const rows=smReportRows();
@@ -3978,22 +3987,23 @@ function exportSMPdf(){
   SM_METHOD_LINES.forEach(line=>{doc.text('•  '+line,15,y);y+=3.7;});
   y+=2.5;
   doc.autoTable({
-    head:[['#','Part Name','Part No.','Machine','On\nHand','On\nOrder','Mo.\nUsage','Lead','Buf','Safety','Reorder\nPt','Net\nAvail','Reorder\nQty','Order?','Justification']],
-    body:rows.map((r,i)=>[i+1,r.name,r.part_no||'—',r.machine||'—',r.on_hand??0,r.on_order??0,r.monthly_usage??0,r.lead_time??0,r.buffer??3,r.safety_stock??1,r.rp,r.net,r.rq||0,r.orderNow?'YES':'NO',smJustifyShort(r)]),
+    head:[['#','Part Name','Part No.','Machine','On\nHand','On\nOrder','Mo.\nUsage','Lead','Buf','Safety','Reorder\nPt','Net\nAvail','Reorder\nQty','Order Qty\nto Taiwan','Order?','Justification']],
+    body:rows.map((r,i)=>[i+1,r.name,r.part_no||'—',r.machine||'—',r.on_hand??0,r.on_order??0,r.monthly_usage??0,r.lead_time??0,r.buffer??3,r.safety_stock??1,r.rp,r.net,r.rq||0,smTaiwanQty(r),r.orderNow?'YES':'NO',smJustifyDetail(r)]),
     startY:y,
     margin:{left:14,right:14},
     theme:'grid',
     tableLineColor:[222,226,235],tableLineWidth:0.1,
-    styles:{fontSize:6.8,cellPadding:{top:1.2,right:1.4,bottom:1.2,left:1.4},overflow:'linebreak',valign:'middle',lineColor:[226,230,240],lineWidth:0.1},
-    headStyles:{fillColor:[30,58,138],textColor:255,fontStyle:'bold',fontSize:6.8,halign:'center',valign:'middle',cellPadding:{top:1.4,right:1,bottom:1.4,left:1}},
+    styles:{fontSize:6.3,cellPadding:{top:1.1,right:1.3,bottom:1.1,left:1.3},overflow:'linebreak',valign:'middle',lineColor:[226,230,240],lineWidth:0.1},
+    headStyles:{fillColor:[30,58,138],textColor:255,fontStyle:'bold',fontSize:6.3,halign:'center',valign:'middle',cellPadding:{top:1.3,right:1,bottom:1.3,left:1}},
     bodyStyles:{textColor:[35,40,55]},
     alternateRowStyles:{fillColor:[246,248,252]},
-    columnStyles:{0:{cellWidth:7,halign:'center'},1:{cellWidth:31,fontStyle:'bold'},2:{cellWidth:23},3:{cellWidth:27,halign:'center'},4:{cellWidth:11,halign:'center'},5:{cellWidth:11,halign:'center'},6:{cellWidth:12,halign:'center'},7:{cellWidth:10,halign:'center'},8:{cellWidth:9,halign:'center'},9:{cellWidth:11,halign:'center'},10:{cellWidth:14,halign:'center',fontStyle:'bold'},11:{cellWidth:12,halign:'center'},12:{cellWidth:14,halign:'center',fontStyle:'bold'},13:{cellWidth:12,halign:'center',fontStyle:'bold'},14:{cellWidth:56,halign:'left'}},
+    columnStyles:{0:{cellWidth:6,halign:'center'},1:{cellWidth:28,fontStyle:'bold'},2:{cellWidth:21},3:{cellWidth:22,halign:'center'},4:{cellWidth:9,halign:'center'},5:{cellWidth:9,halign:'center'},6:{cellWidth:10,halign:'center'},7:{cellWidth:8,halign:'center'},8:{cellWidth:7,halign:'center'},9:{cellWidth:9,halign:'center'},10:{cellWidth:12,halign:'center',fontStyle:'bold'},11:{cellWidth:10,halign:'center'},12:{cellWidth:12,halign:'center',fontStyle:'bold'},13:{cellWidth:14,halign:'center',fontStyle:'bold',fillColor:[255,247,225]},14:{cellWidth:10,halign:'center',fontStyle:'bold'},15:{cellWidth:80,halign:'left'}},
     didParseCell:function(d){
       const r=rows[d.row.index];
       if(d.section==='body'&&r){
-        if(d.column.index===13){d.cell.styles.textColor=r.orderNow?[153,27,27]:[6,95,70];}
-        if(r.orderNow&&d.column.index!==13)d.cell.styles.fillColor=[253,237,238];
+        if(d.column.index===14){d.cell.styles.textColor=r.orderNow?[153,27,27]:[6,95,70];}
+        if(d.column.index===13){d.cell.styles.fillColor=[255,247,225];}
+        else if(r.orderNow)d.cell.styles.fillColor=[253,237,238];
       }
     }
   });
@@ -4046,10 +4056,11 @@ function exportSMExcel(){
     'Reorder Point (Units)':r.rp,
     'Net Available (Units)':r.net,
     'Reorder Qty (Units)':r.rq||0,
+    'Order Qty to Taiwan':smTaiwanQty(r),
     'Order Now?':r.orderNow?'YES':'NO',
-    'Justification':smJustify(r)
+    'Justification':smJustifyDetail(r)
   })));
-  ws['!cols']=[{wch:4},{wch:28},{wch:16},{wch:22},{wch:8},{wch:9},{wch:12},{wch:10},{wch:10},{wch:12},{wch:13},{wch:12},{wch:13},{wch:9},{wch:62}];
+  ws['!cols']=[{wch:4},{wch:28},{wch:16},{wch:22},{wch:8},{wch:9},{wch:12},{wch:10},{wch:10},{wch:12},{wch:13},{wch:12},{wch:13},{wch:16},{wch:9},{wch:95}];
   XLSX.utils.book_append_sheet(wb,ws,'Reorder Report');
   XLSX.writeFile(wb,'StockMonitoring_ReorderReport.xlsx');
 }
