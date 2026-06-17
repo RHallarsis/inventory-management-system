@@ -3951,6 +3951,12 @@ function smJustify(r){
     ? `Net Available (${r.net}) is below Reorder Point (${r.rp}). Action: reorder ${r.rq} unit(s).`
     : `Net Available (${r.net}) meets/exceeds Reorder Point (${r.rp}). No reorder needed.`;
 }
+// Compact one-line version for the PDF table
+function smJustifyShort(r){
+  return r.orderNow
+    ? `Reorder ${r.rq}: Net Avail ${r.net} < RP ${r.rp}`
+    : `OK: Net Avail ${r.net} ≥ RP ${r.rp}`;
+}
 function exportSMPdf(){
   const rows=smReportRows();
   if(!rows.length){gToast('No data to export.','error');return;}
@@ -3960,31 +3966,42 @@ function exportSMPdf(){
   const q=(document.getElementById('sm-search').value||'').trim();
   const orderNow=rows.filter(r=>r.orderNow).length;
   const totalReorder=rows.reduce((s,r)=>s+(r.rq||0),0);
-  let y=14;
-  doc.setFontSize(15);doc.setTextColor(30,58,138);
-  doc.text('Stock Monitoring — Reorder Report',14,y);y+=7;
-  doc.setFontSize(9);doc.setTextColor(80,80,80);
-  doc.text(`Generated: ${new Date().toLocaleString()}    Group: ${tabLabel}${q?'    Search: "'+q+'"':''}`,14,y);y+=5;
-  doc.text(`Parts in report: ${rows.length}    Requiring reorder (Order Now): ${orderNow}    Total reorder units: ${totalReorder}`,14,y);y+=8;
-  doc.setFontSize(10.5);doc.setTextColor(30,58,138);
-  doc.text('Computation Methodology',14,y);y+=5;
-  doc.setFontSize(8.5);doc.setTextColor(40,40,40);
-  SM_METHOD_LINES.forEach(line=>{doc.text('• '+line,16,y);y+=4.6;});
-  y+=2;
+  let y=13;
+  doc.setFontSize(14);doc.setTextColor(30,58,138);
+  doc.text('Stock Monitoring — Reorder Report',14,y);y+=6;
+  doc.setFontSize(8.5);doc.setTextColor(90,90,90);
+  doc.text(`Generated: ${new Date().toLocaleString()}    |    Group: ${tabLabel}${q?'    |    Search: "'+q+'"':''}`,14,y);y+=4.5;
+  doc.text(`Parts in report: ${rows.length}    |    Requiring reorder: ${orderNow}    |    Total reorder units: ${totalReorder}`,14,y);y+=6;
+  doc.setFontSize(9);doc.setTextColor(30,58,138);
+  doc.text('Computation Methodology',14,y);y+=4;
+  doc.setFontSize(7.5);doc.setTextColor(70,70,70);
+  SM_METHOD_LINES.forEach(line=>{doc.text('•  '+line,15,y);y+=3.7;});
+  y+=2.5;
   doc.autoTable({
     head:[['#','Part Name','Part No.','Machine','On\nHand','On\nOrder','Mo.\nUsage','Lead','Buf','Safety','Reorder\nPt','Net\nAvail','Reorder\nQty','Order?','Justification']],
-    body:rows.map((r,i)=>[i+1,r.name,r.part_no||'—',r.machine||'—',r.on_hand??0,r.on_order??0,r.monthly_usage??0,r.lead_time??0,r.buffer??3,r.safety_stock??1,r.rp,r.net,r.rq||0,r.orderNow?'YES':'NO',smJustify(r)]),
+    body:rows.map((r,i)=>[i+1,r.name,r.part_no||'—',r.machine||'—',r.on_hand??0,r.on_order??0,r.monthly_usage??0,r.lead_time??0,r.buffer??3,r.safety_stock??1,r.rp,r.net,r.rq||0,r.orderNow?'YES':'NO',smJustifyShort(r)]),
     startY:y,
-    styles:{fontSize:7,cellPadding:1.8,overflow:'linebreak',valign:'middle'},
-    headStyles:{fillColor:[30,58,138],textColor:255,fontStyle:'bold',fontSize:7,halign:'center'},
-    alternateRowStyles:{fillColor:[245,247,255]},
-    columnStyles:{0:{cellWidth:7,halign:'center'},1:{cellWidth:32},2:{cellWidth:20},3:{cellWidth:24},4:{halign:'center'},5:{halign:'center'},6:{halign:'center'},7:{halign:'center'},8:{halign:'center'},9:{halign:'center'},10:{halign:'center'},11:{halign:'center'},12:{halign:'center'},13:{halign:'center'},14:{cellWidth:58}},
-    didParseCell:function(d){if(d.section==='body'&&rows[d.row.index]&&rows[d.row.index].orderNow){d.cell.styles.fillColor=[254,226,226];}}
+    margin:{left:14,right:14},
+    theme:'grid',
+    tableLineColor:[222,226,235],tableLineWidth:0.1,
+    styles:{fontSize:6.8,cellPadding:{top:1.2,right:1.4,bottom:1.2,left:1.4},overflow:'linebreak',valign:'middle',lineColor:[226,230,240],lineWidth:0.1},
+    headStyles:{fillColor:[30,58,138],textColor:255,fontStyle:'bold',fontSize:6.8,halign:'center',valign:'middle',cellPadding:{top:1.4,right:1,bottom:1.4,left:1}},
+    bodyStyles:{textColor:[35,40,55]},
+    alternateRowStyles:{fillColor:[246,248,252]},
+    columnStyles:{0:{cellWidth:7,halign:'center'},1:{cellWidth:31,fontStyle:'bold'},2:{cellWidth:23},3:{cellWidth:27,halign:'center'},4:{cellWidth:11,halign:'center'},5:{cellWidth:11,halign:'center'},6:{cellWidth:12,halign:'center'},7:{cellWidth:10,halign:'center'},8:{cellWidth:9,halign:'center'},9:{cellWidth:11,halign:'center'},10:{cellWidth:14,halign:'center',fontStyle:'bold'},11:{cellWidth:12,halign:'center'},12:{cellWidth:14,halign:'center',fontStyle:'bold'},13:{cellWidth:12,halign:'center',fontStyle:'bold'},14:{cellWidth:56,halign:'left'}},
+    didParseCell:function(d){
+      const r=rows[d.row.index];
+      if(d.section==='body'&&r){
+        if(d.column.index===13){d.cell.styles.textColor=r.orderNow?[153,27,27]:[6,95,70];}
+        if(r.orderNow&&d.column.index!==13)d.cell.styles.fillColor=[253,237,238];
+      }
+    }
   });
-  let fy=(doc.lastAutoTable?doc.lastAutoTable.finalY:y)+12;
-  if(fy>180){doc.addPage();fy=20;}
-  doc.setFontSize(9);doc.setTextColor(40,40,40);
-  doc.text('Prepared by: __________________        Reviewed by: __________________        Approved by: __________________',14,fy);
+  let fy=(doc.lastAutoTable?doc.lastAutoTable.finalY:y)+10;
+  if(fy>195){doc.addPage();fy=20;}
+  doc.setDrawColor(180,185,200);doc.setLineWidth(0.2);
+  doc.setFontSize(8.5);doc.setTextColor(50,50,50);
+  doc.text('Prepared by: __________________          Reviewed by: __________________          Approved by: __________________',14,fy);
   doc.save('StockMonitoring_ReorderReport.pdf');
 }
 function exportSMExcel(){
