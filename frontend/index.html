@@ -1340,14 +1340,14 @@ body.viewer-mode .line-notify-btn { display:none !important; }
     if(statEl)statEl.textContent='Ready!';
     setTimeout(function(){
       if(scr)scr.classList.add('ls-out');
-      var lg=document.getElementById('login-overlay');
-      if(lg&&!window._ims_session_active)lg.style.display='flex';
+      // Login overlay starts as display:flex by default — no need to show it here.
+      // It only gets hidden by a successful _resumeSession() or doLogin().
       setTimeout(function(){if(scr)scr.classList.add('ls-done');},450);
     },200);
   },3000);
 })();
 </script>
-<div class="login-overlay" id="login-overlay" style="display:none">
+<div class="login-overlay" id="login-overlay" style="display:flex">
   <div class="login-box">
     <div class="login-logo">
       <img src="/images/bg-logo.png" alt="Perception Gaming" class="login-logo-img"/>
@@ -3393,9 +3393,8 @@ function _startHeartbeat(userId){
 }
 async function _resumeSession(){
   try{
-    // Only restore session on page reload (F5), not on fresh navigation.
-    // This prevents Chrome's "Continue where you left off" from auto-logging
-    // in users who expect to see the login page on a new visit.
+    // Login overlay starts as display:flex — only hide it when session confirmed.
+    // On fresh navigation (not F5 reload) always clear session and show login.
     const navType=(performance.getEntriesByType('navigation')[0]||{}).type;
     if(navType!=='reload'){sessionStorage.removeItem('ims_session');return;}
     const saved=sessionStorage.getItem('ims_session');
