@@ -274,6 +274,14 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .acs-pg-btn:disabled{opacity:.45;cursor:not-allowed;}
 .acs-pg-ellipsis{padding:5px 4px;color:var(--text-2);font-size:12px;}
 @media(max-width:640px){.acs-pagination{justify-content:center;}}
+/* STOCK MONITORING TABS */
+.sm-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;}
+.sm-tab{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text-1);font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,color .15s,border-color .15s;}
+.sm-tab:hover:not(.active){background:#f1f5f9;}
+.sm-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.sm-tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 6px;border-radius:10px;background:rgba(15,23,42,.08);font-size:11px;font-weight:700;}
+.sm-tab.active .sm-tab-count{background:rgba(255,255,255,.25);color:#fff;}
+@media(max-width:640px){.sm-tabs{gap:6px;}.sm-tab{padding:8px 11px;font-size:12px;flex:1 1 auto;justify-content:center;}}
 /* LINE NOTIFY */
 .line-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;margin-left:8px;}
 .line-status.connected{background:#f0fdf4;color:#16a34a;}
@@ -1690,6 +1698,14 @@ body.viewer-mode .line-notify-btn { display:none !important; }
     Net Available = On Hand + On Order. &nbsp;|&nbsp;
     Reorder Qty = Reorder Point − Net Available (when Net Available &lt; Reorder Point).
     <span style="float:right;opacity:.6;">(Generated <span id="sm-gen-date"></span>)</span>
+  </div>
+  <!-- Machine group tabs -->
+  <div class="sm-tabs" id="sm-tabs">
+    <button class="sm-tab active" data-tab="all" onclick="smSetTab('all')">All <span class="sm-tab-count" id="sm-tab-count-all">0</span></button>
+    <button class="sm-tab" data-tab="bingo" onclick="smSetTab('bingo')">Bingo Spareparts <span class="sm-tab-count" id="sm-tab-count-bingo">0</span></button>
+    <button class="sm-tab" data-tab="gama" onclick="smSetTab('gama')">GAMA <span class="sm-tab-count" id="sm-tab-count-gama">0</span></button>
+    <button class="sm-tab" data-tab="slot" onclick="smSetTab('slot')">Slot <span class="sm-tab-count" id="sm-tab-count-slot">0</span></button>
+    <button class="sm-tab" data-tab="other" onclick="smSetTab('other')">Other <span class="sm-tab-count" id="sm-tab-count-other">0</span></button>
   </div>
   <!-- Search & Table -->
   <div class="page-toolbar">
@@ -3826,6 +3842,27 @@ function smCalc(r){
 }
 let smPage=1;
 const SM_PAGE_SIZE=20;
+let smActiveTab='all';
+// Machine-use → tab group classification
+const SM_TAB_RULES={
+  bingo:/\bEZ\d?\b|\bBR\b|LOUNGE|J-?ARK/i,   // EZ1, EZ2, BR, EZ/EZ2 Lounge, EZ Lounge, J-Ark & Lounge
+  gama:/\bGCMS\b|\bGTMS\b/i,                  // GCMS, GTMS
+  slot:/\bP43\b|\bS27\b|\bD27\b/i             // P43, S27, D27
+};
+function smGroupsOf(machine){
+  const m=machine||'';
+  const g=[];
+  if(SM_TAB_RULES.bingo.test(m))g.push('bingo');
+  if(SM_TAB_RULES.gama.test(m))g.push('gama');
+  if(SM_TAB_RULES.slot.test(m))g.push('slot');
+  if(!g.length)g.push('other');
+  return g;
+}
+function smSetTab(t){
+  smActiveTab=t;smPage=1;
+  document.querySelectorAll('#sm-tabs .sm-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  renderSM();
+}
 function renderSM(){
   // Set generated date
   const gd=document.getElementById('sm-gen-date');
@@ -3842,7 +3879,13 @@ function renderSM(){
   document.getElementById('sm-kpi-total').textContent=orderNowCount;
   // Render table
   const q=(document.getElementById('sm-search').value||'').toLowerCase();
-  const rows=q?computed.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.part_no||'').toLowerCase().includes(q)||(r.machine||'').toLowerCase().includes(q)):computed;
+  const searched=q?computed.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.part_no||'').toLowerCase().includes(q)||(r.machine||'').toLowerCase().includes(q)):computed;
+  // Tab counts (reflect current search)
+  const counts={all:searched.length,bingo:0,gama:0,slot:0,other:0};
+  searched.forEach(r=>smGroupsOf(r.machine).forEach(g=>counts[g]++));
+  ['all','bingo','gama','slot','other'].forEach(k=>{const el=document.getElementById('sm-tab-count-'+k);if(el)el.textContent=counts[k];});
+  // Filter to active tab
+  const rows=smActiveTab==='all'?searched:searched.filter(r=>smGroupsOf(r.machine).includes(smActiveTab));
   const total=rows.length;
   const totalPages=Math.max(1,Math.ceil(total/SM_PAGE_SIZE));
   if(smPage>totalPages)smPage=totalPages;
