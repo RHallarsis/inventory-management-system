@@ -3357,13 +3357,15 @@ function gToast(msg,type='success'){
 
 // ── AUTH ─────────────────────────────────────────────────────
 // ── Single-session state ─────────────────────────────────────────────────────
+// Sessions are MEMORY-ONLY. Nothing is written to localStorage or sessionStorage.
+// Every page load requires login. Navigating within the app keeps you logged in.
 let _sessionToken=null, _heartbeatTimer=null;
 function _saveSession(user,token){
   _sessionToken=token;
-  // sessionStorage: persists on refresh but clears when browser/tab is closed
-  try{sessionStorage.setItem('ims_session',JSON.stringify({user,token}));}catch(_){}
-  // Clean up any old localStorage entry from previous version
+  // Memory only — wipe any stale storage from old versions
+  try{sessionStorage.removeItem('ims_session');}catch(_){}
   try{localStorage.removeItem('ims_session');}catch(_){}
+  try{localStorage.removeItem('currentUser');}catch(_){}
 }
 function _clearSession(){
   _sessionToken=null;
@@ -3392,36 +3394,12 @@ function _startHeartbeat(userId){
   },60000);
 }
 async function _resumeSession(){
-  try{
-    // Login overlay starts as display:flex — only hide it when session confirmed.
-    // On fresh navigation (not F5 reload) always clear session and show login.
-    const navType=(performance.getEntriesByType('navigation')[0]||{}).type;
-    if(navType!=='reload'){sessionStorage.removeItem('ims_session');return;}
-    const saved=sessionStorage.getItem('ims_session');
-    if(!saved)return;
-    const {user,token}=JSON.parse(saved);
-    if(!user||!token)return;
-    const r=await fetch(API+'/auth/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({user_id:user.id,session_token:token})});
-    if(r.ok){
-      _sessionToken=token;
-      currentUser=user;
-      window._ims_session_active=true;
-      document.getElementById('login-overlay').style.display='none';
-      document.getElementById('user-name').textContent=user.name;
-      document.getElementById('user-role').textContent=user.role;
-      document.getElementById('user-avatar').textContent=ini(user.name);
-      applyRoleAccess(user.role);
-      document.getElementById('set-name').value=user.name||'';
-      document.getElementById('set-email').value=user.email||'';
-      document.getElementById('set-role').value=user.role||'';
-      if(user.role==='Admin'){loadLineConfig();loadUsers();}
-      _startHeartbeat(user.id);
-      initApp();
-    }else{
-      _clearSession();
-    }
-  }catch(_){_clearSession();}
+  // Sessions are memory-only — nothing to restore on page load.
+  // Login overlay is display:flex by default, so login page always shows.
+  // Just wipe any stale storage from old code versions.
+  try{sessionStorage.removeItem('ims_session');}catch(_){}
+  try{localStorage.removeItem('ims_session');}catch(_){}
+  try{localStorage.removeItem('currentUser');}catch(_){}
 }
 
 async function doLogin(){
