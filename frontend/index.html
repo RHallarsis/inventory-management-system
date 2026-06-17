@@ -1711,7 +1711,9 @@ body.viewer-mode .line-notify-btn { display:none !important; }
   <div class="page-toolbar">
     <input class="search-input" id="sm-search" placeholder="Search spare parts..." oninput="smPage=1;renderSM()"/>
     <span class="table-meta" id="sm-meta"></span>
-    <button class="page-add-btn" onclick="openSMModal()">+ Add Part</button>
+    <button class="page-add-btn" onclick="exportSMExcel()" style="background:#10b981">⬇ Excel</button>
+    <button class="page-add-btn" onclick="exportSMPdf()" style="background:#ef4444;margin-left:4px">⬇ PDF</button>
+    <button class="page-add-btn" onclick="openSMModal()" style="margin-left:4px">+ Add Part</button>
   </div>
   <div class="page-tbl-wrap">
     <table class="page-table">
@@ -3928,6 +3930,111 @@ function renderSMPagination(total,totalPages,start,shown){
   }
   btns+=`<button class="acs-pg-btn" ${smPage>=totalPages?'disabled':''} onclick="smGoPage(${smPage+1})">Next ›</button>`;
   el.innerHTML=`<div class="acs-pg-info">Showing ${from}–${to} of ${total}</div><div class="acs-pg-btns">${btns}</div>`;
+}
+// ── STOCK MONITORING REPORT EXPORT ─────────────────────────
+const SM_TAB_LABELS={all:'All Parts',bingo:'Bingo Spareparts',gama:'GAMA',slot:'Slot',other:'Other'};
+const SM_METHOD_LINES=[
+  'Reorder Point (RP) = Monthly Usage x (Lead Time + Buffer + Safety Stock), all in months. Buffer default = 3 months.',
+  'Net Available = On Hand + On Order.',
+  'Reorder Qty = Reorder Point - Net Available (applied only when Net Available is below the Reorder Point).',
+  'Order Now = YES when Net Available is below the Reorder Point; otherwise NO.'
+];
+// Returns the computed rows currently in view (respects active tab + search box)
+function smReportRows(){
+  const computed=smData.map(r=>({...r,...smCalc(r)}));
+  const q=(document.getElementById('sm-search').value||'').toLowerCase();
+  const searched=q?computed.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.part_no||'').toLowerCase().includes(q)||(r.machine||'').toLowerCase().includes(q)):computed;
+  return smActiveTab==='all'?searched:searched.filter(r=>smGroupsOf(r.machine).includes(smActiveTab));
+}
+function smJustify(r){
+  return r.orderNow
+    ? `Net Available (${r.net}) is below Reorder Point (${r.rp}). Action: reorder ${r.rq} unit(s).`
+    : `Net Available (${r.net}) meets/exceeds Reorder Point (${r.rp}). No reorder needed.`;
+}
+function exportSMPdf(){
+  const rows=smReportRows();
+  if(!rows.length){gToast('No data to export.','error');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape'});
+  const tabLabel=SM_TAB_LABELS[smActiveTab]||'All Parts';
+  const q=(document.getElementById('sm-search').value||'').trim();
+  const orderNow=rows.filter(r=>r.orderNow).length;
+  const totalReorder=rows.reduce((s,r)=>s+(r.rq||0),0);
+  let y=14;
+  doc.setFontSize(15);doc.setTextColor(30,58,138);
+  doc.text('Stock Monitoring — Reorder Report',14,y);y+=7;
+  doc.setFontSize(9);doc.setTextColor(80,80,80);
+  doc.text(`Generated: ${new Date().toLocaleString()}    Group: ${tabLabel}${q?'    Search: "'+q+'"':''}`,14,y);y+=5;
+  doc.text(`Parts in report: ${rows.length}    Requiring reorder (Order Now): ${orderNow}    Total reorder units: ${totalReorder}`,14,y);y+=8;
+  doc.setFontSize(10.5);doc.setTextColor(30,58,138);
+  doc.text('Computation Methodology',14,y);y+=5;
+  doc.setFontSize(8.5);doc.setTextColor(40,40,40);
+  SM_METHOD_LINES.forEach(line=>{doc.text('• '+line,16,y);y+=4.6;});
+  y+=2;
+  doc.autoTable({
+    head:[['#','Part Name','Part No.','Machine','On\nHand','On\nOrder','Mo.\nUsage','Lead','Buf','Safety','Reorder\nPt','Net\nAvail','Reorder\nQty','Order?','Justification']],
+    body:rows.map((r,i)=>[i+1,r.name,r.part_no||'—',r.machine||'—',r.on_hand??0,r.on_order??0,r.monthly_usage??0,r.lead_time??0,r.buffer??3,r.safety_stock??1,r.rp,r.net,r.rq||0,r.orderNow?'YES':'NO',smJustify(r)]),
+    startY:y,
+    styles:{fontSize:7,cellPadding:1.8,overflow:'linebreak',valign:'middle'},
+    headStyles:{fillColor:[30,58,138],textColor:255,fontStyle:'bold',fontSize:7,halign:'center'},
+    alternateRowStyles:{fillColor:[245,247,255]},
+    columnStyles:{0:{cellWidth:7,halign:'center'},1:{cellWidth:32},2:{cellWidth:20},3:{cellWidth:24},4:{halign:'center'},5:{halign:'center'},6:{halign:'center'},7:{halign:'center'},8:{halign:'center'},9:{halign:'center'},10:{halign:'center'},11:{halign:'center'},12:{halign:'center'},13:{halign:'center'},14:{cellWidth:58}},
+    didParseCell:function(d){if(d.section==='body'&&rows[d.row.index]&&rows[d.row.index].orderNow){d.cell.styles.fillColor=[254,226,226];}}
+  });
+  let fy=(doc.lastAutoTable?doc.lastAutoTable.finalY:y)+12;
+  if(fy>180){doc.addPage();fy=20;}
+  doc.setFontSize(9);doc.setTextColor(40,40,40);
+  doc.text('Prepared by: __________________        Reviewed by: __________________        Approved by: __________________',14,fy);
+  doc.save('StockMonitoring_ReorderReport.pdf');
+}
+function exportSMExcel(){
+  const rows=smReportRows();
+  if(!rows.length){gToast('No data to export.','error');return;}
+  const tabLabel=SM_TAB_LABELS[smActiveTab]||'All Parts';
+  const q=(document.getElementById('sm-search').value||'').trim();
+  const orderNow=rows.filter(r=>r.orderNow).length;
+  const totalReorder=rows.reduce((s,r)=>s+(r.rq||0),0);
+  const wb=XLSX.utils.book_new();
+  const meth=[
+    ['Stock Monitoring — Reorder Report'],
+    ['Generated',new Date().toLocaleString()],
+    ['Group',tabLabel],
+    ['Search filter',q||'(none)'],
+    ['Parts in report',rows.length],
+    ['Requiring reorder (Order Now)',orderNow],
+    ['Total reorder units',totalReorder],
+    [],
+    ['Computation Methodology'],
+    ...SM_METHOD_LINES.map(l=>['• '+l]),
+    [],
+    ['Approval','Name','Signature','Date'],
+    ['Prepared by'],
+    ['Reviewed by'],
+    ['Approved by']
+  ];
+  const wsM=XLSX.utils.aoa_to_sheet(meth);
+  wsM['!cols']=[{wch:30},{wch:28},{wch:20},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,wsM,'Methodology');
+  const ws=XLSX.utils.json_to_sheet(rows.map((r,i)=>({
+    '#':i+1,
+    'Part Name':r.name,
+    'Part Number':r.part_no||'',
+    'Machine Use':r.machine||'',
+    'On Hand':r.on_hand??0,
+    'On Order':r.on_order??0,
+    'Monthly Usage':r.monthly_usage??0,
+    'Lead Time (Months)':r.lead_time??0,
+    'Buffer (Months)':r.buffer??3,
+    'Safety Stock (Months)':r.safety_stock??1,
+    'Reorder Point (Units)':r.rp,
+    'Net Available (Units)':r.net,
+    'Reorder Qty (Units)':r.rq||0,
+    'Order Now?':r.orderNow?'YES':'NO',
+    'Justification':smJustify(r)
+  })));
+  ws['!cols']=[{wch:4},{wch:28},{wch:16},{wch:22},{wch:8},{wch:9},{wch:12},{wch:10},{wch:10},{wch:12},{wch:13},{wch:12},{wch:13},{wch:9},{wch:62}];
+  XLSX.utils.book_append_sheet(wb,ws,'Reorder Report');
+  XLSX.writeFile(wb,'StockMonitoring_ReorderReport.xlsx');
 }
 function openSMModal(id=null){smEditId=id;const r=id?smData.find(x=>x.id===id):null;document.getElementById('sm-modal-title').textContent=id?'Edit Spare Part':'Add Spare Part';['name','partno','machine','onhand','onorder','usage','lead','buffer','safety'].forEach(k=>{const map={name:r?.name,partno:r?.part_no,machine:r?.machine,onhand:r?.on_hand??0,onorder:r?.on_order??0,usage:r?.monthly_usage??0,lead:r?.lead_time??0,buffer:r?.buffer??3,safety:r?.safety_stock??1};document.getElementById('sm-f-'+k).value=map[k]??'';});document.getElementById('sm-modal').classList.add('open');}
 function closeSMModal(){document.getElementById('sm-modal').classList.remove('open');}
