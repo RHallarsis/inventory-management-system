@@ -143,7 +143,7 @@ router.put('/logistics/manpower/:id', upload.single('file'), async (req, res) =>
     const { db } = await dbPromise;
     const existing = await db.getOne('SELECT * FROM manpower_requests WHERE id=?', [+req.params.id]);
     if (!existing) return res.status(404).json({ error: 'Not found' });
-    const { location, machine_type, machine_quantity, manpower_quantity, purpose, unit_price, remarks } = req.body;
+    const { location, machine_type, machine_quantity, manpower_quantity, purpose, unit_price, remarks, payment_status } = req.body;
     const mq  = machine_quantity  != null ? parseInt(machine_quantity)  : existing.machine_quantity;
     const mpq = manpower_quantity != null ? parseInt(manpower_quantity) : existing.manpower_quantity;
     const up  = unit_price        != null ? parseFloat(unit_price)      : existing.unit_price;
@@ -154,11 +154,26 @@ router.put('/logistics/manpower/:id', upload.single('file'), async (req, res) =>
       const old = path.join(UPLOAD_DIR, existing.file_name);
       if (fs.existsSync(old)) fs.unlinkSync(old);
     }
+    const ps = payment_status || existing.payment_status || 'Pending';
     await db.run(
       `UPDATE manpower_requests SET location=?, machine_type=?, machine_quantity=?, manpower_quantity=?,
-       purpose=?, unit_price=?, remarks=?, total=?, file_name=?, file_path=?, updated_at=NOW() WHERE id=?`,
+       purpose=?, unit_price=?, remarks=?, total=?, file_name=?, file_path=?, payment_status=?, updated_at=NOW() WHERE id=?`,
       [(location || existing.location).trim(), (machine_type || existing.machine_type).trim(),
-       mq, mpq, purpose || existing.purpose, up, remarks || existing.remarks, total, file_name, file_path, +req.params.id]
+       mq, mpq, purpose || existing.purpose, up, remarks || existing.remarks, total, file_name, file_path, ps, +req.params.id]
+    );
+    res.json(await db.getOne('SELECT * FROM manpower_requests WHERE id=?', [+req.params.id]));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.patch('/logistics/manpower/:id/payment', async (req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const { payment_status } = req.body;
+    const valid = ['Pending', 'For Release', 'Released', 'Cancelled'];
+    if (!valid.includes(payment_status)) return res.status(400).json({ error: 'Invalid payment status' });
+    await db.run(
+      `UPDATE manpower_requests SET payment_status=?, updated_at=NOW() WHERE id=?`,
+      [payment_status, +req.params.id]
     );
     res.json(await db.getOne('SELECT * FROM manpower_requests WHERE id=?', [+req.params.id]));
   } catch (err) { res.status(500).json({ error: err.message }); }

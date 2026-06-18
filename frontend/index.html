@@ -98,6 +98,8 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .badge-ordered{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#dbeafe;color:#1e40af;}
 .badge-received,.badge-completed,.badge-delivered{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#d1fae5;color:#065f46;}
 .badge-cancelled,.badge-rejected{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#fee2e2;color:#991b1b;}
+.badge-forrelease{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#fff7ed;color:#9a3412;}
+.badge-released{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#dcfce7;color:#166534;}
 .badge-inactive{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#f1f5f9;color:#64748b;}
 .badge-scheduled{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#e0e7ff;color:#3730a3;}
 .badge-inprogress,.badge-in-progress{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#fef3c7;color:#92400e;}
@@ -969,7 +971,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 /* Badges (extra padding refinement) */
 .badge-instock,.badge-active,.badge-received,.badge-completed,.badge-delivered{padding:4px 12px;font-size:11.5px;border-radius:20px;font-weight:700;}
 .badge-lowstock,.badge-pending,.badge-inprogress,.badge-in-progress{padding:4px 12px;font-size:11.5px;border-radius:20px;font-weight:700;}
-.badge-outofstock,.badge-cancelled,.badge-rejected,.badge-inactive{padding:4px 12px;font-size:11.5px;border-radius:20px;font-weight:700;}
+.badge-outofstock,.badge-cancelled,.badge-rejected,.badge-inactive,.badge-forrelease,.badge-released{padding:4px 12px;font-size:11.5px;border-radius:20px;font-weight:700;}
 .badge-ordered,.badge-scheduled,.badge-delivery,.badge-pullout,.badge-approved{padding:4px 12px;font-size:11.5px;border-radius:20px;font-weight:700;}
 
 /* Logistics — compact table */
@@ -2221,7 +2223,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
       <button class="page-add-btn" onclick="openMPModal()">+ Add Request</button>
     </div>
     <div class="page-tbl-wrap"><table class="page-table">
-      <thead><tr><th>#</th><th>Request No.</th><th>Location</th><th>Machine Type</th><th>MP Qty</th><th>Unit Price</th><th>Total</th><th>Purpose</th><th>File</th><th>Actions</th></tr></thead>
+      <thead><tr><th>#</th><th>Request No.</th><th>Location</th><th>Machine Type</th><th>MP Qty</th><th>Unit Price</th><th>Total</th><th>Purpose</th><th>Payment Status</th><th>File</th><th>Actions</th></tr></thead>
       <tbody id="mp-body"></tbody>
     </table></div>
   </div>
@@ -3192,6 +3194,7 @@ img,svg,canvas{max-width:100%;}
         <div class="g-form-group"><label>Total</label><input id="mp-f-total" readonly style="background:#f1f5f9;font-weight:700;color:var(--primary)"/></div>
       </div>
       <div class="g-form-group"><label>Purpose</label><input id="mp-f-purpose" placeholder="Purpose"/></div>
+      <div class="g-form-group"><label>Payment Status</label><select id="mp-f-paystatus"><option>Pending</option><option>For Release</option><option>Released</option><option>Cancelled</option></select></div>
       <div class="g-form-group"><label>Remarks</label><textarea id="mp-f-remarks" rows="2" placeholder="Notes..."></textarea></div>
       <div class="g-form-group"><label>Attach File</label><input type="file" id="mp-f-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg"/><div id="mp-cur-file" style="font-size:11px;color:var(--text-2);margin-top:4px"></div></div>
     </div>
@@ -4691,18 +4694,25 @@ function closeTQDelModal(){document.getElementById('tq-del-modal').classList.rem
 async function confirmDeleteTQ(){try{await fetch(API+'/logistics/trucking/'+tqDeleteId,{method:'DELETE'});gToast('Deleted.');closeTQDelModal();logActivity('DELETE','Logistics - Trucking','Deleted trucking quotation');loadTQ();}catch{gToast('Delete failed','error');}}
 
 // Manpower
-async function loadMP(){try{const r=await fetch(API+'/logistics/manpower');mpData=await r.json();renderMP();}catch{document.getElementById('mp-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
+async function loadMP(){try{const r=await fetch(API+'/logistics/manpower');mpData=await r.json();renderMP();}catch{document.getElementById('mp-body').innerHTML='<tr><td colspan="11"><div class="no-results">Backend offline.</div></td></tr>';}}
 function renderMP(){
   const q=(document.getElementById('mp-search').value||'').toLowerCase();
   const rows=q?mpData.filter(r=>(r.request_no||'').toLowerCase().includes(q)||(r.location||'').toLowerCase().includes(q)||(r.machine_type||'').toLowerCase().includes(q)):mpData;
   document.getElementById('mp-meta').textContent=`Showing ${rows.length} of ${mpData.length}`;
-  document.getElementById('mp-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.request_no}</strong></td><td>${r.location}</td><td>${r.machine_type||'—'}</td><td>${r.manpower_quantity||0}</td><td>${fmt(r.unit_price)}</td><td>${fmt(r.total)}</td><td>${r.purpose||'—'}</td><td>${fileLink(r)}</td>
-    <td><button class="page-act-btn btn-edit" onclick="openMPModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openMPDelModal(${r.id},'${(r.request_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="10"><div class="no-results">No requests.</div></td></tr>';
+  document.getElementById('mp-body').innerHTML=rows.map((r,i)=>{
+    const ps=r.payment_status||'Pending';
+    const psNext={'Pending':'For Release','For Release':'Released','Released':'Cancelled','Cancelled':'Pending'}[ps]||'Pending';
+    return `<tr><td>${i+1}</td><td><strong>${r.request_no}</strong></td><td>${r.location}</td><td>${r.machine_type||'—'}</td><td>${r.manpower_quantity||0}</td><td>${fmt(r.unit_price)}</td><td>${fmt(r.total)}</td><td>${r.purpose||'—'}</td>
+    <td style="white-space:nowrap">${badge(ps)}<br><button class="page-act-btn" style="margin-top:4px;font-size:10px;padding:2px 8px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;border-radius:5px;cursor:pointer" onclick="mpPaymentToggle(${r.id},'${ps}')">→ ${psNext}</button></td>
+    <td>${fileLink(r)}</td>
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openMPModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openMPDelModal(${r.id},'${(r.request_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`;
+  }).join('')||'<tr><td colspan="11"><div class="no-results">No requests.</div></td></tr>';
 }
+async function mpPaymentToggle(id,cur){const nxt={'Pending':'For Release','For Release':'Released','Released':'Cancelled','Cancelled':'Pending'}[cur]||'Pending';try{const res=await fetch(API+'/logistics/manpower/'+id+'/payment',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({payment_status:nxt})});if(!res.ok)throw new Error('Update failed');const rec=mpData.find(x=>x.id===id);if(rec)rec.payment_status=nxt;renderMP();gToast('Payment: '+nxt);}catch(err){gToast(err.message,'error');}}
 function calcMPTotal(){const q=+document.getElementById('mp-f-mpqty').value||0;const p=+document.getElementById('mp-f-up').value||0;document.getElementById('mp-f-total').value=fmt(q*p);}
-async function openMPModal(id=null){mpEditId=id;const r=id?mpData.find(x=>x.id===id):null;document.getElementById('mp-modal-title').textContent=id?'Edit Request':'Add Manpower Request';if(!id){try{const res=await fetch(API+'/logistics/manpower/next-request-no');const d=await res.json();document.getElementById('mp-f-rno').value=d.request_no;}catch{document.getElementById('mp-f-rno').value='Auto';}}else{document.getElementById('mp-f-rno').value=r.request_no;}document.getElementById('mp-f-loc').value=r?r.location:'';document.getElementById('mp-f-mtype').value=r?r.machine_type:'';document.getElementById('mp-f-mpqty').value=r?r.manpower_quantity:0;document.getElementById('mp-f-up').value=r?r.unit_price:0;calcMPTotal();document.getElementById('mp-f-purpose').value=r?r.purpose:'';document.getElementById('mp-f-remarks').value=r?r.remarks:'';document.getElementById('mp-f-file').value='';document.getElementById('mp-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('mp-modal').classList.add('open');}
+async function openMPModal(id=null){mpEditId=id;const r=id?mpData.find(x=>x.id===id):null;document.getElementById('mp-modal-title').textContent=id?'Edit Request':'Add Manpower Request';if(!id){try{const res=await fetch(API+'/logistics/manpower/next-request-no');const d=await res.json();document.getElementById('mp-f-rno').value=d.request_no;}catch{document.getElementById('mp-f-rno').value='Auto';}}else{document.getElementById('mp-f-rno').value=r.request_no;}document.getElementById('mp-f-loc').value=r?r.location:'';document.getElementById('mp-f-mtype').value=r?r.machine_type:'';document.getElementById('mp-f-mpqty').value=r?r.manpower_quantity:0;document.getElementById('mp-f-up').value=r?r.unit_price:0;calcMPTotal();document.getElementById('mp-f-purpose').value=r?r.purpose:'';document.getElementById('mp-f-paystatus').value=r?r.payment_status||'Pending':'Pending';document.getElementById('mp-f-remarks').value=r?r.remarks:'';document.getElementById('mp-f-file').value='';document.getElementById('mp-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('mp-modal').classList.add('open');}
 function closeMPModal(){document.getElementById('mp-modal').classList.remove('open');}
-async function saveMP(){const fd=new FormData();fd.append('location',document.getElementById('mp-f-loc').value.trim());fd.append('machine_type',document.getElementById('mp-f-mtype').value.trim());fd.append('manpower_quantity',document.getElementById('mp-f-mpqty').value||0);fd.append('unit_price',document.getElementById('mp-f-up').value||0);fd.append('purpose',document.getElementById('mp-f-purpose').value.trim());fd.append('remarks',document.getElementById('mp-f-remarks').value.trim());const fi=document.getElementById('mp-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('location')||!fd.get('machine_type')){gToast('Location and machine type required.','error');return;}try{const url=mpEditId?API+'/logistics/manpower/'+mpEditId:API+'/logistics/manpower';const res=await fetch(url,{method:mpEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(mpEditId?'Updated!':'Added!');logActivity(mpEditId?'UPDATE':'CREATE','Logistics - Manpower',mpEditId?'Updated manpower request':'Added manpower request');closeMPModal();loadMP();}catch(err){gToast(err.message,'error');}}
+async function saveMP(){const fd=new FormData();fd.append('location',document.getElementById('mp-f-loc').value.trim());fd.append('machine_type',document.getElementById('mp-f-mtype').value.trim());fd.append('manpower_quantity',document.getElementById('mp-f-mpqty').value||0);fd.append('unit_price',document.getElementById('mp-f-up').value||0);fd.append('purpose',document.getElementById('mp-f-purpose').value.trim());fd.append('payment_status',document.getElementById('mp-f-paystatus').value);fd.append('remarks',document.getElementById('mp-f-remarks').value.trim());const fi=document.getElementById('mp-f-file');if(fi.files[0])fd.append('file',fi.files[0]);if(!fd.get('location')||!fd.get('machine_type')){gToast('Location and machine type required.','error');return;}try{const url=mpEditId?API+'/logistics/manpower/'+mpEditId:API+'/logistics/manpower';const res=await fetch(url,{method:mpEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(mpEditId?'Updated!':'Added!');logActivity(mpEditId?'UPDATE':'CREATE','Logistics - Manpower',mpEditId?'Updated manpower request':'Added manpower request');closeMPModal();loadMP();}catch(err){gToast(err.message,'error');}}
 function openMPDelModal(id,name){mpDeleteId=id;document.getElementById('mp-del-name').textContent=name;document.getElementById('mp-del-modal').classList.add('open');}
 function closeMPDelModal(){document.getElementById('mp-del-modal').classList.remove('open');}
 async function confirmDeleteMP(){try{await fetch(API+'/logistics/manpower/'+mpDeleteId,{method:'DELETE'});gToast('Deleted.');closeMPDelModal();logActivity('DELETE','Logistics - Manpower','Deleted manpower request');loadMP();}catch{gToast('Delete failed','error');}}
