@@ -488,6 +488,11 @@ const dbPromise = (async () => {
     await db.run(`ALTER TABLE packing_lists DROP COLUMN IF EXISTS port_of_discharge`);
   } catch (_) {}
 
+  // ── SI tracking columns on purchase_orders ────────────────────
+  await db.run(`ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS si_submitted_date TEXT DEFAULT NULL`);
+  await db.run(`ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS si_file_name TEXT DEFAULT NULL`);
+  await db.run(`ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS si_file_path TEXT DEFAULT NULL`);
+
   // ── Ensure line_config row exists ──────────────────────────────
   const lcCnt = await db.scalar('SELECT COUNT(*) FROM line_config');
   if (!lcCnt) {
@@ -725,19 +730,4 @@ const dbPromise = (async () => {
       prev_qty     INTEGER     NOT NULL DEFAULT 0,
       new_qty      INTEGER     NOT NULL DEFAULT 0,
       change_qty   INTEGER     NOT NULL DEFAULT 0,
-      reason       TEXT        NOT NULL DEFAULT 'Manual update',
-      user_name    TEXT        NOT NULL DEFAULT 'System',
-      created_at   TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
-
-  console.log('[db] PostgreSQL schema ready.');
-  return { db, save: () => {} };
-})();
-
-// Prevent unhandled-rejection crash — log the error but keep the process alive
-dbPromise.catch(err => {
-  console.error('[db] FATAL init error:', err.message);
-});
-
-module.exports = { dbPromise, calcStatus };
+      reason       TEXT        NOT NULL DEFAULT 'Manua

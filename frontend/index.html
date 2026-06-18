@@ -1843,7 +1843,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
   </div>
   <div class="page-tbl-wrap">
     <table class="page-table">
-      <thead><tr><th>#</th><th>PO Number</th><th>Supplier</th><th>Order Date</th><th>Status</th><th>Total Amount</th><th>File</th><th>Actions</th></tr></thead>
+      <thead><tr><th>#</th><th>PO Number</th><th>Supplier</th><th>Order Date</th><th>Status</th><th>Total Amount</th><th>File</th><th>SI Submitted</th><th>SI Invoice</th><th>Actions</th></tr></thead>
       <tbody id="po-body"></tbody>
     </table>
   </div>
@@ -4335,14 +4335,49 @@ async function confirmDeleteLP(){
 }
 
 // ── PURCHASE ORDERS ─────────────────────────────────────────
-async function loadPO(){try{const r=await fetch(API+'/purchase-orders');poData=await r.json();renderPO();}catch{document.getElementById('po-body').innerHTML='<tr><td colspan="8"><div class="no-results">Backend offline.</div></td></tr>';}}
+async function loadPO(){try{const r=await fetch(API+'/purchase-orders');poData=await r.json();renderPO();}catch{document.getElementById('po-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
 function renderPO(){
   const q=(document.getElementById('po-search').value||'').toLowerCase();const ft=document.getElementById('po-filter').value;
   let rows=poData.filter(r=>(!q||(r.po_number||'').toLowerCase().includes(q)||(r.supplier||'').toLowerCase().includes(q))&&(!ft||r.status===ft));
   document.getElementById('po-meta').textContent=`Showing ${rows.length} of ${poData.length}`;
-  document.getElementById('po-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.po_number}</strong></td><td>${r.supplier}</td><td>${r.order_date||'—'}</td><td>${badge(r.status)}</td><td>${fmt(r.total_amount)}</td><td>${fileLink(r)}</td>
-    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPOModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPODelModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">Del</button>${r.status==='Approved'?`<button class="page-act-btn" style="background:linear-gradient(135deg,#6b2e0a,#a0522d);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600" onclick="notifyPOSupplier(${r.id})">✉ Notify Supplier</button>`:''}</td></tr>`).join('')||'<tr><td colspan="8"><div class="no-results">No purchase orders.</div></td></tr>';
+  document.getElementById('po-body').innerHTML=rows.map((r,i)=>{
+    const siDateCell=`<td style="white-space:nowrap;min-width:130px">
+      <input type="date" value="${r.si_submitted_date||''}" title="Click to set SI submission date"
+        style="border:1px solid #ddd;border-radius:5px;padding:3px 6px;font-size:11.5px;cursor:pointer;background:${r.si_submitted_date?'#e8f5e9':'#fff'};color:${r.si_submitted_date?'#2e7d32':'#555'};width:118px"
+        onchange="saveSIDate(${r.id},this.value,this)">
+    </td>`;
+    const siFileCell=`<td style="text-align:center;min-width:90px">
+      ${r.si_file_name
+        ?`<a class="file-link" href="${window.location.origin}${r.si_file_path}" target="_blank" title="${r.si_file_name.replace(/^\d+[-_]/,'')}" style="font-size:11px">📄 ${r.si_file_name.replace(/^\d+[-_]/,'').substring(0,18)}${r.si_file_name.length>22?'…':''}</a>
+           <br><label style="font-size:10px;color:#888;cursor:pointer;text-decoration:underline">replace<input type="file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" style="display:none" onchange="uploadSIFile(${r.id},this)"></label>`
+        :`<label style="cursor:pointer;color:#6b2e0a;font-size:11px;font-weight:600;border:1px dashed #c0844a;border-radius:5px;padding:3px 8px;white-space:nowrap">📎 Upload<input type="file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" style="display:none" onchange="uploadSIFile(${r.id},this)"></label>`
+      }
+    </td>`;
+    return `<tr><td>${i+1}</td><td><strong>${r.po_number}</strong></td><td>${r.supplier}</td><td>${r.order_date||'—'}</td><td>${badge(r.status)}</td><td>${fmt(r.total_amount)}</td><td>${fileLink(r)}</td>${siDateCell}${siFileCell}
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPOModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPODelModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">Del</button>${r.status==='Approved'?`<button class="page-act-btn" style="background:linear-gradient(135deg,#6b2e0a,#a0522d);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600" onclick="notifyPOSupplier(${r.id})">✉ Notify Supplier</button>`:''}</td></tr>`;
+  }).join('')||'<tr><td colspan="10"><div class="no-results">No purchase orders.</div></td></tr>';
 }
+async function saveSIDate(id,val,inputEl){
+  try{
+    const fd=new FormData();fd.append('si_submitted_date',val);
+    const r=await fetch(API+'/purchase-orders/'+id+'/si',{method:'PATCH',body:fd});
+    if(!r.ok){const e=await r.json();throw new Error(e.error||'Save failed');}
+    const updated=await r.json();
+    const idx=poData.findIndex(x=>x.id===id);if(idx>-1)poData[idx]=updated;
+    inputEl.style.background=val?'#e8f5e9':'#fff';
+    inputEl.style.color=val?'#2e7d32':'#555';
+    gToast(val?`SI date saved: ${val}`:'SI date cleared');
+  }catch(err){gToast(err.message,'error');}}
+async function uploadSIFile(id,inputEl){
+  if(!inputEl.files||!inputEl.files[0])return;
+  try{
+    const fd=new FormData();fd.append('si_file',inputEl.files[0]);
+    const r=await fetch(API+'/purchase-orders/'+id+'/si',{method:'PATCH',body:fd});
+    if(!r.ok){const e=await r.json();throw new Error(e.error||'Upload failed');}
+    const updated=await r.json();
+    const idx=poData.findIndex(x=>x.id===id);if(idx>-1)poData[idx]=updated;
+    gToast('SI invoice uploaded!');renderPO();
+  }catch(err){gToast(err.message,'error');}}
 function extractPOPrefix(fname){return /^[A-Za-z]{2}\d{8}[A-Za-z]/.test(fname)?fname.substring(0,11):fname.substring(0,10);}
 function generatePONumber(prefix){const matching=poData.filter(p=>(p.po_number||'').startsWith(prefix+'-'));const maxSeq=matching.reduce((m,p)=>{const s=parseInt((p.po_number||'').split('-').pop())||0;return Math.max(m,s);},0);return `${prefix}-${String(maxSeq+1).padStart(4,'0')}`;}
 function onPOFileChange(){if(poEditId)return;const fi=document.getElementById('po-f-file');if(!fi.files[0])return;const poInput=document.getElementById('po-f-no');const extracted=extractPOPrefix(fi.files[0].name);poInput.value=extracted;poInput.placeholder=extracted;}
@@ -6015,68 +6050,4 @@ function renderActivityLogs(rows){
       <td><span style="font-size:11px;color:#7c3aed;font-weight:600">${esc(r.role||'—')}</span></td>
       <td>${actionBadge[r.action]||esc(r.action)}</td>
       <td style="font-size:12px">${esc(r.section||'—')}</td>
-      <td style="max-width:260px">${esc(r.description||'—')}</td>
-    </tr>`;
-  }).join(''):'')||'<tr><td colspan="7"><div class="no-results">No activity logs found.</div></td></tr>';
-  renderAlPagination();
-}
-function renderAlPagination(){
-  const totalPages=Math.max(1,Math.ceil(alTotal/alPageSize));
-  const el=document.getElementById('al-pagination');
-  if(!el)return;
-  if(totalPages<=1){el.innerHTML='';return;}
-  // Build page number buttons (show up to 7 around current page)
-  let pages=[];
-  const delta=2;
-  for(let p=Math.max(1,alPage-delta);p<=Math.min(totalPages,alPage+delta);p++)pages.push(p);
-  if(pages[0]>1){if(pages[0]>2)pages.unshift('…');pages.unshift(1);}
-  if(pages[pages.length-1]<totalPages){if(pages[pages.length-1]<totalPages-1)pages.push('…');pages.push(totalPages);}
-  const btn=(label,page,disabled,active)=>
-    `<button onclick="${typeof page==='number'?'loadActivityLogs('+page+')':''}"
-      style="min-width:32px;padding:5px 10px;border-radius:6px;border:1px solid ${active?'#6366f1':'#e2e8f0'};
-      background:${active?'#6366f1':'#fff'};color:${active?'#fff':'#374151'};font-size:12px;font-weight:600;
-      cursor:${disabled||typeof page!=='number'?'default':'pointer'};opacity:${disabled?.45:1}"
-      ${disabled||typeof page!=='number'?'disabled':''}>
-      ${label}
-    </button>`;
-  el.innerHTML=
-    btn('‹ Prev', alPage-1, alPage<=1, false)+
-    pages.map(p=>typeof p==='number'?btn(p,p,false,p===alPage):btn('…','…',true,false)).join('')+
-    btn('Next ›', alPage+1, alPage>=totalPages, false);
-}
-async function clearActivityLogs(){
-  if(!confirm('Clear all activity logs? This cannot be undone.'))return;
-  try{
-    await fetch(API+'/activity-logs',{method:'DELETE'});
-    alData=[];renderActivityLogs();
-    gToast('Activity logs cleared.');
-  }catch{gToast('Failed to clear logs','error');}
-}
-
-async function testActivityLog(){
-  try{
-    const res=await fetch(API+'/activity-logs',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        username: (currentUser&&currentUser.name)||'TestUser',
-        role:     (currentUser&&currentUser.role)||'Admin',
-        action:   'CREATE',
-        section:  'Test',
-        description: 'API connection test'
-      })
-    });
-    const txt=await res.text();
-    if(res.ok){
-      gToast('✅ API works! Status: '+res.status);
-      loadActivityLogs();
-    } else {
-      gToast('❌ API error '+res.status+': '+txt.substring(0,100),'error');
-    }
-  }catch(e){
-    gToast('❌ Fetch failed: '+e.message,'error');
-  }
-}
-</script>
-</body>
-</html>
+      <td style="max-width:260px">${esc(r.description||'�
