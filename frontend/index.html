@@ -282,6 +282,8 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .sm-tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 6px;border-radius:10px;background:rgba(15,23,42,.08);font-size:11px;font-weight:700;}
 .sm-tab.active .sm-tab-count{background:rgba(255,255,255,.25);color:#fff;}
 @media(max-width:640px){.sm-tabs{gap:6px;}.sm-tab{padding:8px 11px;font-size:12px;flex:1 1 auto;justify-content:center;}}
+.sm-sel-info{font-size:12px;color:var(--text-2);margin-right:auto;}
+.sm-sel-info b{color:#7c3aed;}
 /* LINE NOTIFY */
 .line-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;margin-left:8px;}
 .line-status.connected{background:#f0fdf4;color:#16a34a;}
@@ -1714,13 +1716,15 @@ body.viewer-mode .line-notify-btn { display:none !important; }
   <div class="page-toolbar">
     <input class="search-input" id="sm-search" placeholder="Search spare parts..." oninput="smPage=1;renderSM()"/>
     <span class="table-meta" id="sm-meta"></span>
-    <button class="page-add-btn" onclick="exportSMExcel()" style="background:#10b981">⬇ Excel</button>
-    <button class="page-add-btn" onclick="exportSMPdf()" style="background:#ef4444;margin-left:4px">⬇ PDF</button>
+    <span class="sm-sel-info" id="sm-sel-info"></span>
+    <button class="page-add-btn" id="sm-btn-excel" onclick="exportSMExcel()" style="background:#10b981">⬇ Excel</button>
+    <button class="page-add-btn" id="sm-btn-pdf" onclick="exportSMPdf()" style="background:#ef4444;margin-left:4px">⬇ PDF</button>
     <button class="page-add-btn" onclick="openSMModal()" style="margin-left:4px">+ Add Part</button>
   </div>
   <div class="page-tbl-wrap">
     <table class="page-table">
       <thead><tr>
+        <th style="width:30px;text-align:center" title="Select for report"><input type="checkbox" id="sm-chk-all" onclick="smToggleAll(this.checked)" style="cursor:pointer;width:15px;height:15px;vertical-align:middle"/></th>
         <th>#</th>
         <th>Part Name</th>
         <th>Part Number</th>
@@ -3848,6 +3852,22 @@ function smCalc(r){
 let smPage=1;
 const SM_PAGE_SIZE=20;
 let smActiveTab='all';
+// Report row selection (specific items to print)
+let smSelected=new Set();
+let smFilteredIds=[];
+function smToggleRow(id,checked){if(checked)smSelected.add(id);else smSelected.delete(id);smUpdateSelUI();}
+function smToggleAll(checked){if(checked)smFilteredIds.forEach(id=>smSelected.add(id));else smFilteredIds.forEach(id=>smSelected.delete(id));renderSM();}
+function smClearSel(){smSelected.clear();renderSM();}
+function smUpdateSelUI(){
+  const n=smSelected.size;
+  const info=document.getElementById('sm-sel-info');
+  if(info)info.innerHTML=n?`<b>${n}</b> selected for report &middot; <a href="#" onclick="smClearSel();return false;" style="color:#dc2626;text-decoration:underline;">Clear</a>`:'';
+  const allc=document.getElementById('sm-chk-all');
+  if(allc){const sel=smFilteredIds.filter(id=>smSelected.has(id)).length;allc.checked=smFilteredIds.length>0&&sel===smFilteredIds.length;allc.indeterminate=sel>0&&sel<smFilteredIds.length;}
+  const bp=document.getElementById('sm-btn-pdf'),be=document.getElementById('sm-btn-excel');
+  if(bp)bp.textContent=n?`⬇ PDF (${n})`:'⬇ PDF';
+  if(be)be.textContent=n?`⬇ Excel (${n})`:'⬇ Excel';
+}
 // Machine-use → tab group classification
 const SM_TAB_RULES={
   bingo:/\bEZ\d?\b|\bBR\b|LOUNGE|J-?ARK/i,   // EZ1, EZ2, BR, EZ/EZ2 Lounge, EZ Lounge, J-Ark & Lounge
@@ -3899,6 +3919,7 @@ function renderSM(){
   const pageRows=rows.slice(start,start+SM_PAGE_SIZE);
   document.getElementById('sm-meta').textContent=`Showing ${total?start+1:0}–${start+pageRows.length} of ${total}`;
   document.getElementById('sm-body').innerHTML=pageRows.map((r,i)=>`<tr${r.orderNow?' style="background:rgba(254,226,226,.45)"':''}>
+    <td style="text-align:center"><input type="checkbox" class="sm-row-chk" onclick="smToggleRow(${r.id},this.checked)" ${smSelected.has(r.id)?'checked':''} style="cursor:pointer;width:15px;height:15px;vertical-align:middle"/></td>
     <td>${start+i+1}</td>
     <td><strong>${esc(r.name)}</strong></td>
     <td>${esc(r.part_no)}</td>
@@ -3913,7 +3934,9 @@ function renderSM(){
     <td>${r.net}</td>
     <td>${r.rq||0}</td>
     <td><span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;${r.orderNow?'background:#fee2e2;color:#991b1b;':'background:#d1fae5;color:#065f46;'}">${r.orderNow?'YES':'NO'}</span></td>
-    <td><button class="page-act-btn btn-edit" onclick="openSMModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSMDelModal(${r.id},'${esc(r.name||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="15"><div class="no-results">No spare parts.</div></td></tr>';
+    <td><button class="page-act-btn btn-edit" onclick="openSMModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSMDelModal(${r.id},'${esc(r.name||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="16"><div class="no-results">No spare parts.</div></td></tr>';
+  smFilteredIds=rows.map(r=>r.id);
+  smUpdateSelUI();
   renderSMPagination(total,totalPages,start,pageRows.length);
 }
 function smGoPage(p){smPage=p;renderSM();const w=document.querySelector('#page-stockmonitoring .page-tbl-wrap');if(w)w.scrollTop=0;}
@@ -3937,9 +3960,11 @@ function renderSMPagination(total,totalPages,start,shown){
 // ── STOCK MONITORING REPORT EXPORT ─────────────────────────
 const SM_TAB_LABELS={all:'All Parts',bingo:'Bingo Spareparts',gama:'GAMA',slot:'Slot',other:'Other'};
 // Prominent report identification per tab
-const SM_GROUP_HEADER={all:'ALL SPARE PARTS',bingo:'BINGO SPAREPARTS',gama:'GAMA (GCMS & GTMS)',slot:'SLOT (P43, S27 & D27)',other:'OTHER SPARE PARTS'};
-const SM_GROUP_COLOR={all:[30,41,59],bingo:[30,58,138],gama:[13,148,136],slot:[180,83,9],other:[71,85,105]};
-const SM_GROUP_SLUG={all:'AllParts',bingo:'Bingo',gama:'GAMA',slot:'Slot',other:'Other'};
+const SM_GROUP_HEADER={all:'ALL SPARE PARTS',bingo:'BINGO SPAREPARTS',gama:'GAMA (GCMS & GTMS)',slot:'SLOT (P43, S27 & D27)',other:'OTHER SPARE PARTS',selected:'SELECTED ITEMS'};
+const SM_GROUP_COLOR={all:[30,41,59],bingo:[30,58,138],gama:[13,148,136],slot:[180,83,9],other:[71,85,105],selected:[109,40,217]};
+const SM_GROUP_SLUG={all:'AllParts',bingo:'Bingo',gama:'GAMA',slot:'Slot',other:'Other',selected:'Selected'};
+// Which identification the report uses: a manual selection takes priority over the active tab
+function smReportKey(){return smSelected.size?'selected':smActiveTab;}
 const SM_METHOD_LINES=[
   'Reorder Point (RP) = Monthly Usage x (Lead Time + Buffer + Safety Stock), all in months. Buffer default = 3 months.',
   'Net Available = On Hand + On Order.',
@@ -3949,9 +3974,11 @@ const SM_METHOD_LINES=[
 ];
 // Order Qty to Taiwan = Reorder Qty rounded to nearest 5
 function smTaiwanQty(r){return Math.round((r.rq||0)/5)*5;}
-// Returns the computed rows currently in view (respects active tab + search box)
+// Returns the computed rows for the report.
+// If specific items are checked, only those are exported; otherwise the current tab + search view.
 function smReportRows(){
   const computed=smData.map(r=>({...r,...smCalc(r)}));
+  if(smSelected.size)return computed.filter(r=>smSelected.has(r.id));
   const q=(document.getElementById('sm-search').value||'').toLowerCase();
   const searched=q?computed.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.part_no||'').toLowerCase().includes(q)||(r.machine||'').toLowerCase().includes(q)):computed;
   return smActiveTab==='all'?searched:searched.filter(r=>smGroupsOf(r.machine).includes(smActiveTab));
@@ -3982,8 +4009,9 @@ function exportSMPdf(){
   const q=(document.getElementById('sm-search').value||'').trim();
   const orderNow=rows.filter(r=>r.orderNow).length;
   const totalReorder=rows.reduce((s,r)=>s+(r.rq||0),0);
-  const ghead=SM_GROUP_HEADER[smActiveTab]||'ALL SPARE PARTS';
-  const gc=SM_GROUP_COLOR[smActiveTab]||[30,41,59];
+  const gkey=smReportKey();
+  const ghead=SM_GROUP_HEADER[gkey]||'ALL SPARE PARTS';
+  const gc=SM_GROUP_COLOR[gkey]||[30,41,59];
   let y=13;
   doc.setFontSize(14);doc.setTextColor(30,58,138);
   doc.text('Stock Monitoring — Reorder Report',14,y);y+=7;
@@ -4031,7 +4059,7 @@ function exportSMPdf(){
   doc.setDrawColor(180,185,200);doc.setLineWidth(0.2);
   doc.setFontSize(8.5);doc.setTextColor(50,50,50);
   doc.text('Prepared by: __________________          Reviewed by: __________________          Approved by: __________________',14,fy);
-  doc.save(`StockMonitoring_ReorderReport_${SM_GROUP_SLUG[smActiveTab]||'AllParts'}.pdf`);
+  doc.save(`StockMonitoring_ReorderReport_${SM_GROUP_SLUG[gkey]||'AllParts'}.pdf`);
 }
 function exportSMExcel(){
   const rows=smReportRows();
@@ -4040,7 +4068,8 @@ function exportSMExcel(){
   const q=(document.getElementById('sm-search').value||'').trim();
   const orderNow=rows.filter(r=>r.orderNow).length;
   const totalReorder=rows.reduce((s,r)=>s+(r.rq||0),0);
-  const ghead=SM_GROUP_HEADER[smActiveTab]||'ALL SPARE PARTS';
+  const gkey=smReportKey();
+  const ghead=SM_GROUP_HEADER[gkey]||'ALL SPARE PARTS';
   const wb=XLSX.utils.book_new();
   const meth=[
     ['Stock Monitoring — Reorder Report'],
@@ -4084,7 +4113,7 @@ function exportSMExcel(){
   ws['!cols']=[{wch:4},{wch:28},{wch:16},{wch:22},{wch:8},{wch:9},{wch:12},{wch:10},{wch:10},{wch:12},{wch:13},{wch:12},{wch:13},{wch:16},{wch:9},{wch:95}];
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:5}}];
   XLSX.utils.book_append_sheet(wb,ws,'Reorder Report');
-  XLSX.writeFile(wb,`StockMonitoring_ReorderReport_${SM_GROUP_SLUG[smActiveTab]||'AllParts'}.xlsx`);
+  XLSX.writeFile(wb,`StockMonitoring_ReorderReport_${SM_GROUP_SLUG[gkey]||'AllParts'}.xlsx`);
 }
 function openSMModal(id=null){smEditId=id;const r=id?smData.find(x=>x.id===id):null;document.getElementById('sm-modal-title').textContent=id?'Edit Spare Part':'Add Spare Part';['name','partno','machine','onhand','onorder','usage','lead','buffer','safety'].forEach(k=>{const map={name:r?.name,partno:r?.part_no,machine:r?.machine,onhand:r?.on_hand??0,onorder:r?.on_order??0,usage:r?.monthly_usage??0,lead:r?.lead_time??0,buffer:r?.buffer??3,safety:r?.safety_stock??1};document.getElementById('sm-f-'+k).value=map[k]??'';});document.getElementById('sm-modal').classList.add('open');}
 function closeSMModal(){document.getElementById('sm-modal').classList.remove('open');}
