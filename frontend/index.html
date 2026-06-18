@@ -991,6 +991,21 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 #log-panel-manpower .mp-pay-wrap{display:inline-flex;align-items:center;gap:4px;}
 #log-panel-manpower .mp-pay-btn{font-size:10px;padding:2px 6px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:4px;cursor:pointer;font-weight:600;line-height:1.5;white-space:nowrap;}
 #log-panel-manpower .mp-pay-btn:hover{background:#e2e8f0;}
+/* Column-specific alignment */
+#log-panel-manpower .page-table th:nth-child(1),
+#log-panel-manpower .page-table td:nth-child(1){text-align:center;width:32px;padding-left:4px;padding-right:4px;}
+#log-panel-manpower .page-table th:nth-child(5),
+#log-panel-manpower .page-table td:nth-child(5){text-align:center;width:56px;}
+#log-panel-manpower .page-table th:nth-child(6),
+#log-panel-manpower .page-table td:nth-child(6){text-align:right;width:88px;}
+#log-panel-manpower .page-table th:nth-child(7),
+#log-panel-manpower .page-table td:nth-child(7){text-align:right;width:95px;}
+#log-panel-manpower .page-table th:nth-child(9),
+#log-panel-manpower .page-table td:nth-child(9){text-align:center;}
+#log-panel-manpower .page-table th:nth-child(10),
+#log-panel-manpower .page-table td:nth-child(10){text-align:center;width:80px;}
+#log-panel-manpower .page-table th:nth-child(11),
+#log-panel-manpower .page-table td:nth-child(11){text-align:center;width:90px;}
 
 /* Settings card */
 .settings-card{
@@ -4716,9 +4731,9 @@ function renderMP(){
     <td><span class="mp-rno">${esc(r.request_no)}</span></td>
     <td>${esc(r.location)}</td>
     <td>${esc(r.machine_type)||'—'}</td>
-    <td class="mp-num">${r.manpower_quantity||0}</td>
-    <td class="mp-num">${fmt(r.unit_price)}</td>
-    <td class="mp-num" style="font-weight:700">${fmt(r.total)}</td>
+    <td>${r.manpower_quantity||0}</td>
+    <td>${fmt(r.unit_price)}</td>
+    <td style="font-weight:700">${fmt(r.total)}</td>
     <td><span class="mp-purpose" title="${esc(r.purpose)||''}">${esc(r.purpose)||'—'}</span></td>
     <td><div class="mp-pay-wrap">${badge(ps)}<button class="mp-pay-btn" onclick="mpPaymentToggle(${r.id},'${ps}')" title="Advance to: ${psNext}">→ ${psNext}</button></div></td>
     <td>${fileLink(r)}</td>
