@@ -6050,4 +6050,68 @@ function renderActivityLogs(rows){
       <td><span style="font-size:11px;color:#7c3aed;font-weight:600">${esc(r.role||'—')}</span></td>
       <td>${actionBadge[r.action]||esc(r.action)}</td>
       <td style="font-size:12px">${esc(r.section||'—')}</td>
-      <td style="max-width:260px">${esc(r.description||'�
+      <td style="max-width:260px">${esc(r.description||'—')}</td>
+    </tr>`;
+  }).join(''):'')||'<tr><td colspan="7"><div class="no-results">No activity logs found.</div></td></tr>';
+  renderAlPagination();
+}
+function renderAlPagination(){
+  const totalPages=Math.max(1,Math.ceil(alTotal/alPageSize));
+  const el=document.getElementById('al-pagination');
+  if(!el)return;
+  if(totalPages<=1){el.innerHTML='';return;}
+  // Build page number buttons (show up to 7 around current page)
+  let pages=[];
+  const delta=2;
+  for(let p=Math.max(1,alPage-delta);p<=Math.min(totalPages,alPage+delta);p++)pages.push(p);
+  if(pages[0]>1){if(pages[0]>2)pages.unshift('…');pages.unshift(1);}
+  if(pages[pages.length-1]<totalPages){if(pages[pages.length-1]<totalPages-1)pages.push('…');pages.push(totalPages);}
+  const btn=(label,page,disabled,active)=>
+    `<button onclick="${typeof page==='number'?'loadActivityLogs('+page+')':''}"
+      style="min-width:32px;padding:5px 10px;border-radius:6px;border:1px solid ${active?'#6366f1':'#e2e8f0'};
+      background:${active?'#6366f1':'#fff'};color:${active?'#fff':'#374151'};font-size:12px;font-weight:600;
+      cursor:${disabled||typeof page!=='number'?'default':'pointer'};opacity:${disabled?.45:1}"
+      ${disabled||typeof page!=='number'?'disabled':''}>
+      ${label}
+    </button>`;
+  el.innerHTML=
+    btn('‹ Prev', alPage-1, alPage<=1, false)+
+    pages.map(p=>typeof p==='number'?btn(p,p,false,p===alPage):btn('…','…',true,false)).join('')+
+    btn('Next ›', alPage+1, alPage>=totalPages, false);
+}
+async function clearActivityLogs(){
+  if(!confirm('Clear all activity logs? This cannot be undone.'))return;
+  try{
+    await fetch(API+'/activity-logs',{method:'DELETE'});
+    alData=[];renderActivityLogs();
+    gToast('Activity logs cleared.');
+  }catch{gToast('Failed to clear logs','error');}
+}
+
+async function testActivityLog(){
+  try{
+    const res=await fetch(API+'/activity-logs',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        username: (currentUser&&currentUser.name)||'TestUser',
+        role:     (currentUser&&currentUser.role)||'Admin',
+        action:   'CREATE',
+        section:  'Test',
+        description: 'API connection test'
+      })
+    });
+    const txt=await res.text();
+    if(res.ok){
+      gToast('✅ API works! Status: '+res.status);
+      loadActivityLogs();
+    } else {
+      gToast('❌ API error '+res.status+': '+txt.substring(0,100),'error');
+    }
+  }catch(e){
+    gToast('❌ Fetch failed: '+e.message,'error');
+  }
+}
+</script>
+</body>
+</html>

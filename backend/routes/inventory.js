@@ -1042,4 +1042,43 @@ router.post('/machine-monitoring', async (req, res) => {
       [site.trim(), grp, area.trim(), +ez || 0, +br || 0, +ez2 || 0, +ezl || 0, +lb || 0, +j_ark || 0, total]
     );
     res.status(201).json(await db.getOne('SELECT * FROM machine_monitoring WHERE id = ?', [id]));
-  } catch (err) { res.status(500).json({ error: err.messag
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/machine-monitoring/:id', async (req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const ex = await db.getOne('SELECT * FROM machine_monitoring WHERE id = ?', [+req.params.id]);
+    if (!ex) return res.status(404).json({ error: 'Record not found' });
+    const { site, group_name, area, ez, br, ez2, ezl, lb, j_ark } = req.body;
+    const nr = {
+      ez:    ez    != null ? +ez    : ex.ez,
+      br:    br    != null ? +br    : ex.br,
+      ez2:   ez2   != null ? +ez2   : ex.ez2,
+      ezl:   ezl   != null ? +ezl   : ex.ezl,
+      lb:    lb    != null ? +lb    : ex.lb,
+      j_ark: j_ark != null ? +j_ark : ex.j_ark
+    };
+    const total  = mmTotal(nr);
+    const newArea = area       ? area.trim()       : ex.area;
+    const newGrp  = group_name ? group_name.trim() : ex.group_name;
+    await db.run(
+      `UPDATE machine_monitoring SET site=?, group_name=?, area=?, ez=?, br=?, ez2=?, ezl=?, lb=?, j_ark=?, total=?, updated_at=NOW() WHERE id=?`,
+      [(site ?? ex.site).trim(), newGrp, newArea,
+       nr.ez, nr.br, nr.ez2, nr.ezl, nr.lb, nr.j_ark, total, +req.params.id]
+    );
+    res.json(await db.getOne('SELECT * FROM machine_monitoring WHERE id = ?', [+req.params.id]));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/machine-monitoring/:id', async (req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const ex = await db.getOne('SELECT id FROM machine_monitoring WHERE id = ?', [+req.params.id]);
+    if (!ex) return res.status(404).json({ error: 'Record not found' });
+    await db.run('DELETE FROM machine_monitoring WHERE id = ?', [+req.params.id]);
+    res.status(204).end();
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+module.exports = router;
