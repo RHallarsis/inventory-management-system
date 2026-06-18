@@ -118,14 +118,19 @@ async function sendApprovedPODraft(po) {
     htmlContent: buildEmailBody(po),
   };
 
-  // Add CC recipients if provided (comma-separated list)
+  // Parse CC/BCC — accept both comma and semicolon separators
+  const parseEmailList = (raw = '') =>
+    raw.split(/[,;]/).map(e => e.trim()).filter(e => e).map(e => {
+      const m = e.match(/<([^>]+)>/);
+      return { email: m ? m[1].trim() : e };
+    }).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.email));
+
   if (po.cc) {
-    const ccList = po.cc.split(',').map(e => ({ email: e.trim() })).filter(e => e.email);
+    const ccList = parseEmailList(po.cc);
     if (ccList.length) payload.cc = ccList;
   }
-  // Add BCC recipients if provided (comma-separated list)
   if (po.bcc) {
-    const bccList = po.bcc.split(',').map(e => ({ email: e.trim() })).filter(e => e.email);
+    const bccList = parseEmailList(po.bcc);
     if (bccList.length) payload.bcc = bccList;
   }
 
@@ -141,8 +146,4 @@ async function sendApprovedPODraft(po) {
   console.log(`[EmailService] CC:`, JSON.stringify(payload.cc || null));
   console.log(`[EmailService] BCC:`, JSON.stringify(payload.bcc || null));
   const result = await brevoSend(payload);
-  console.log(`[EmailService] Email sent. Message ID: ${result.messageId}`);
-  return result;
-}
-
-module.exports = { sendApprovedPODraft };
+  console.log(`[EmailService] Ema
