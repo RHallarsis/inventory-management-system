@@ -3859,11 +3859,12 @@ function smToggleRow(id,checked){if(checked)smSelected.add(id);else smSelected.d
 function smToggleAll(checked){if(checked)smFilteredIds.forEach(id=>smSelected.add(id));else smFilteredIds.forEach(id=>smSelected.delete(id));renderSM();}
 function smClearSel(){smSelected.clear();renderSM();}
 function smUpdateSelUI(){
-  const n=smSelected.size;
+  // Count only items selected WITHIN the current tab/search view (this is what the report exports)
+  const n=smFilteredIds.filter(id=>smSelected.has(id)).length;
   const info=document.getElementById('sm-sel-info');
-  if(info)info.innerHTML=n?`<b>${n}</b> selected for report &middot; <a href="#" onclick="smClearSel();return false;" style="color:#dc2626;text-decoration:underline;">Clear</a>`:'';
+  if(info)info.innerHTML=n?`<b>${n}</b> selected in this tab for report &middot; <a href="#" onclick="smClearSel();return false;" style="color:#dc2626;text-decoration:underline;">Clear</a>`:'';
   const allc=document.getElementById('sm-chk-all');
-  if(allc){const sel=smFilteredIds.filter(id=>smSelected.has(id)).length;allc.checked=smFilteredIds.length>0&&sel===smFilteredIds.length;allc.indeterminate=sel>0&&sel<smFilteredIds.length;}
+  if(allc){allc.checked=smFilteredIds.length>0&&n===smFilteredIds.length;allc.indeterminate=n>0&&n<smFilteredIds.length;}
   const bp=document.getElementById('sm-btn-pdf'),be=document.getElementById('sm-btn-excel');
   if(bp)bp.textContent=n?`⬇ PDF (${n})`:'⬇ PDF';
   if(be)be.textContent=n?`⬇ Excel (${n})`:'⬇ Excel';
@@ -3974,15 +3975,24 @@ const SM_METHOD_LINES=[
 ];
 // Order Qty to Taiwan = Reorder Qty rounded to nearest 5
 function smTaiwanQty(r){return Math.round((r.rq||0)/5)*5;}
-// Returns the computed rows for the report.
-// If specific items are checked, only those are exported; otherwise the current tab + search view.
-function smReportRows(){
+// Builds the report context: rows + identification, scoped to the CURRENT tab + search.
+// A manual selection only narrows WITHIN the current tab — it never pulls in items from other tabs.
+function smReportContext(){
   const computed=smData.map(r=>({...r,...smCalc(r)}));
-  if(smSelected.size)return computed.filter(r=>smSelected.has(r.id));
-  const q=(document.getElementById('sm-search').value||'').toLowerCase();
-  const searched=q?computed.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.part_no||'').toLowerCase().includes(q)||(r.machine||'').toLowerCase().includes(q)):computed;
-  return smActiveTab==='all'?searched:searched.filter(r=>smGroupsOf(r.machine).includes(smActiveTab));
+  const q=(document.getElementById('sm-search').value||'').trim();
+  const ql=q.toLowerCase();
+  const searched=ql?computed.filter(r=>(r.name||'').toLowerCase().includes(ql)||(r.part_no||'').toLowerCase().includes(ql)||(r.machine||'').toLowerCase().includes(ql)):computed;
+  const base=smActiveTab==='all'?searched:searched.filter(r=>smGroupsOf(r.machine).includes(smActiveTab));
+  const sel=base.filter(r=>smSelected.has(r.id));      // only selected items within this tab/search
+  const selActive=sel.length>0;
+  const rows=selActive?sel:base;                        // selected subset if any, else whole view
+  const key=smActiveTab;
+  let head=SM_GROUP_HEADER[key]||'ALL SPARE PARTS';
+  let slug=SM_GROUP_SLUG[key]||'AllParts';
+  if(selActive){head+=' — SELECTED ITEMS';slug+='_Selected';}
+  return {rows,head,color:SM_GROUP_COLOR[key]||[30,41,59],slug,selActive,q};
 }
+function smReportRows(){return smReportContext().rows;}
 function smJustify(r){
   return r.orderNow
     ? `Net Available (${r.net}) is below Reorder Point (${r.rp}). Action: reorder ${r.rq} unit(s).`
@@ -4001,17 +4011,16 @@ function smJustifyDetail(r){
   return `${base} Net Available (${r.net}) meets/exceeds Reorder Point (${r.rp}); no reorder required.`;
 }
 function exportSMPdf(){
-  const rows=smReportRows();
+  const ctx=smReportContext();
+  const rows=ctx.rows;
   if(!rows.length){gToast('No data to export.','error');return;}
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'landscape'});
-  const tabLabel=SM_TAB_LABELS[smActiveTab]||'All Parts';
-  const q=(document.getElementById('sm-search').value||'').trim();
+  const q=ctx.q;
   const orderNow=rows.filter(r=>r.orderNow).length;
   const totalReorder=rows.reduce((s,r)=>s+(r.rq||0),0);
-  const gkey=smReportKey();
-  const ghead=SM_GROUP_HEADER[gkey]||'ALL SPARE PARTS';
-  const gc=SM_GROUP_COLOR[gkey]||[30,41,59];
+  const ghead=ctx.head;
+  const gc=ctx.color;
   let y=13;
   doc.setFontSize(14);doc.setTextColor(30,58,138);
   doc.text('Stock Monitoring — Reorder Report',14,y);y+=7;
@@ -4059,17 +4068,16 @@ function exportSMPdf(){
   doc.setDrawColor(180,185,200);doc.setLineWidth(0.2);
   doc.setFontSize(8.5);doc.setTextColor(50,50,50);
   doc.text('Prepared by: __________________          Reviewed by: __________________          Approved by: __________________',14,fy);
-  doc.save(`StockMonitoring_ReorderReport_${SM_GROUP_SLUG[gkey]||'AllParts'}.pdf`);
+  doc.save(`StockMonitoring_ReorderReport_${ctx.slug}.pdf`);
 }
 function exportSMExcel(){
-  const rows=smReportRows();
+  const ctx=smReportContext();
+  const rows=ctx.rows;
   if(!rows.length){gToast('No data to export.','error');return;}
-  const tabLabel=SM_TAB_LABELS[smActiveTab]||'All Parts';
-  const q=(document.getElementById('sm-search').value||'').trim();
+  const q=ctx.q;
   const orderNow=rows.filter(r=>r.orderNow).length;
   const totalReorder=rows.reduce((s,r)=>s+(r.rq||0),0);
-  const gkey=smReportKey();
-  const ghead=SM_GROUP_HEADER[gkey]||'ALL SPARE PARTS';
+  const ghead=ctx.head;
   const wb=XLSX.utils.book_new();
   const meth=[
     ['Stock Monitoring — Reorder Report'],
@@ -4113,7 +4121,7 @@ function exportSMExcel(){
   ws['!cols']=[{wch:4},{wch:28},{wch:16},{wch:22},{wch:8},{wch:9},{wch:12},{wch:10},{wch:10},{wch:12},{wch:13},{wch:12},{wch:13},{wch:16},{wch:9},{wch:95}];
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:5}}];
   XLSX.utils.book_append_sheet(wb,ws,'Reorder Report');
-  XLSX.writeFile(wb,`StockMonitoring_ReorderReport_${SM_GROUP_SLUG[gkey]||'AllParts'}.xlsx`);
+  XLSX.writeFile(wb,`StockMonitoring_ReorderReport_${ctx.slug}.xlsx`);
 }
 function openSMModal(id=null){smEditId=id;const r=id?smData.find(x=>x.id===id):null;document.getElementById('sm-modal-title').textContent=id?'Edit Spare Part':'Add Spare Part';['name','partno','machine','onhand','onorder','usage','lead','buffer','safety'].forEach(k=>{const map={name:r?.name,partno:r?.part_no,machine:r?.machine,onhand:r?.on_hand??0,onorder:r?.on_order??0,usage:r?.monthly_usage??0,lead:r?.lead_time??0,buffer:r?.buffer??3,safety:r?.safety_stock??1};document.getElementById('sm-f-'+k).value=map[k]??'';});document.getElementById('sm-modal').classList.add('open');}
 function closeSMModal(){document.getElementById('sm-modal').classList.remove('open');}
