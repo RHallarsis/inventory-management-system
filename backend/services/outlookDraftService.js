@@ -13,7 +13,12 @@ const https = require('https');
 const fs    = require('fs');
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
+// BREVO_FROM should be a Brevo-verified sender (NOT a raw Gmail address — Gmail
+// DMARC p=reject will cause delivery failures when sent via third-party SMTP).
+// If only GMAIL_USER is set, we still use it as the FROM but add it as replyTo
+// and warn in logs. Set BREVO_FROM in Railway to a verified non-Gmail sender.
 const FROM_EMAIL    = process.env.BREVO_FROM || process.env.GMAIL_USER || '';
+const REPLY_TO      = process.env.GMAIL_USER || '';
 const FROM_NAME     = 'Inventory Management System';
 
 /** Build the HTML email body for an approved PO */
@@ -111,38 +116,28 @@ async function sendApprovedPODraft(po) {
     throw new Error(`No email address provided for supplier "${po.supplier_name}".`);
   }
 
+  // Warn if sending via Gmail address (DMARC p=reject causes delivery failures)
+  if (FROM_EMAIL.endsWith('@gmail.com') && !process.env.BREVO_FROM) {
+    console.warn('[EmailService] WARNING: FROM is a Gmail address. Gmail DMARC p=reject ' +
+      'will cause delivery failures via third-party SMTP. Set BREVO_FROM in Railway ' +
+      'to a verified non-Gmail sender (e.g. noreply@perceptiongames.com).');
+  }
+
   const payload = {
     sender:      { name: FROM_NAME, email: FROM_EMAIL },
     to:          [{ email: po.supplier_email, name: po.supplier_name }],
+    replyTo:     REPLY_TO ? { email: REPLY_TO } : undefined,
     subject:     `Purchase Order Approved – ${po.po_number} | ${po.supplier_name}`,
     htmlContent: buildEmailBody(po),
   };
 
-  // Add CC recipients if provided (comma-separated list)
+  // Parse CC/BCC — accept both comma and semicolon separators
+  const parseEmailList = (raw = '') =>
+    raw.split(/[,;]/).map(e => e.trim()).filter(e => e).map(e => {
+      const m = e.match(/<([^>]+)>/);
+      return { email: m ? m[1].trim() : e };
+    }).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.email));
+
   if (po.cc) {
-    const ccList = po.cc.split(',').map(e => ({ email: e.trim() })).filter(e => e.email);
-    if (ccList.length) payload.cc = ccList;
-  }
-  // Add BCC recipients if provided (comma-separated list)
-  if (po.bcc) {
-    const bccList = po.bcc.split(',').map(e => ({ email: e.trim() })).filter(e => e.email);
-    if (bccList.length) payload.bcc = bccList;
-  }
-
-  // Attach the PO file if one was found on disk
-  if (po.attachment_path && po.attachment_name && fs.existsSync(po.attachment_path)) {
-    const cleanName = po.attachment_name.replace(/^\d+[-_]/, '');
-    const content   = fs.readFileSync(po.attachment_path).toString('base64');
-    payload.attachment = [{ name: cleanName, content }];
-    console.log(`[EmailService] Attaching file: ${cleanName}`);
-  }
-
-  console.log(`[EmailService] Sending via Brevo: PO ${po.po_number} → ${po.supplier_email}`);
-  console.log(`[EmailService] CC:`, JSON.stringify(payload.cc || null));
-  console.log(`[EmailService] BCC:`, JSON.stringify(payload.bcc || null));
-  const result = await brevoSend(payload);
-  console.log(`[EmailService] Email sent. Message ID: ${result.messageId}`);
-  return result;
-}
-
-module.exports = { sendApprovedPODraft };
+    const ccList = parseEmailList(po.cc);
+    if (ccList.length) payload.cc = cc
