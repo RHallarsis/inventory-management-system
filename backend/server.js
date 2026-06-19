@@ -31,41 +31,6 @@ app.get('/api/diag', (_req, res) => res.json({
   GMAIL_USER:    process.env.GMAIL_USER    ? `✅ set (${process.env.GMAIL_USER})`                  : '❌ NOT SET',
 }));
 
-// ── Quick Brevo test: GET /api/test-email?to=you@email.com ────
-app.get('/api/test-email', async (req, res) => {
-  const https = require('https');
-  const BREVO_API_KEY = process.env.BREVO_API_KEY;
-  const FROM_EMAIL    = process.env.BREVO_FROM || process.env.GMAIL_USER || '';
-  const to = req.query.to || FROM_EMAIL;
-  if (!BREVO_API_KEY) return res.status(500).json({ error: 'BREVO_API_KEY not set' });
-  if (!FROM_EMAIL)    return res.status(500).json({ error: 'GMAIL_USER / BREVO_FROM not set' });
-  const payload = JSON.stringify({
-    sender:      { name: 'IMS Test', email: FROM_EMAIL },
-    to:          [{ email: to }],
-    subject:     'IMS Email Test — ' + new Date().toISOString(),
-    htmlContent: '<p>This is a test email from your Inventory Management System (Brevo).</p>',
-  });
-  const options = {
-    hostname: 'api.brevo.com', path: '/v3/smtp/email', method: 'POST',
-    headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
-  };
-  try {
-    const result = await new Promise((resolve, reject) => {
-      const r = https.request(options, (resp) => {
-        let d = '';
-        resp.on('data', c => d += c);
-        resp.on('end', () => resolve({ status: resp.statusCode, body: d }));
-      });
-      r.on('error', reject);
-      r.setTimeout(15000, () => { r.destroy(); reject(new Error('timeout')); });
-      r.write(payload); r.end();
-    });
-    res.json({ from: FROM_EMAIL, to, brevo_status: result.status, brevo_response: JSON.parse(result.body || '{}') });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // Serve static files — HTML is never cached so browsers always get fresh JS
 app.use(express.static(path.join(__dirname, '../frontend'), {
   etag: false,
@@ -108,4 +73,36 @@ app.listen(PORT, '0.0.0.0', () => console.log(`[server] Listening on port ${PORT
     const logisticsRouter      = loadRouter('logistics',       './routes/logistics');
     const authRouter           = loadRouter('auth',            './routes/auth');
     const calendarRouter       = loadRouter('calendar',        './routes/calendar');
-    con
+    const lineResult           = loadRouter('line',            './routes/line');
+    const lineRouter           = lineResult.router || lineResult;
+    const localPurchasesRouter = loadRouter('local-purchases', './routes/local-purchases');
+    const ciplRouter           = loadRouter('cipl',            './routes/cipl');
+    const auditRouter          = loadRouter('audit',           './routes/audit');
+    const alertsRouter         = loadRouter('alerts',          './routes/alerts');
+    const statsRouter               = loadRouter('stats',               './routes/stats');
+    const activityLogsRouter        = loadRouter('activity-logs',       './routes/activity-logs');
+    const supplierQuotationsRouter  = loadRouter('supplier-quotations', './routes/supplier-quotations');
+
+    app.use('/api', inventoryRouter);
+    app.use('/api', jobsRouter);
+    app.use('/api', logisticsRouter);
+    app.use('/api', authRouter);
+    app.use('/api', calendarRouter);
+    app.use('/api', lineRouter);
+    app.use('/api', localPurchasesRouter);
+    app.use('/api', ciplRouter);
+    app.use('/api', auditRouter);
+    app.use('/api', alertsRouter);
+    app.use('/api', statsRouter);
+    app.use('/api', supplierQuotationsRouter);
+    app.use('/api', activityLogsRouter);
+    try { app.use('/', lineRouter); } catch (_) {}
+
+    app.get('/', (_req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
+    diag.ready = true;
+    console.log("[server] Ready. Route errors:", JSON.stringify(diag.routeErrors));
+  } catch (err) {
+    diag.iifeError = err.stack || err.message;
+    console.error("[server] IIFE CRASHED:", diag.iifeError);
+  }
+})();
