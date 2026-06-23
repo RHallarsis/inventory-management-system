@@ -1,26 +1,20 @@
 // ================================================================
 // emailService.js (outlookDraftService.js)
-// Sends PO approval emails. Priority:
-//   1. Gmail SMTP via Nodemailer (GMAIL_USER + GMAIL_APP_PASSWORD) — DMARC-safe
-//   2. Brevo transactional API (BREVO_API_KEY) — fallback
+// Sends PO approval emails via Brevo (HTTPS API — works on Railway,
+// no domain verification required, free tier 300 emails/day).
 //
-// Railway env vars:
-//   GMAIL_USER         – Gmail address used as sender
-//   GMAIL_APP_PASSWORD – Gmail App Password (myaccount.google.com > Security)
-//   BREVO_API_KEY      – Brevo API key (fallback only)
-//   BREVO_FROM         – verified Brevo sender (if using Brevo without Gmail)
+// Railway env vars required:
+//   BREVO_API_KEY  – from brevo.com → Settings → SMTP & API → API Keys
+//   BREVO_FROM     – (optional) verified sender email, defaults to GMAIL_USER
+//   GMAIL_USER     – your Gmail address, used as the FROM address
 // ================================================================
 
-const https      = require('https');
-const fs         = require('fs');
-const nodemailer = require('nodemailer');
+const https = require('https');
+const fs    = require('fs');
 
-const GMAIL_USER    = process.env.GMAIL_USER         || '';
-const GMAIL_PASS    = process.env.GMAIL_APP_PASSWORD  || '';
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const FROM_EMAIL    = process.env.BREVO_FROM || GMAIL_USER;
+const FROM_EMAIL    = process.env.BREVO_FROM || process.env.GMAIL_USER || '';
 const FROM_NAME     = 'Inventory Management System';
-const USE_GMAIL     = !!(GMAIL_USER && GMAIL_PASS);
 
 /** Build the HTML email body for an approved PO */
 function buildEmailBody(po) {
@@ -95,78 +89,60 @@ function brevoSend(payload) {
   });
 }
 
-// Parse CC/BCC — accept comma or semicolon, strip display-name format
-function parseEmailList(raw) {
-  if (!raw) return [];
-  return raw.split(/[,;]/).map(e => e.trim()).filter(Boolean).map(e => {
-    const m = e.match(/<([^>]+)>/);
-    return m ? m[1].trim() : e;
-  }).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
-}
-
-/** Send via Gmail SMTP — DMARC-safe, emails come from Google's servers */
-async function sendViaGmail(po, subject, htmlBody) {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: GMAIL_USER, pass: GMAIL_PASS },
-  });
-  const ccList  = parseEmailList(po.cc);
-  const bccList = parseEmailList(po.bcc);
-  const mailOpts = {
-    from:    `"${FROM_NAME}" <${GMAIL_USER}>`,
-    to:      po.supplier_email,
-    subject,
-    html:    htmlBody,
-  };
-  if (ccList.length)  mailOpts.cc  = ccList.join(', ');
-  if (bccList.length) mailOpts.bcc = bccList.join(', ');
-  if (po.attachment_path && po.attachment_name && fs.existsSync(po.attachment_path)) {
-    const cleanName = po.attachment_name.replace(/^\d+[-_]/, '');
-    mailOpts.attachments = [{ filename: cleanName, path: po.attachment_path }];
-    console.log(`[EmailService/Gmail] Attaching: ${cleanName}`);
+/**
+ * Sends an approval email to the supplier via Brevo.
+ *
+ * @param {object} po {
+ *   po_number, order_date, supplier_name,
+ *   supplier_email,   – recipient (editable in preview modal)
+ *   total_amount,
+ *   attachment_path,  – optional absolute path to PO file
+ *   attachment_name,  – optional filename
+ * }
+ */
+async function sendApprovedPODraft(po) {
+  if (!BREVO_API_KEY) {
+    throw new Error('BREVO_API_KEY is not set. Add it in Railway → your service → Variables.');
   }
-  console.log(`[EmailService/Gmail] Sending PO ${po.po_number} → ${po.supplier_email} | cc:${ccList} bcc:${bccList}`);
-  const info = await transporter.sendMail(mailOpts);
-  console.log(`[EmailService/Gmail] Done. MessageId: ${info.messageId}`);
-  return info;
-}
+  if (!FROM_EMAIL) {
+    throw new Error('GMAIL_USER or BREVO_FROM is not set — needed as the sender address.');
+  }
+  if (!po.supplier_email) {
+    throw new Error(`No email address provided for supplier "${po.supplier_name}".`);
+  }
 
-/** Send via Brevo API — fallback when Gmail SMTP not configured */
-async function sendViaBrevo(po, subject, htmlBody) {
-  if (!BREVO_API_KEY) throw new Error('No email provider configured. Set GMAIL_APP_PASSWORD (recommended) or BREVO_API_KEY in Railway.');
-  if (!FROM_EMAIL)    throw new Error('Set GMAIL_USER in Railway variables.');
-  const ccObjs  = parseEmailList(po.cc).map(e => ({ email: e }));
-  const bccObjs = parseEmailList(po.bcc).map(e => ({ email: e }));
   const payload = {
     sender:      { name: FROM_NAME, email: FROM_EMAIL },
     to:          [{ email: po.supplier_email, name: po.supplier_name }],
-    replyTo:     GMAIL_USER ? { email: GMAIL_USER } : undefined,
-    subject,
-    htmlContent: htmlBody,
+    subject:     `Purchase Order Approved – ${po.po_number} | ${po.supplier_name}`,
+    htmlContent: buildEmailBody(po),
   };
-  if (ccObjs.length)  payload.cc  = ccObjs;
-  if (bccObjs.length) payload.bcc = bccObjs;
+
+  // Add CC recipients if provided (comma-separated list)
+  if (po.cc) {
+    const ccList = po.cc.split(',').map(e => ({ email: e.trim() })).filter(e => e.email);
+    if (ccList.length) payload.cc = ccList;
+  }
+  // Add BCC recipients if provided (comma-separated list)
+  if (po.bcc) {
+    const bccList = po.bcc.split(',').map(e => ({ email: e.trim() })).filter(e => e.email);
+    if (bccList.length) payload.bcc = bccList;
+  }
+
+  // Attach the PO file if one was found on disk
   if (po.attachment_path && po.attachment_name && fs.existsSync(po.attachment_path)) {
     const cleanName = po.attachment_name.replace(/^\d+[-_]/, '');
-    payload.attachment = [{ name: cleanName, content: fs.readFileSync(po.attachment_path).toString('base64') }];
-    console.log(`[EmailService/Brevo] Attaching: ${cleanName}`);
+    const content   = fs.readFileSync(po.attachment_path).toString('base64');
+    payload.attachment = [{ name: cleanName, content }];
+    console.log(`[EmailService] Attaching file: ${cleanName}`);
   }
-  console.log(`[EmailService/Brevo] Sending PO ${po.po_number} → ${po.supplier_email}`);
-  const result = await brevoSend(payload);
-  console.log(`[EmailService/Brevo] Done. MessageId: ${result.messageId}`);
-  return result;
-}
 
-async function sendApprovedPODraft(po) {
-  if (!po.supplier_email) throw new Error(`No email address for supplier "${po.supplier_name}".`);
-  const subject  = `Purchase Order Approved – ${po.po_number} | ${po.supplier_name}`;
-  const htmlBody = buildEmailBody(po);
-  if (USE_GMAIL) {
-    console.log('[EmailService] Provider: Gmail SMTP');
-    return sendViaGmail(po, subject, htmlBody);
-  }
-  console.log('[EmailService] Provider: Brevo API');
-  return sendViaBrevo(po, subject, htmlBody);
+  console.log(`[EmailService] Sending via Brevo: PO ${po.po_number} → ${po.supplier_email}`);
+  console.log(`[EmailService] CC:`, JSON.stringify(payload.cc || null));
+  console.log(`[EmailService] BCC:`, JSON.stringify(payload.bcc || null));
+  const result = await brevoSend(payload);
+  console.log(`[EmailService] Email sent. Message ID: ${result.messageId}`);
+  return result;
 }
 
 module.exports = { sendApprovedPODraft };

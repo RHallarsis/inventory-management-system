@@ -4354,7 +4354,7 @@ function renderPO(){
       }
     </td>`;
     return `<tr><td>${i+1}</td><td><strong>${r.po_number}</strong></td><td>${r.supplier}</td><td>${r.order_date||'—'}</td><td>${badge(r.status)}</td><td>${fmt(r.total_amount)}</td><td>${fileLink(r)}</td>${siDateCell}${siFileCell}
-    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPOModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPODelModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">Del</button>${r.status==='Approved'?`<button class="page-act-btn" style="background:linear-gradient(135deg,#6b2e0a,#a0522d);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600" onclick="notifyPOSupplier(${r.id})">✉ Notify Supplier</button>`:''}</td></tr>`;
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPOModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPODelModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">Del</button>${r.status==='Approved'&&!r.si_file_name?`<button class="page-act-btn" style="background:linear-gradient(135deg,#6b2e0a,#a0522d);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600" onclick="notifyPOSupplier(${r.id})">✉ Notify Supplier</button>`:''}</td></tr>`;
   }).join('')||'<tr><td colspan="10"><div class="no-results">No purchase orders.</div></td></tr>';
 }
 async function saveSIDate(id,val,inputEl){
