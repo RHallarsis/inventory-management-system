@@ -707,6 +707,23 @@ router.patch('/purchase-orders/:id/si', siUpload.single('si_file'), async (req, 
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Remove SI file only ───────────────────────────────────────
+router.delete('/purchase-orders/:id/si', async (req, res) => {
+  try {
+    const { db } = await dbPromise;
+    const ex = await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]);
+    if (!ex) return res.status(404).json({ error: 'Purchase order not found' });
+    if (ex.si_file_path) {
+      try { fs.unlinkSync(path.join(__dirname, '..', ex.si_file_path)); } catch (_) {}
+    }
+    await db.run(
+      `UPDATE purchase_orders SET si_file_name=NULL, si_file_path=NULL, updated_at=NOW() WHERE id=?`,
+      [+req.params.id]
+    );
+    res.json(await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.delete('/purchase-orders/:id', async (req, res) => {
   try {
     const { db } = await dbPromise;
