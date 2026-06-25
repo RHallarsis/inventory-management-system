@@ -1095,4 +1095,7 @@ router.delete('/machine-monitoring/:id', async (req, res) => {
     if (!ex) return res.status(404).json({ error: 'Record not found' });
     await db.run('DELETE FROM machine_monitoring WHERE id = ?', [+req.params.id]);
     res.status(204).end();
-  } catch (err) { res.status(500).json
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+module.exports = router;
