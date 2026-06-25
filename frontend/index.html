@@ -4346,28 +4346,15 @@ function renderPO(){
         style="border:1px solid #ddd;border-radius:5px;padding:3px 6px;font-size:11.5px;cursor:pointer;background:${r.si_submitted_date?'#e8f5e9':'#fff'};color:${r.si_submitted_date?'#2e7d32':'#555'};width:118px"
         onchange="saveSIDate(${r.id},this.value,this)">
     </td>`;
-    const siName = r.si_file_name ? r.si_file_name.replace(/^\d+[-_]/,'') : '';
-    const siFileCell=`<td style="text-align:center;min-width:110px;white-space:nowrap">
+    const siFileCell=`<td style="text-align:center;min-width:90px">
       ${r.si_file_name
-        ?`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-            <a class="file-link" href="${window.location.origin}${r.si_file_path}" target="_blank"
-               title="${siName}" style="font-size:11px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">
-              📄 ${siName.length>16?siName.substring(0,15)+'…':siName}
-            </a>
-            <div style="display:flex;gap:4px">
-              <label class="page-act-btn btn-edit" style="cursor:pointer;font-size:10px;padding:3px 7px;margin:0" title="Replace SI file">
-                🔄 Replace<input type="file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" style="display:none" onchange="uploadSIFile(${r.id},this)">
-              </label>
-              <button class="page-act-btn btn-del" style="font-size:10px;padding:3px 7px;margin:0" title="Remove SI file" onclick="removeSIFile(${r.id})">🗑 Remove</button>
-            </div>
-          </div>`
-        :`<label class="page-act-btn" style="cursor:pointer;background:#fff7ed;color:#9a3412;border:1.5px dashed #c0844a;font-size:11px;padding:4px 10px;margin:0;display:inline-flex;align-items:center;gap:4px" title="Upload Sales Invoice">
-            📎 Upload SI<input type="file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" style="display:none" onchange="uploadSIFile(${r.id},this)">
-          </label>`
+        ?`<a class="file-link" href="${window.location.origin}${r.si_file_path}" target="_blank" title="${r.si_file_name.replace(/^\d+[-_]/,'')}" style="font-size:11px">📄 ${r.si_file_name.replace(/^\d+[-_]/,'').substring(0,18)}${r.si_file_name.length>22?'…':''}</a>
+           <br><label style="font-size:10px;color:#888;cursor:pointer;text-decoration:underline">replace<input type="file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" style="display:none" onchange="uploadSIFile(${r.id},this)"></label>`
+        :`<label style="cursor:pointer;color:#6b2e0a;font-size:11px;font-weight:600;border:1px dashed #c0844a;border-radius:5px;padding:3px 8px;white-space:nowrap">📎 Upload<input type="file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" style="display:none" onchange="uploadSIFile(${r.id},this)"></label>`
       }
     </td>`;
     return `<tr><td>${i+1}</td><td><strong>${r.po_number}</strong></td><td>${r.supplier}</td><td>${r.order_date||'—'}</td><td>${badge(r.status)}</td><td>${fmt(r.total_amount)}</td><td>${fileLink(r)}</td>${siDateCell}${siFileCell}
-    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPOModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPODelModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">Del</button>${r.status==='Approved'&&!r.si_file_name?`<button class="page-act-btn" style="background:linear-gradient(135deg,#6b2e0a,#a0522d);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600" onclick="notifyPOSupplier(${r.id})">✉ Notify Supplier</button>`:''}</td></tr>`;
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPOModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPODelModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">Del</button>${r.status==='Approved'?`<button class="page-act-btn" style="background:linear-gradient(135deg,#6b2e0a,#a0522d);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600" onclick="notifyPOSupplier(${r.id})">✉ Notify Supplier</button>`:''}</td></tr>`;
   }).join('')||'<tr><td colspan="10"><div class="no-results">No purchase orders.</div></td></tr>';
 }
 async function saveSIDate(id,val,inputEl){
@@ -4390,15 +4377,6 @@ async function uploadSIFile(id,inputEl){
     const updated=await r.json();
     const idx=poData.findIndex(x=>x.id===id);if(idx>-1)poData[idx]=updated;
     gToast('SI invoice uploaded!');renderPO();
-  }catch(err){gToast(err.message,'error');}}
-async function removeSIFile(id){
-  if(!confirm('Remove the SI invoice file for this PO?'))return;
-  try{
-    const r=await fetch(API+'/purchase-orders/'+id+'/si',{method:'DELETE'});
-    if(!r.ok){const e=await r.json();throw new Error(e.error||'Remove failed');}
-    const updated=await r.json();
-    const idx=poData.findIndex(x=>x.id===id);if(idx>-1)poData[idx]=updated;
-    gToast('SI invoice removed.');renderPO();
   }catch(err){gToast(err.message,'error');}}
 function extractPOPrefix(fname){return /^[A-Za-z]{2}\d{8}[A-Za-z]/.test(fname)?fname.substring(0,11):fname.substring(0,10);}
 function generatePONumber(prefix){const matching=poData.filter(p=>(p.po_number||'').startsWith(prefix+'-'));const maxSeq=matching.reduce((m,p)=>{const s=parseInt((p.po_number||'').split('-').pop())||0;return Math.max(m,s);},0);return `${prefix}-${String(maxSeq+1).padStart(4,'0')}`;}
@@ -6098,4 +6076,42 @@ function renderAlPagination(){
     </button>`;
   el.innerHTML=
     btn('‹ Prev', alPage-1, alPage<=1, false)+
-    pages.map(p=>typeof p==='number'?btn(p,p,false,p===alPage):btn('�
+    pages.map(p=>typeof p==='number'?btn(p,p,false,p===alPage):btn('…','…',true,false)).join('')+
+    btn('Next ›', alPage+1, alPage>=totalPages, false);
+}
+async function clearActivityLogs(){
+  if(!confirm('Clear all activity logs? This cannot be undone.'))return;
+  try{
+    await fetch(API+'/activity-logs',{method:'DELETE'});
+    alData=[];renderActivityLogs();
+    gToast('Activity logs cleared.');
+  }catch{gToast('Failed to clear logs','error');}
+}
+
+async function testActivityLog(){
+  try{
+    const res=await fetch(API+'/activity-logs',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        username: (currentUser&&currentUser.name)||'TestUser',
+        role:     (currentUser&&currentUser.role)||'Admin',
+        action:   'CREATE',
+        section:  'Test',
+        description: 'API connection test'
+      })
+    });
+    const txt=await res.text();
+    if(res.ok){
+      gToast('✅ API works! Status: '+res.status);
+      loadActivityLogs();
+    } else {
+      gToast('❌ API error '+res.status+': '+txt.substring(0,100),'error');
+    }
+  }catch(e){
+    gToast('❌ Fetch failed: '+e.message,'error');
+  }
+}
+</script>
+</body>
+</html>
