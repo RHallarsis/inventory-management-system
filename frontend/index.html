@@ -977,7 +977,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 .badge-ordered,.badge-scheduled,.badge-delivery,.badge-pullout,.badge-approved{padding:4px 12px;font-size:11.5px;border-radius:20px;font-weight:700;}
 
 /* Logistics — compact table */
-#page-logistics .page-tbl-wrap{border-radius:12px;border:1px solid #edf0f7;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,.04);}
+#page-logistics .page-tbl-wrap{border-radius:12px;border:1px solid #edf0f7;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;box-shadow:0 1px 8px rgba(0,0,0,.04);}
 #page-logistics .page-table th{padding:8px 11px;font-size:10.5px;letter-spacing:.5px;}
 #page-logistics .page-table td{padding:7px 11px;font-size:12.5px;}
 #page-logistics .page-table tr:hover td{background:#f5f7ff;}
@@ -2024,12 +2024,12 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 
 <!-- ===== CI MODAL ===== -->
 <div class="g-modal" id="ci-modal" style="display:none">
-  <div class="g-modal-box" style="max-width:640px">
+  <div class="g-modal-box" style="max-width:640px;display:flex;flex-direction:column;max-height:88vh;overflow:hidden;">
     <div class="g-modal-head">
       <span id="ci-modal-title">Add Commercial Invoice</span>
       <button class="g-modal-close" onclick="closeCIModal()">✕</button>
     </div>
-    <div class="g-modal-body">
+    <div class="g-modal-body" style="overflow-y:auto;flex:1;min-height:0;">
       <input type="hidden" id="ci-modal-id"/>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="g-form-group" style="grid-column:1/-1">
