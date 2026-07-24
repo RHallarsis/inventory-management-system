@@ -7,8 +7,15 @@ const router = express.Router();
 router.get('/stats/monthly-purchases', async (req, res) => {
   try {
     const { db } = await dbPromise;
+    // NOTE: this used to pick the query dialect via try/catch, but the SQLite
+    // driver (db.js) already catches its own errors internally and returns []
+    // instead of throwing — so the Postgres-flavoured query below always
+    // silently "succeeded" with an empty result under SQLite (logging
+    // '[sqljs] getAll: unrecognized token: ":"' from the `::date` cast) and
+    // the SQLite fallback query was never actually reached. Branch on
+    // DATABASE_URL explicitly instead so local dev really gets real data.
     let rows;
-    try {
+    if (process.env.DATABASE_URL) {
       rows = await db.getAll(
         `SELECT TO_CHAR(DATE_TRUNC('month', order_date::date), 'Mon YYYY') AS month,
                 TO_CHAR(DATE_TRUNC('month', order_date::date), 'YYYY-MM')  AS sort_key,
@@ -18,16 +25,26 @@ router.get('/stats/monthly-purchases', async (req, res) => {
          GROUP BY DATE_TRUNC('month', order_date::date)
          ORDER BY DATE_TRUNC('month', order_date::date) ASC`
       );
-    } catch {
-      rows = await db.getAll(
-        `SELECT strftime('%b %Y', order_date) AS month,
-                strftime('%Y-%m', order_date)  AS sort_key,
-                SUM(total_amount) AS total
+    } else {
+      // sql.js's bundled SQLite doesn't support strftime's '%b' (month name)
+      // specifier — it silently returns NULL for the whole column instead of
+      // erroring, which would have shown blank month labels — so we only ask
+      // SQLite for the sortable 'YYYY-MM' key and build the 'Mon YYYY' label
+      // in JS instead.
+      const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const raw = await db.getAll(
+        `SELECT strftime('%Y-%m', order_date) AS sort_key, SUM(total_amount) AS total
          FROM purchase_orders
          WHERE order_date IS NOT NULL AND order_date <> ''
          GROUP BY strftime('%Y-%m', order_date)
          ORDER BY strftime('%Y-%m', order_date) ASC`
       );
+      rows = raw.map(r => {
+        const [y, m] = String(r.sort_key || '').split('-');
+        const mi = parseInt(m, 10) - 1;
+        const month = (mi >= 0 && mi < 12) ? `${MONTH_NAMES[mi]} ${y}` : r.sort_key;
+        return { month, sort_key: r.sort_key, total: r.total };
+      });
     }
     res.json(rows || []);
   } catch (err) { res.status(500).json({ error: err.message }); }

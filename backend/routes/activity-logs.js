@@ -18,7 +18,13 @@ router.get('/activity-logs', async (req, res) => {
     const { db } = await dbPromise;
 
     // Auto-purge logs older than 30 days
-    await db.run(`DELETE FROM user_activity_logs WHERE created_at < NOW() - INTERVAL '30 days'`);
+    // (Postgres uses NOW() - INTERVAL '30 days'; SQLite has no INTERVAL syntax
+    // and needs datetime('now','-30 days') instead — branch on DB dialect.)
+    if (process.env.DATABASE_URL) {
+      await db.run(`DELETE FROM user_activity_logs WHERE created_at < NOW() - INTERVAL '30 days'`);
+    } else {
+      await db.run(`DELETE FROM user_activity_logs WHERE created_at < datetime('now','-30 days')`);
+    }
 
     const { user, section, action, limit = 50, page = 1 } = req.query;
     const pageSize = Math.max(1, Math.min(200, +limit));

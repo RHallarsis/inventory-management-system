@@ -53,7 +53,8 @@ app.listen(PORT, '0.0.0.0', () => console.log(`[server] Listening on port ${PORT
   try {
     console.log('[server] Starting init... DATABASE_URL:', diag.databaseUrl);
 
-    try { require('./database'); console.log('[server] database.js loaded'); }
+    let dbPromise = null;
+    try { ({ dbPromise } = require('./database')); console.log('[server] database.js loaded'); }
     catch (e) { console.error('[server] FAILED database.js:', e.message); diag.dbError = e.message; }
 
     function loadRouter(name, file) {
@@ -99,6 +100,24 @@ app.listen(PORT, '0.0.0.0', () => console.log(`[server] Listening on port ${PORT
     try { app.use('/', lineRouter); } catch (_) {}
 
     app.get('/', (_req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
+
+    // ── Daily low-stock LINE notification scheduler ──────────────────────
+    // Ticks every 15 minutes; the actual send is gated inside
+    // checkAndSendScheduledLowStockLine (only fires once per Manila calendar
+    // day, from 8 AM onward, and only when enabled in Settings), so firing
+    // this often is cheap and harmless.
+    if (dbPromise && typeof alertsRouter.checkAndSendScheduledLowStockLine === 'function') {
+      setInterval(async () => {
+        try {
+          const { db } = await dbPromise;
+          await alertsRouter.checkAndSendScheduledLowStockLine(db);
+        } catch (e) {
+          console.error('[low-stock-scheduler] tick failed:', e.message);
+        }
+      }, 15 * 60 * 1000);
+      console.log('[server] Low-stock LINE scheduler started (checks every 15 min).');
+    }
+
     diag.ready = true;
     console.log("[server] Ready. Route errors:", JSON.stringify(diag.routeErrors));
   } catch (err) {
