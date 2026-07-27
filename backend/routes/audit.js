@@ -1,10 +1,16 @@
 'use strict';
 const express = require('express');
 const { dbPromise } = require('../database');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
+// Legacy/orphaned log table (superseded by user_activity_logs) — treated
+// the same as the Logs section: viewing is Admin/Manager only.
+router.use('/audit-log', requireAuth);
+const logsOnly = requireRole('Admin', 'Manager');
+
 // GET /api/audit-log — paginated audit log
-router.get('/audit-log', async (req, res) => {
+router.get('/audit-log', logsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const limit  = Math.min(parseInt(req.query.limit)  || 100, 500);

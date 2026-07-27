@@ -15,7 +15,13 @@ const path          = require('path');
 const fs            = require('fs');
 const multer        = require('multer');
 const { dbPromise } = require('../database');
+const { requireAuth, requireWrite } = require('../middleware/auth');
 const router        = express.Router();
+
+// Supplier Quotations is a "Documents" module: Admin/Manager/Staff get
+// full CRUD + file management; Viewer is read-only.
+router.use('/supplier-quotations', requireAuth);
+const writeGate = requireWrite(true);
 
 // ── File upload setup ────────────────────────────────────────────
 const UPLOAD_DIR = path.join(__dirname, '../uploads/supplier-quotations');
@@ -74,7 +80,7 @@ router.get('/supplier-quotations/:id', async (req, res) => {
 });
 
 // ── POST /api/supplier-quotations ───────────────────────────────
-router.post('/supplier-quotations', upload.single('file'), async (req, res) => {
+router.post('/supplier-quotations', writeGate, upload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const {
@@ -117,7 +123,7 @@ router.post('/supplier-quotations', upload.single('file'), async (req, res) => {
 });
 
 // ── PUT /api/supplier-quotations/:id ────────────────────────────
-router.put('/supplier-quotations/:id', upload.single('file'), async (req, res) => {
+router.put('/supplier-quotations/:id', writeGate, upload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM supplier_quotations WHERE id=?', [+req.params.id]);
@@ -163,7 +169,7 @@ router.put('/supplier-quotations/:id', upload.single('file'), async (req, res) =
 });
 
 // ── DELETE /api/supplier-quotations/:id ─────────────────────────
-router.delete('/supplier-quotations/:id', async (req, res) => {
+router.delete('/supplier-quotations/:id', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT file_name FROM supplier_quotations WHERE id=?', [+req.params.id]);

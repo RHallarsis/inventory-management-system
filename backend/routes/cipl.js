@@ -10,8 +10,14 @@ const multer  = require('multer');
 const path    = require('path');
 const fs      = require('fs');
 const { dbPromise } = require('../database');
+const { requireAuth, requireWrite } = require('../middleware/auth');
 
 const router = express.Router();
+
+// CI/PL is a "Documents" module: Admin/Manager/Staff get full CRUD +
+// file management; Viewer is read-only. Must be logged in just to view.
+router.use('/cipl', requireAuth);
+const writeGate = requireWrite(true);
 
 // ── Upload directory ──────────────────────────────────────────
 const UPLOAD_DIR = path.join(__dirname, '../uploads/cipl');
@@ -62,7 +68,7 @@ router.get('/cipl/ci/:id', async (req, res) => {
 });
 
 // POST create
-router.post('/cipl/ci', upload.single('file'), async (req, res) => {
+router.post('/cipl/ci', writeGate, upload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const {
@@ -108,7 +114,7 @@ router.post('/cipl/ci', upload.single('file'), async (req, res) => {
 });
 
 // PUT update
-router.put('/cipl/ci/:id', upload.single('file'), async (req, res) => {
+router.put('/cipl/ci/:id', writeGate, upload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne(
@@ -157,7 +163,7 @@ router.put('/cipl/ci/:id', upload.single('file'), async (req, res) => {
 });
 
 // DELETE
-router.delete('/cipl/ci/:id', async (req, res) => {
+router.delete('/cipl/ci/:id', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne(
@@ -195,7 +201,7 @@ router.get('/cipl/pl/:id', async (req, res) => {
 });
 
 // POST create
-router.post('/cipl/pl', uploadPL, async (req, res) => {
+router.post('/cipl/pl', writeGate, uploadPL, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const {
@@ -253,7 +259,7 @@ router.post('/cipl/pl', uploadPL, async (req, res) => {
 });
 
 // PUT update
-router.put('/cipl/pl/:id', uploadPL, async (req, res) => {
+router.put('/cipl/pl/:id', writeGate, uploadPL, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne(
@@ -311,7 +317,7 @@ router.put('/cipl/pl/:id', uploadPL, async (req, res) => {
 });
 
 // DELETE
-router.delete('/cipl/pl/:id', async (req, res) => {
+router.delete('/cipl/pl/:id', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne(

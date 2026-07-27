@@ -10,15 +10,29 @@
 
 const express       = require('express');
 const { dbPromise } = require('../database');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const router        = express.Router();
 
+// Viewing/clearing the log is the "Logs" section — Admin/Manager only,
+// hidden entirely from Staff/Viewer. Recording a NEW entry (POST) stays
+// open to any logged-in role: it's how each user's own actions elsewhere
+// in the app get written to the log, not a "view logs" permission.
+router.use('/activity-logs', requireAuth);
+const logsOnly = requireRole('Admin', 'Manager');
+
 // ── GET /api/activity-logs ──────────────────────────────────────────────────
-router.get('/activity-logs', async (req, res) => {
+router.get('/activity-logs', logsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
 
     // Auto-purge logs older than 30 days
-    await db.run(`DELETE FROM user_activity_logs WHERE created_at < NOW() - INTERVAL '30 days'`);
+    // (Postgres uses NOW() - INTERVAL '30 days'; SQLite has no INTERVAL syntax
+    // and needs datetime('now','-30 days') instead — branch on DB dialect.)
+    if (process.env.DATABASE_URL) {
+      await db.run(`DELETE FROM user_activity_logs WHERE created_at < NOW() - INTERVAL '30 days'`);
+    } else {
+      await db.run(`DELETE FROM user_activity_logs WHERE created_at < datetime('now','-30 days')`);
+    }
 
     const { user, section, action, limit = 50, page = 1 } = req.query;
     const pageSize = Math.max(1, Math.min(200, +limit));
@@ -62,7 +76,7 @@ router.post('/activity-logs', async (req, res) => {
 });
 
 // ── DELETE /api/activity-logs ───────────────────────────────────────────────
-router.delete('/activity-logs', async (_req, res) => {
+router.delete('/activity-logs', logsOnly, async (_req, res) => {
   try {
     const { db } = await dbPromise;
     await db.run('DELETE FROM user_activity_logs');

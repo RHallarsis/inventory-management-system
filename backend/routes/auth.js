@@ -2,7 +2,13 @@
 const express = require('express');
 const crypto  = require('crypto');
 const { dbPromise } = require('../database');
+const { requireRole } = require('../middleware/auth');
 const router = express.Router();
+
+// User account management is Admin/Manager only (Settings/Users area) —
+// login/logout/heartbeat/change-password stay open since they ARE the
+// auth mechanism itself and run before any session exists.
+const usersOnly = requireRole('Admin', 'Manager');
 
 // Session timeout: 10 minutes of inactivity
 const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
@@ -84,7 +90,7 @@ router.post('/auth/heartbeat', async (req, res) => {
 });
 
 // GET /api/users — list all users (Admin only)
-router.get('/users', async (req, res) => {
+router.get('/users', usersOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const users = await db.getAll(
@@ -97,7 +103,7 @@ router.get('/users', async (req, res) => {
 });
 
 // POST /api/users — create new user
-router.post('/users', async (req, res) => {
+router.post('/users', usersOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const { name, email, role, password, status } = req.body;
@@ -123,7 +129,7 @@ router.post('/users', async (req, res) => {
 });
 
 // PUT /api/users/:id — update user
-router.put('/users/:id', async (req, res) => {
+router.put('/users/:id', usersOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const id = parseInt(req.params.id);
@@ -157,7 +163,7 @@ router.put('/users/:id', async (req, res) => {
 });
 
 // DELETE /api/users/:id — delete user
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/:id', usersOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const id = parseInt(req.params.id);

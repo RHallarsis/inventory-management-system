@@ -2,16 +2,27 @@ const express = require('express');
 const router  = express.Router();
 const { dbPromise } = require('../database');
 const { pushLine, broadcastLine, buildCalendarMessage } = require('../utils/lineService');
+const { requireAuth, requireRole } = require('../middleware/auth');
+
+// LINE config/notify/broadcast/test live in Settings — Admin/Manager only.
+// /webhook/line is called BY the LINE platform itself (not our frontend)
+// and is deliberately left ungated below.
+const settingsOnly = requireRole('Admin', 'Manager');
 
 // -- Helpers --
 async function getConfig(db) {
-  const row = await db.getOne('SELECT channel_token, user_id, auto_notify FROM line_config WHERE id=1');
-  if (!row) return { channel_token: '', user_id: '', auto_notify: 0 };
-  return { channel_token: row.channel_token || '', user_id: row.user_id || '', auto_notify: row.auto_notify || 0 };
+  const row = await db.getOne('SELECT channel_token, user_id, auto_notify, low_stock_notify FROM line_config WHERE id=1');
+  if (!row) return { channel_token: '', user_id: '', auto_notify: 0, low_stock_notify: 0 };
+  return {
+    channel_token: row.channel_token || '',
+    user_id: row.user_id || '',
+    auto_notify: row.auto_notify || 0,
+    low_stock_notify: row.low_stock_notify || 0,
+  };
 }
 
 // GET /api/line/config
-router.get('/line/config', async (req, res) => {
+router.get('/line/config', requireAuth, settingsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const cfg = await getConfig(db);
@@ -19,6 +30,7 @@ router.get('/line/config', async (req, res) => {
       token_set  : !!cfg.channel_token,
       user_id    : cfg.user_id,
       auto_notify: !!cfg.auto_notify,
+      low_stock_notify: !!cfg.low_stock_notify,
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -26,13 +38,23 @@ router.get('/line/config', async (req, res) => {
 });
 
 // POST /api/line/config
-router.post('/line/config', async (req, res) => {
+// Fields are merged onto the existing row (rather than blindly overwritten)
+// so that saving one setting (e.g. the low-stock toggle) never resets a
+// field the caller didn't send (e.g. the calendar auto_notify toggle).
+router.post('/line/config', requireAuth, settingsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
-    const { channel_token, user_id, auto_notify } = req.body;
+    const existing = await getConfig(db);
+    const { channel_token, user_id, auto_notify, low_stock_notify } = req.body;
+    const merged = {
+      channel_token: channel_token != null ? channel_token : existing.channel_token,
+      user_id: user_id != null ? user_id : existing.user_id,
+      auto_notify: auto_notify != null ? (auto_notify ? 1 : 0) : existing.auto_notify,
+      low_stock_notify: low_stock_notify != null ? (low_stock_notify ? 1 : 0) : existing.low_stock_notify,
+    };
     await db.run(
-      `UPDATE line_config SET channel_token=?,user_id=?,auto_notify=?,updated_at=NOW() WHERE id=1`,
-      [channel_token || '', user_id || '', auto_notify ? 1 : 0]
+      `UPDATE line_config SET channel_token=?,user_id=?,auto_notify=?,low_stock_notify=?,updated_at=NOW() WHERE id=1`,
+      [merged.channel_token || '', merged.user_id || '', merged.auto_notify, merged.low_stock_notify]
     );
     res.json({ ok: true });
   } catch (e) {
@@ -41,7 +63,7 @@ router.post('/line/config', async (req, res) => {
 });
 
 // POST /api/line/notify — push urgent tasks to a single configured user ID
-router.post('/line/notify', async (req, res) => {
+router.post('/line/notify', requireAuth, settingsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const cfg = await getConfig(db);
@@ -72,7 +94,7 @@ router.post('/line/notify', async (req, res) => {
 });
 
 // POST /api/line/broadcast — broadcast to ALL friends/followers of the Line Official Account
-router.post('/line/broadcast', async (req, res) => {
+router.post('/line/broadcast', requireAuth, settingsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const cfg = await getConfig(db);
@@ -127,7 +149,7 @@ router.post('/line/broadcast', async (req, res) => {
 });
 
 // POST /api/line/test — sends a test broadcast to confirm token works
-router.post('/line/test', async (req, res) => {
+router.post('/line/test', requireAuth, settingsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const cfg = await getConfig(db);

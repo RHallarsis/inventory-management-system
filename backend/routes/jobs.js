@@ -12,8 +12,14 @@
 const express      = require('express');
 const { dbPromise } = require('../database');
 const queue        = require('../workers/jobQueue');
+const { requireAuth, requireWrite } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Background job triggers are an Admin/Manager action; viewing job
+// status stays open to any logged-in role.
+router.use('/jobs', requireAuth);
+const writeGate = requireWrite(false);
 
 // ── Valid job types ────────────────────────────────────────────
 const VALID_TYPES = ['low-stock-check', 'reorder-calc', 'bulk-status-recalc', 'report-summary'];
@@ -22,7 +28,7 @@ const VALID_TYPES = ['low-stock-check', 'reorder-calc', 'bulk-status-recalc', 'r
 //  Body: { type: string, payload?: object }
 //  When payload is omitted (or missing required keys), the route
 //  auto-fetches the data it needs straight from the DB.
-router.post('/jobs', async (req, res) => {
+router.post('/jobs', writeGate, async (req, res) => {
   const { type, payload } = req.body ?? {};
 
   if (!type || !VALID_TYPES.includes(type)) {

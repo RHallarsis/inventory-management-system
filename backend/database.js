@@ -152,6 +152,25 @@ const dbPromise = (async () => {
     )
   `);
 
+  // 🔧 PO Line Items — one PO can list multiple items (part/description, qty, unit price).
+  // total_amount on purchase_orders is recalculated from these whenever an item is
+  // added/edited/removed (see routes/inventory.js). No FK constraint is used here,
+  // matching the lightweight style of the other tables in this file — the PO's line
+  // items are deleted manually in application code when a PO itself is deleted.
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS po_line_items (
+      id          SERIAL      PRIMARY KEY,
+      po_id       INTEGER     NOT NULL DEFAULT 0,
+      part_no     TEXT        NOT NULL DEFAULT '',
+      description TEXT        NOT NULL DEFAULT '',
+      quantity    REAL        NOT NULL DEFAULT 0,
+      unit_price  REAL        NOT NULL DEFAULT 0,
+      line_total  REAL        NOT NULL DEFAULT 0,
+      created_at  TIMESTAMPTZ DEFAULT NOW(),
+      updated_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
   await db.run(`
     CREATE TABLE IF NOT EXISTS goods_received (
       id            SERIAL      PRIMARY KEY,
@@ -199,6 +218,61 @@ const dbPromise = (async () => {
       updated_at           TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+
+  // 🔧 Goods Received / Stock Transfer / Pullout Receipt Line Items — same shape
+  // as po_line_items, reusing that proven design. When a Goods Received or
+  // Pullout Receipt is marked Completed, its line items adjust the matching
+  // spare_parts.on_hand and are logged into stock_movements (see routes/inventory.js).
+  // Stock Transfers move stock between locations rather than changing the total
+  // quantity on hand, so its line items are kept for record-keeping only and do
+  // NOT write to spare_parts or stock_movements.
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS gr_line_items (
+      id          SERIAL      PRIMARY KEY,
+      gr_id       INTEGER     NOT NULL DEFAULT 0,
+      part_no     TEXT        NOT NULL DEFAULT '',
+      description TEXT        NOT NULL DEFAULT '',
+      quantity    REAL        NOT NULL DEFAULT 0,
+      unit_price  REAL        NOT NULL DEFAULT 0,
+      line_total  REAL        NOT NULL DEFAULT 0,
+      created_at  TIMESTAMPTZ DEFAULT NOW(),
+      updated_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS transfer_line_items (
+      id          SERIAL      PRIMARY KEY,
+      transfer_id INTEGER     NOT NULL DEFAULT 0,
+      part_no     TEXT        NOT NULL DEFAULT '',
+      description TEXT        NOT NULL DEFAULT '',
+      quantity    REAL        NOT NULL DEFAULT 0,
+      unit_price  REAL        NOT NULL DEFAULT 0,
+      line_total  REAL        NOT NULL DEFAULT 0,
+      created_at  TIMESTAMPTZ DEFAULT NOW(),
+      updated_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS pullout_line_items (
+      id          SERIAL      PRIMARY KEY,
+      pullout_id  INTEGER     NOT NULL DEFAULT 0,
+      part_no     TEXT        NOT NULL DEFAULT '',
+      description TEXT        NOT NULL DEFAULT '',
+      quantity    REAL        NOT NULL DEFAULT 0,
+      unit_price  REAL        NOT NULL DEFAULT 0,
+      line_total  REAL        NOT NULL DEFAULT 0,
+      created_at  TIMESTAMPTZ DEFAULT NOW(),
+      updated_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  // 🔧 stock_applied flags — records whether a document's line items have already
+  // been applied against real stock, so re-editing after Completion can't double-count.
+  // Once true, the line items lock; un-completing the document reverses the effect
+  // and clears this flag so it can be edited and re-completed.
+  await db.run(`ALTER TABLE goods_received ADD COLUMN IF NOT EXISTS stock_applied INTEGER NOT NULL DEFAULT 0`);
+  await db.run(`ALTER TABLE stock_transfers ADD COLUMN IF NOT EXISTS stock_applied INTEGER NOT NULL DEFAULT 0`);
+  await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS stock_applied INTEGER NOT NULL DEFAULT 0`);
 
   await db.run(`
     CREATE TABLE IF NOT EXISTS transmittal_receipts (
@@ -315,6 +389,11 @@ const dbPromise = (async () => {
       updated_at    TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  // 🔧 Daily low-stock LINE notification — separate on/off switch from the
+  // calendar's auto_notify, plus a last-sent date so the scheduler (see
+  // server.js) never sends the same day's alert twice even across restarts.
+  await db.run(`ALTER TABLE line_config ADD COLUMN IF NOT EXISTS low_stock_notify INTEGER NOT NULL DEFAULT 0`);
+  await db.run(`ALTER TABLE line_config ADD COLUMN IF NOT EXISTS low_stock_last_sent TEXT NOT NULL DEFAULT ''`);
 
   await db.run(`
     CREATE TABLE IF NOT EXISTS users (
@@ -437,6 +516,13 @@ const dbPromise = (async () => {
     await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS returned_by TEXT NOT NULL DEFAULT ''`);
     await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS witnessed_by TEXT NOT NULL DEFAULT ''`);
   } catch (_) {}
+  // 🔧 Migrate pullout_receipts: items_count (integer) → items_description (text)
+  // Mirrors the same fix already applied to transmittal_receipts below — pullout_receipts
+  // never got this column, which is why "Items Description" was showing the items_count
+  // integer (default 0) instead of real text.
+  try {
+    await db.run(`ALTER TABLE pullout_receipts ADD COLUMN IF NOT EXISTS items_description TEXT NOT NULL DEFAULT ''`);
+  } catch (_) {}
 
   // 🔧 Migrate transmittal_receipts: rename transferred_by → turned_over_by, add new columns
   try {
@@ -460,9 +546,17 @@ const dbPromise = (async () => {
   } catch (_) {}
 
   // ── Change items_count to TEXT in stock_transfers (Items Definition) ─────
-  try {
-    await db.run(`ALTER TABLE stock_transfers ALTER COLUMN items_count TYPE TEXT USING items_count::TEXT`);
-  } catch (_) {}
+  // Postgres needs an explicit column-type change for this; SQLite is loosely
+  // typed and already accepts a TEXT value in this column with no migration
+  // at all. The Postgres-only "ALTER COLUMN ... TYPE ... USING" syntax below
+  // also isn't valid SQLite syntax in any form — every local boot was hitting
+  // it and logging "near ALTER: syntax error" (harmless, but noisy), so this
+  // is now skipped entirely outside Postgres mode.
+  if (process.env.DATABASE_URL) {
+    try {
+      await db.run(`ALTER TABLE stock_transfers ALTER COLUMN items_count TYPE TEXT USING items_count::TEXT`);
+    } catch (_) {}
+  }
 
   // ── Add file upload columns to pullout & transmittal receipts ───────────
   try {
@@ -492,6 +586,14 @@ const dbPromise = (async () => {
   await db.run(`ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS si_submitted_date TEXT DEFAULT NULL`);
   await db.run(`ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS si_file_name TEXT DEFAULT NULL`);
   await db.run(`ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS si_file_path TEXT DEFAULT NULL`);
+
+  // ── Approval-email tracking columns on purchase_orders ─────────
+  // Previously a failed auto-email on approval (e.g. no matching/complete supplier
+  // record) was only logged to the server console — invisible to anyone using the
+  // app. These columns let the UI show the real status instead of failing silently.
+  await db.run(`ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS email_status TEXT NOT NULL DEFAULT ''`);
+  await db.run(`ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS email_error TEXT NOT NULL DEFAULT ''`);
+  await db.run(`ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS email_sent_at TIMESTAMPTZ DEFAULT NULL`);
 
   // ── Ensure line_config row exists ──────────────────────────────
   const lcCnt = await db.scalar('SELECT COUNT(*) FROM line_config');

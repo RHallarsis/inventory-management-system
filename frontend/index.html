@@ -443,8 +443,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
   .log-tab{padding:7px 11px;font-size:11px;}
 }
 /* ── STAFF / VIEW-ONLY MODE ─────────────────────────────────────────────── */
-/* Hide Audit Log and Stock Movements nav items for staff */
-body.staff-mode .nav-item[data-page="auditlog"],
+/* Hide Stock Movements nav item for staff */
 body.staff-mode .nav-item[data-page="stockmovements"],
 body.staff-mode .nav-item[data-page="activitylogs"],
 body.viewer-mode .nav-item[data-page="activitylogs"] { display:none !important; }
@@ -546,6 +545,68 @@ body.viewer-mode .ac-task-del,
 body.viewer-mode .ac-sum-edit,
 body.viewer-mode .ac-sum-del,
 body.viewer-mode .line-notify-btn { display:none !important; }
+
+/* Staff mode — read-only everywhere by default (same lockdown as Viewer),
+   EXCEPT on the "Documents" pages (Purchase Orders, Suppliers, CI/PL,
+   Stock Transfers, Pullout Receipts, Transmittal Receipts, Logistics,
+   Supplier Quotations) where Staff gets full CRUD + file management —
+   see the override block right below this one. */
+body.staff-mode .page-add-btn,
+body.staff-mode .btn-edit,
+body.staff-mode .btn-del,
+body.staff-mode .ua-btn,
+body.staff-mode .ua-btn-edit,
+body.staff-mode .ua-btn-del,
+body.staff-mode .ac-add-btn,
+body.staff-mode .ac-task-edit,
+body.staff-mode .ac-task-del,
+body.staff-mode .ac-sum-edit,
+body.staff-mode .ac-sum-del,
+body.staff-mode .line-notify-btn { display:none !important; }
+
+/* Staff mode — re-enable full CRUD on the "Documents" pages only */
+body.staff-mode #page-purchaseorders .page-add-btn,
+body.staff-mode #page-suppliers .page-add-btn,
+body.staff-mode #page-cipl .page-add-btn,
+body.staff-mode #page-stocktransfers .page-add-btn,
+body.staff-mode #page-pulloutreceipts .page-add-btn,
+body.staff-mode #page-transmittalreceipts .page-add-btn,
+body.staff-mode #page-logistics .page-add-btn,
+body.staff-mode #page-supplierquotations .page-add-btn { display:flex !important; }
+body.staff-mode #page-purchaseorders .btn-edit,
+body.staff-mode #page-purchaseorders .btn-del,
+body.staff-mode #page-purchaseorders .page-act-btn,
+body.staff-mode #page-suppliers .btn-edit,
+body.staff-mode #page-suppliers .btn-del,
+body.staff-mode #page-suppliers .page-act-btn,
+body.staff-mode #page-cipl .btn-edit,
+body.staff-mode #page-cipl .btn-del,
+body.staff-mode #page-cipl .page-act-btn,
+body.staff-mode #page-stocktransfers .btn-edit,
+body.staff-mode #page-stocktransfers .btn-del,
+body.staff-mode #page-stocktransfers .page-act-btn,
+body.staff-mode #page-pulloutreceipts .btn-edit,
+body.staff-mode #page-pulloutreceipts .btn-del,
+body.staff-mode #page-pulloutreceipts .page-act-btn,
+body.staff-mode #page-transmittalreceipts .btn-edit,
+body.staff-mode #page-transmittalreceipts .btn-del,
+body.staff-mode #page-transmittalreceipts .page-act-btn,
+body.staff-mode #page-logistics .btn-edit,
+body.staff-mode #page-logistics .btn-del,
+body.staff-mode #page-logistics .page-act-btn,
+body.staff-mode #page-supplierquotations .btn-edit,
+body.staff-mode #page-supplierquotations .btn-del,
+body.staff-mode #page-supplierquotations .page-act-btn { display:inline-block !important; }
+/* Viewer can never open/preview/download an attached file, anywhere
+   (matches the backend gate on the /uploads static route). Staff and
+   Admin/Manager keep normal clickable file links. */
+body.viewer-mode .file-link,
+body.viewer-mode .log-file-link {
+  pointer-events:none;
+  opacity:.55;
+  cursor:not-allowed;
+  text-decoration:none !important;
+}
 /* Staff access-denied screen (shown when a blocked page is attempted) */
 .staff-blocked-notice {
   display:none;
@@ -808,7 +869,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 
 /* ── TABLES ──────────────────────────────────────────── */
 .page-tbl-wrap{
-  border-radius:14px;overflow:hidden;border:none;
+  border-radius:14px;overflow-x:auto;overflow-y:hidden;border:none;-webkit-overflow-scrolling:touch;
   box-shadow:0 2px 16px rgba(0,0,0,.07),0 1px 4px rgba(0,0,0,.04);
   background:#fff;
 }
@@ -832,6 +893,9 @@ body.viewer-mode .line-notify-btn { display:none !important; }
   background:linear-gradient(135deg,#1e1b4b,#312e81);
   color:#e0e7ff;font-weight:700;padding:12px 16px;border-bottom:none;
 }
+/* Purchase Orders — narrow the File column so it doesn't crowd out SI/Actions */
+#page-purchaseorders .page-table td:nth-child(7){max-width:90px;}
+#page-purchaseorders .page-table td:nth-child(7) .file-link{display:inline-block;max-width:82px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;}
 /* Pullout Receipts — compact table overrides */
 #page-pulloutreceipts .page-tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 #page-pulloutreceipts .page-table{font-size:11.5px;table-layout:auto;width:100%;}
@@ -975,7 +1039,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 .badge-ordered,.badge-scheduled,.badge-delivery,.badge-pullout,.badge-approved{padding:4px 12px;font-size:11.5px;border-radius:20px;font-weight:700;}
 
 /* Logistics — compact table */
-#page-logistics .page-tbl-wrap{border-radius:12px;border:1px solid #edf0f7;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,.04);}
+#page-logistics .page-tbl-wrap{border-radius:12px;border:1px solid #edf0f7;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;box-shadow:0 1px 8px rgba(0,0,0,.04);}
 #page-logistics .page-table th{padding:8px 11px;font-size:10.5px;letter-spacing:.5px;}
 #page-logistics .page-table td{padding:7px 11px;font-size:12.5px;}
 #page-logistics .page-table tr:hover td{background:#f5f7ff;}
@@ -1020,22 +1084,25 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 .g-modal{
   border-radius:18px;border:none;overflow:hidden;
   box-shadow:0 28px 90px rgba(0,0,0,.2),0 8px 26px rgba(0,0,0,.1);
+  display:flex;flex-direction:column;
 }
 .g-modal-head{
   padding:20px 24px;font-size:15px;font-weight:800;
   color:#0f172a;letter-spacing:-.3px;
   background:linear-gradient(135deg,#f8f9ff,#ffffff);
   border-bottom:1px solid #eef0f8;
+  flex-shrink:0;
 }
 .g-modal-close{
   color:#94a3b8;border-radius:8px;padding:4px;
   transition:background .12s,color .12s;
 }
 .g-modal-close:hover{background:#f1f5f9;color:#475569;}
-.g-modal-body{padding:22px 24px;}
+.g-modal-body{padding:22px 24px;flex:1 1 auto;min-height:0;overflow-y:auto;}
 .g-modal-foot{
   padding:16px 24px;border-top:1px solid #f0f3fa;
   background:#fafbff;
+  flex-shrink:0;
 }
 .g-form-group{margin-bottom:16px;}
 .g-form-group label{
@@ -1526,8 +1593,6 @@ body.viewer-mode .line-notify-btn { display:none !important; }
       <span>Alerts</span><span class="nav-badge" id="alert-badge">0</span></div>
     <div class="nav-item" data-page="activitycalendar" onclick="showPage(&apos;activitycalendar&apos;)">
       <svg viewBox="0 0 24 24"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg><span>Activity Calendar</span><span class="nav-badge" id="ac-urgent-badge" style="display:none">0</span></div>
-    <div class="nav-item" data-page="auditlog" onclick="showPage(&apos;auditlog&apos;);loadAuditLog()">
-      <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8zm0-4h5v2H8z"/></svg><span>Audit Log</span></div>
     <div class="nav-item" data-page="activitylogs" onclick="showPage(&apos;activitylogs&apos;);loadActivityLogs()">
       <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg><span>Activity Logs</span>
     </div>
@@ -1872,6 +1937,9 @@ body.viewer-mode .line-notify-btn { display:none !important; }
     <span class="table-meta" id="sup-meta"></span>
     <button class="page-add-btn" onclick="openSupModal()">+ Add Supplier</button>
   </div>
+  <div id="sup-email-reminder" style="display:none;margin:0 0 14px;padding:10px 16px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px;align-items:center;gap:8px">
+    <span style="font-size:15px;margin-right:6px">💡</span><span id="sup-email-reminder-text"></span>
+  </div>
   <div class="page-tbl-wrap">
     <table class="page-table">
       <thead><tr><th>#</th><th>Supplier</th><th>Contact Person</th><th>Email</th><th>Phone</th><th>Category</th><th>Location</th><th>Status</th><th>2303</th><th>Actions</th></tr></thead>
@@ -2018,12 +2086,12 @@ body.viewer-mode .line-notify-btn { display:none !important; }
 
 <!-- ===== CI MODAL ===== -->
 <div class="g-modal" id="ci-modal" style="display:none">
-  <div class="g-modal-box" style="max-width:640px">
+  <div class="g-modal-box" style="max-width:640px;display:flex;flex-direction:column;max-height:88vh;overflow:hidden;">
     <div class="g-modal-head">
       <span id="ci-modal-title">Add Commercial Invoice</span>
       <button class="g-modal-close" onclick="closeCIModal()">✕</button>
     </div>
-    <div class="g-modal-body">
+    <div class="g-modal-body" style="overflow-y:auto;flex:1;min-height:0;">
       <input type="hidden" id="ci-modal-id"/>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="g-form-group" style="grid-column:1/-1">
@@ -2203,7 +2271,7 @@ body.viewer-mode .line-notify-btn { display:none !important; }
   <div class="page-hero h-red"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></div><div><div class="ph-title">Alerts & Notifications</div><div class="ph-sub">Critical inventory alerts — low stock, out-of-stock & reorder triggers</div></div></div></div>
   <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
     <button class="page-add-btn" onclick="sendLowStockAlert()" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">✉ Email Low-Stock Alert to Management</button>
-    <button class="page-add-btn" onclick="showPage('auditlog')" style="background:#6366f1">📋 View Audit Log</button>
+    <button class="page-add-btn" onclick="showPage('activitylogs');loadActivityLogs()" style="background:#6366f1">📋 View Activity Logs</button>
   </div>
   <div class="alert-section">
     <div class="alert-section-head alert-head-red">🚫 Out of Stock <span class="alert-head-count" id="alert-out-count"></span></div>
@@ -2371,26 +2439,6 @@ body.viewer-mode .line-notify-btn { display:none !important; }
     </div>
   </div>
 </div>
-<!-- ===== AUDIT LOG ===== -->
-<div id="page-auditlog" class="page-section">
-  <div class="page-hero h-slate"><div class="ph-left"><div class="ph-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8zm0-4h5v2H8z"/></svg></div><div><div class="ph-title">Audit Log</div><div class="ph-sub">Complete history of all actions performed in the system by users</div></div></div></div>
-  <div class="page-toolbar">
-    <input class="search-input" id="alog-search" placeholder="Filter by user, action or entity..." oninput="renderAuditLog()"/>
-    <button class="page-add-btn" onclick="loadAuditLog()" style="background:#6366f1">&#8635; Refresh</button>
-    <span class="table-meta" id="alog-meta"></span>
-  </div>
-  <div class="page-tbl-wrap">
-    <table class="page-table">
-      <thead><tr><th>#</th><th>Date &amp; Time</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
-      <tbody id="alog-body"></tbody>
-    </table>
-  </div>
-  <div style="text-align:center;margin-top:12px">
-    <button class="page-add-btn" id="alog-load-more" onclick="loadMoreAudit()" style="background:#64748b;display:none">Load More</button>
-  </div>
-</div>
-<!-- ===== STOCK MOVEMENTS ===== -->
-
 <!-- ===== ACCOUNT ACTIVITY LOGS ===== -->
 <div id="page-activitylogs" class="page-section">
   <div class="page-hero h-indigo">
@@ -2530,10 +2578,17 @@ body.viewer-mode .line-notify-btn { display:none !important; }
           Auto-notify on High priority task save
         </label>
       </div>
+      <div class="g-form-group" style="grid-column:1/-1;display:flex;align-items:flex-end">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+          <input type="checkbox" id="line-lowstock" style="width:16px;height:16px"/>
+          每天自動檢查低庫存並用 LINE 通知我(每天早上8點後,當天最多發一次)
+        </label>
+      </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
       <button class="g-btn g-btn-save" onclick="saveLineConfig()">Save LINE Config</button>
       <button class="g-btn g-btn-cancel" onclick="testLineNotify()" id="line-test-btn">Send Test Message</button>
+      <button class="g-btn g-btn-cancel" onclick="testLowStockLine()" id="line-lowstock-test-btn">🧪 Test Low-Stock Alert Now</button>
     </div>
     <p style="font-size:11px;color:var(--text-2);margin-top:10px">
       &#128161; How to get your User ID: Open LINE app &rarr; Settings &rarr; Profile &rarr; copy the ID shown below your name.
@@ -2739,20 +2794,74 @@ body.viewer-mode .line-notify-btn { display:none !important; }
   </div>
 </div>
 <!-- PO MODALS -->
+<!-- Shared supplier-name autocomplete suggestions for PO / Supplier Quotations / Goods Received -->
+<datalist id="supplier-datalist"></datalist>
 <div class="g-modal-overlay" id="po-modal">
   <div class="g-modal" style="max-width:580px">
     <div class="g-modal-head"><span id="po-modal-title">Add Purchase Order</span><button class="g-modal-close" onclick="closePOModal()">&#215;</button></div>
     <div class="g-modal-body">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="g-form-group"><label>PO Number *</label><input id="po-f-no" placeholder="Attach a file to auto-fill"/><div id="po-f-no-hint" style="font-size:11px;color:#888;margin-top:3px;display:none">📎 Auto-filled from filename — attach a file below</div></div>
-        <div class="g-form-group"><label>Supplier *</label><input id="po-f-supplier" placeholder="Supplier name"/></div>
+        <div class="g-form-group"><label>Supplier *</label><input id="po-f-supplier" list="supplier-datalist" placeholder="Supplier name" autocomplete="off"/></div>
         <div class="g-form-group"><label>Order Date</label><input type="date" id="po-f-date"/></div>
         <div class="g-form-group"><label>Status</label><select id="po-f-status"><option>Pending</option><option>Approved</option><option>Ordered</option><option>Received</option><option>Cancelled</option></select></div>
       </div>
-      <div class="g-form-group"><label>Total Amount</label><input type="number" id="po-f-amount" min="0" step="0.01" placeholder="0.00"/></div>
+      <div class="g-form-group"><label>Total Amount</label><input type="number" id="po-f-amount" min="0" step="0.01" placeholder="0.00"/><div id="po-f-amount-note" style="font-size:11px;color:#888;margin-top:3px"></div></div>
       <div class="g-form-group"><label>Attach File</label><input type="file" id="po-f-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg" onchange="onPOFileChange()"/><div id="po-cur-file" style="font-size:11px;color:var(--text-2);margin-top:4px"></div></div>
     </div>
     <div class="g-modal-foot"><button class="g-btn g-btn-cancel" onclick="closePOModal()">Cancel</button><button class="g-btn g-btn-save" onclick="savePO()">Save</button></div>
+  </div>
+</div>
+<!-- PO Line Items Modal -->
+<div class="g-modal-overlay" id="po-items-modal">
+  <div class="g-modal" style="max-width:740px">
+    <div class="g-modal-head"><span id="po-items-modal-title">PO Items</span><button class="g-modal-close" onclick="closePOItemsModal()">&#215;</button></div>
+    <div class="g-modal-body">
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:10px">Add each item on this PO below. The Total Amount on the PO is calculated automatically from these items.</div>
+      <div class="page-tbl-wrap">
+        <table class="page-table">
+          <thead><tr><th>Part No.</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Line Total</th><th></th></tr></thead>
+          <tbody id="po-items-body"></tbody>
+        </table>
+      </div>
+      <div style="display:grid;grid-template-columns:110px 1fr 70px 100px 90px 34px;gap:8px;align-items:center;margin-top:12px">
+        <input id="poitem-f-partno" list="poitem-partno-list" placeholder="Part No." style="padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12.5px">
+        <input id="poitem-f-desc" placeholder="Description *" style="padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12.5px">
+        <input id="poitem-f-qty" type="number" min="0" step="1" placeholder="Qty" style="padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12.5px">
+        <input id="poitem-f-price" type="number" min="0" step="0.01" placeholder="Unit Price" style="padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12.5px">
+        <div></div>
+        <button class="page-act-btn btn-edit" style="padding:6px 10px" onclick="addPOLineItem()">+</button>
+      </div>
+      <datalist id="poitem-partno-list"></datalist>
+      <div style="text-align:right;margin-top:14px;font-size:14px;font-weight:700">Total: <span id="po-items-total">0.00</span></div>
+    </div>
+    <div class="g-modal-foot"><button class="g-btn g-btn-cancel" onclick="closePOItemsModal()">Close</button></div>
+  </div>
+</div>
+<!-- Generic Line Items Modal — reused for Goods Received / Stock Transfers / Pullout Receipts -->
+<div class="g-modal-overlay" id="doc-items-modal">
+  <div class="g-modal" style="max-width:740px">
+    <div class="g-modal-head"><span id="doc-items-modal-title">Items</span><button class="g-modal-close" onclick="closeDocItemsModal()">&#215;</button></div>
+    <div class="g-modal-body">
+      <div id="doc-items-note" style="font-size:12px;color:var(--text-2);margin-bottom:10px"></div>
+      <div class="page-tbl-wrap">
+        <table class="page-table">
+          <thead><tr><th>Part No.</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Line Total</th><th></th></tr></thead>
+          <tbody id="doc-items-body"></tbody>
+        </table>
+      </div>
+      <div id="doc-items-add-row" style="display:grid;grid-template-columns:110px 1fr 70px 100px 90px 34px;gap:8px;align-items:center;margin-top:12px">
+        <input id="docitem-f-partno" list="docitem-partno-list" placeholder="Part No." style="padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12.5px">
+        <input id="docitem-f-desc" placeholder="Description *" style="padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12.5px">
+        <input id="docitem-f-qty" type="number" min="0" step="1" placeholder="Qty" style="padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12.5px">
+        <input id="docitem-f-price" type="number" min="0" step="0.01" placeholder="Unit Price" style="padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12.5px">
+        <div></div>
+        <button class="page-act-btn btn-edit" style="padding:6px 10px" onclick="addDocLineItem()">+</button>
+      </div>
+      <datalist id="docitem-partno-list"></datalist>
+      <div style="text-align:right;margin-top:14px;font-size:14px;font-weight:700">Total: <span id="doc-items-total">0.00</span></div>
+    </div>
+    <div class="g-modal-foot"><button class="g-btn g-btn-cancel" onclick="closeDocItemsModal()">Close</button></div>
   </div>
 </div>
 <!-- PO Supplier Email Preview Modal -->
@@ -3019,7 +3128,7 @@ img,svg,canvas{max-width:100%;}
     <div class="g-modal-body">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="g-form-group"><label>Quote Number *</label><input id="sq-f-no" placeholder="Auto-generated" readonly style="background:var(--surface-2,#f5f5f5);color:var(--text-2);cursor:not-allowed"/></div>
-        <div class="g-form-group"><label>Supplier *</label><input id="sq-f-supplier" placeholder="Supplier name"/></div>
+        <div class="g-form-group"><label>Supplier *</label><input id="sq-f-supplier" list="supplier-datalist" placeholder="Supplier name" autocomplete="off" oninput="onSQSupplierAutofill()"/></div>
         <div class="g-form-group"><label>Contact Person</label><input id="sq-f-contact" placeholder="Contact name"/></div>
         <div class="g-form-group"><label>Status</label><select id="sq-f-status"><option>Pending</option><option>Approved</option><option>Rejected</option><option>Converted</option><option>Cancelled</option></select></div>
         <div class="g-form-group"><label>Quote Date</label><input type="date" id="sq-f-date"/></div>
@@ -3078,7 +3187,7 @@ img,svg,canvas{max-width:100%;}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="g-form-group"><label>GR Number *</label><input id="gr-f-grno" placeholder="GR-2024-001"/></div>
         <div class="g-form-group"><label>PO Number</label><select id="gr-f-pono" onchange="onGRPOChange()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;background:var(--card);color:var(--text)"><option value="">-- Select PO (optional) --</option></select></div>
-        <div class="g-form-group"><label>Supplier *</label><input id="gr-f-supplier" placeholder="Supplier name"/></div>
+        <div class="g-form-group"><label>Supplier *</label><input id="gr-f-supplier" list="supplier-datalist" placeholder="Supplier name" autocomplete="off"/></div>
         <div class="g-form-group"><label>Received Date</label><input type="date" id="gr-f-date"/></div>
         <div class="g-form-group"><label>Received By</label><input id="gr-f-by" placeholder="Name"/></div>
         <div class="g-form-group"><label>Total Items</label><input type="number" id="gr-f-items" min="0" value="0"/></div>
@@ -3380,6 +3489,7 @@ function logActivity(action, section, description){
 }
 
 let invData=[],catData=[],smData=[],irData=[],mmData=[],poData=[],supData=[],grData=[],stData=[],pullData=[],trmitData=[],tqData=[],mpData=[],saData=[],wbData=[],lpData=[],ciData=[],plData=[];
+let supplierAutoList=[]; // cached {name, contact_person} for the shared supplier-name autocomplete (PO / Supplier Quotations / Goods Received)
 let invEditId=null,invDeleteId=null,catEditId=null,catDeleteId=null;
 let smEditId=null,smDeleteId=null,mmEditId=null,mmDeleteId=null,mmAreaFilter='';
 let poEditId=null,poDeleteId=null,supEditId=null,supDeleteId=null;
@@ -3446,6 +3556,35 @@ function _startHeartbeat(userId){
     }catch(_){}
   },60000);
 }
+
+// ── Auto-attach auth headers to every backend API call ───────────────────────
+// The backend now validates X-User-Id / X-Session-Token on every /api/*
+// route (see backend/middleware/auth.js — previously these routes had NO
+// server-side check at all). Rather than touching every one of the 100+
+// existing fetch(API+...) call sites in this file, the global fetch is
+// patched once here: any request whose URL starts with our own API base
+// automatically gets the current session's headers attached.
+(function(){
+  const _origFetch=window.fetch.bind(window);
+  window.fetch=function(input,init){
+    try{
+      const url=typeof input==='string'?input:(input&&input.url)||'';
+      // Some call sites use the absolute API constant (API+'/x'), others use
+      // a plain relative path ('/api/x') — e.g. loadUsers/saveUser/deleteUser
+      // in the User Accounts panel. Match both forms so neither is missed.
+      const isApiCall=url.indexOf(API)===0 || url.indexOf('/api/')===0 || url==='/api';
+      if(isApiCall && _sessionToken && currentUser && currentUser.id){
+        init=init?Object.assign({},init):{};
+        init.headers=Object.assign({},init.headers||{},{
+          'X-User-Id':String(currentUser.id),
+          'X-Session-Token':_sessionToken
+        });
+      }
+    }catch(_){}
+    return _origFetch(input,init);
+  };
+})();
+
 async function _resumeSession(){
   // Sessions are memory-only — nothing to restore on page load.
   // Login overlay is display:flex by default, so login page always shows.
@@ -3595,7 +3734,7 @@ function applyRoleAccess(role) {
 }
 
 // ── PAGE SWITCHING ───────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',supplierquotations:'Supplier Quotations',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Delivery Receipts',pulloutreceipts:'Pullout Receipts',transmittalreceipts:'Transmittal Receipts',cipl:'CI / PL — Commercial Invoice & Packing List',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',auditlog:'Audit Log',activitylogs:'Account Activity Logs',stockmovements:'Stock Movements',settings:'Settings'};
+const PAGE_TITLES={dashboard:'Dashboard',categories:'Categories',stockmonitoring:'Stock Monitoring',localpurchase:'Local Purchase Monitoring',machinemonitoring:'Machine Monitoring',purchaseorders:'Purchase Orders',supplierquotations:'Supplier Quotations',suppliers:'Suppliers',goodsreceived:'Goods Received',stocktransfers:'Delivery Receipts',pulloutreceipts:'Pullout Receipts',transmittalreceipts:'Transmittal Receipts',cipl:'CI / PL — Commercial Invoice & Packing List',inventoryreport:'Inventory Report',purchasereport:'Purchase Report',alerts:'Alerts',logistics:'Logistics',activitycalendar:'Activity Calendar',activitylogs:'Account Activity Logs',stockmovements:'Stock Movements',settings:'Settings'};
 function showPage(page){
   // ── Role guard: Staff and Viewer cannot visit blocked pages ──
   if(currentUser && (currentUser.role==='Staff' || currentUser.role==='Viewer') && STAFF_BLOCKED_PAGES.includes(page)){
@@ -3630,7 +3769,6 @@ function showPage(page){
   else if(page==='logistics')loadLogistics();
   else if(page==='localpurchase')loadLP();
   else if(page==='activitycalendar'){acYear=new Date().getFullYear();acMonth=new Date().getMonth();acSelectedDate=null;renderACCalendar();loadACEvents();}
-  else if(page==='auditlog')loadAuditLog();
   else if(page==='activitylogs')loadActivityLogs();
   else if(page==='stockmovements')loadStockMovements();
 }
@@ -4366,8 +4504,13 @@ function renderPO(){
           </label>`
       }
     </td>`;
-    return `<tr><td>${i+1}</td><td><strong>${r.po_number}</strong></td><td>${r.supplier}</td><td>${r.order_date||'—'}</td><td>${badge(r.status)}</td><td>${fmt(r.total_amount)}</td><td>${fileLink(r)}</td>${siDateCell}${siFileCell}
-    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPOModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPODelModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">Del</button>${r.status==='Approved'&&!r.si_file_name?`<button class="page-act-btn" style="background:linear-gradient(135deg,#6b2e0a,#a0522d);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600" onclick="notifyPOSupplier(${r.id})">✉ Notify Supplier</button>`:''}</td></tr>`;
+    const emailBadge=r.status!=='Approved'?'':r.email_status==='sent'
+      ?`<div style="font-size:10px;color:#16a34a;margin-top:3px" title="${(r.email_sent_at||'').replace(/"/g,'')}">✅ Emailed</div>`
+      :r.email_status==='failed'
+        ?`<div style="font-size:10px;color:#dc2626;margin-top:3px;cursor:help" title="${(r.email_error||'').replace(/"/g,'')}">⚠️ Email failed</div>`
+        :'';
+    return `<tr><td>${i+1}</td><td><strong>${r.po_number}</strong></td><td>${r.supplier}</td><td>${r.order_date||'—'}</td><td>${badge(r.status)}${emailBadge}</td><td>${fmt(r.total_amount)}</td><td>${fileLink(r)}</td>${siDateCell}${siFileCell}
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPOModal(${r.id})">Edit</button><button class="page-act-btn" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe" onclick="openPOItemsModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">📋 Items</button><button class="page-act-btn btn-del" onclick="openPODelModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">Del</button>${r.status==='Approved'&&!r.si_file_name?`<button class="page-act-btn" style="background:linear-gradient(135deg,#6b2e0a,#a0522d);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600" onclick="notifyPOSupplier(${r.id})">✉ Notify Supplier</button>`:''}</td></tr>`;
   }).join('')||'<tr><td colspan="10"><div class="no-results">No purchase orders.</div></td></tr>';
 }
 async function saveSIDate(id,val,inputEl){
@@ -4403,12 +4546,88 @@ async function removeSIFile(id){
 function extractPOPrefix(fname){return /^[A-Za-z]{2}\d{8}[A-Za-z]/.test(fname)?fname.substring(0,11):fname.substring(0,10);}
 function generatePONumber(prefix){const matching=poData.filter(p=>(p.po_number||'').startsWith(prefix+'-'));const maxSeq=matching.reduce((m,p)=>{const s=parseInt((p.po_number||'').split('-').pop())||0;return Math.max(m,s);},0);return `${prefix}-${String(maxSeq+1).padStart(4,'0')}`;}
 function onPOFileChange(){if(poEditId)return;const fi=document.getElementById('po-f-file');if(!fi.files[0])return;const poInput=document.getElementById('po-f-no');const extracted=extractPOPrefix(fi.files[0].name);poInput.value=extracted;poInput.placeholder=extracted;}
-function openPOModal(id=null){poEditId=id;const r=id?poData.find(x=>x.id===id):null;document.getElementById('po-modal-title').textContent=id?'Edit PO':'Add Purchase Order';const poInput=document.getElementById('po-f-no');const hint=document.getElementById('po-f-no-hint');poInput.value=r?r.po_number:'';poInput.placeholder=id?'':'Attach a file to auto-fill';poInput.readOnly=!id;poInput.style.background=id?'':'#f0f0f0';poInput.style.color=id?'':'#555';poInput.style.cursor=id?'':'default';hint.style.display=id?'none':'block';document.getElementById('po-f-supplier').value=r?r.supplier:'';document.getElementById('po-f-date').value=r?r.order_date:today();document.getElementById('po-f-status').value=r?r.status:'Pending';document.getElementById('po-f-amount').value=r?r.total_amount:'';document.getElementById('po-f-file').value='';document.getElementById('po-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('po-modal').classList.add('open');}
+function openPOModal(id=null){ensureSupplierDatalist();poEditId=id;const r=id?poData.find(x=>x.id===id):null;document.getElementById('po-modal-title').textContent=id?'Edit PO':'Add Purchase Order';const poInput=document.getElementById('po-f-no');const hint=document.getElementById('po-f-no-hint');poInput.value=r?r.po_number:'';poInput.placeholder=id?'':'Attach a file to auto-fill';poInput.readOnly=!id;poInput.style.background=id?'':'#f0f0f0';poInput.style.color=id?'':'#555';poInput.style.cursor=id?'':'default';hint.style.display=id?'none':'block';document.getElementById('po-f-supplier').value=r?r.supplier:'';document.getElementById('po-f-date').value=r?r.order_date:today();document.getElementById('po-f-status').value=r?r.status:'Pending';document.getElementById('po-f-amount').value=r?r.total_amount:'';document.getElementById('po-f-file').value='';document.getElementById('po-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';
+  const amtInput=document.getElementById('po-f-amount');const amtNote=document.getElementById('po-f-amount-note');amtInput.readOnly=false;amtNote.textContent='';
+  if(id){fetch(API+'/purchase-orders/'+id+'/line-items').then(r=>r.json()).then(items=>{if(items&&items.length){amtInput.readOnly=true;amtNote.textContent='🔒 Auto-calculated from Items — click "📋 Items" on this PO to edit';}}).catch(()=>{});}
+  document.getElementById('po-modal').classList.add('open');}
 function closePOModal(){document.getElementById('po-modal').classList.remove('open');}
 async function savePO(){
   const fd=new FormData();fd.append('po_number',document.getElementById('po-f-no').value.trim());fd.append('supplier',document.getElementById('po-f-supplier').value.trim());fd.append('order_date',document.getElementById('po-f-date').value);fd.append('status',document.getElementById('po-f-status').value);fd.append('total_amount',document.getElementById('po-f-amount').value||0);const fi=document.getElementById('po-f-file');if(fi.files[0])fd.append('file',fi.files[0]);
   if(!fd.get('po_number')||!fd.get('supplier')){gToast('PO number and supplier required.','error');return;}
   try{const url=poEditId?API+'/purchase-orders/'+poEditId:API+'/purchase-orders';const res=await fetch(url,{method:poEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(poEditId?'Updated!':'Added!');logActivity(poEditId?'UPDATE':'CREATE','Purchase Orders',poEditId?'Updated purchase order':'Added purchase order');closePOModal();loadPO();}catch(err){gToast(err.message,'error');}
+}
+// ── PO Line Items ────────────────────────────────────────────
+let poItemsPOId=null;
+async function openPOItemsModal(poId,poNumber){
+  poItemsPOId=poId;
+  document.getElementById('po-items-modal-title').textContent='Items — '+(poNumber||'');
+  document.getElementById('poitem-f-partno').value='';
+  document.getElementById('poitem-f-desc').value='';
+  document.getElementById('poitem-f-qty').value='';
+  document.getElementById('poitem-f-price').value='';
+  document.getElementById('po-items-modal').classList.add('open');
+  try{
+    const parts=await fetch(API+'/spare-parts').then(r=>r.json());
+    document.getElementById('poitem-partno-list').innerHTML=parts.map(p=>`<option value="${p.part_no}">${p.name||''}</option>`).join('');
+  }catch{}
+  await loadPOLineItems();
+}
+function closePOItemsModal(){document.getElementById('po-items-modal').classList.remove('open');poItemsPOId=null;loadPO();}
+async function loadPOLineItems(){
+  if(!poItemsPOId)return;
+  try{
+    const items=await fetch(API+'/purchase-orders/'+poItemsPOId+'/line-items').then(r=>r.json());
+    renderPOLineItems(items);
+  }catch(err){gToast(err.message,'error');}
+}
+function renderPOLineItems(items){
+  document.getElementById('po-items-body').innerHTML=items.map(it=>`<tr>
+    <td>${it.part_no||'—'}</td>
+    <td>${it.description}</td>
+    <td style="text-align:center"><input type="number" min="0" step="1" value="${it.quantity}" style="width:60px;padding:3px 5px;border:1px solid #ddd;border-radius:5px" onchange="updatePOLineItem(${it.id},'quantity',this.value)"></td>
+    <td style="text-align:center"><input type="number" min="0" step="0.01" value="${it.unit_price}" style="width:80px;padding:3px 5px;border:1px solid #ddd;border-radius:5px" onchange="updatePOLineItem(${it.id},'unit_price',this.value)"></td>
+    <td style="text-align:center;font-weight:600">${fmt(it.line_total)}</td>
+    <td><button class="page-act-btn btn-del" style="padding:3px 8px" onclick="deletePOLineItem(${it.id})">🗑</button></td>
+  </tr>`).join('')||'<tr><td colspan="6"><div class="no-results">No items added yet.</div></td></tr>';
+  const total=items.reduce((s,it)=>s+(+it.line_total||0),0);
+  document.getElementById('po-items-total').textContent=fmt(total);
+}
+async function addPOLineItem(){
+  const desc=document.getElementById('poitem-f-desc').value.trim();
+  if(!desc){gToast('Description is required.','error');return;}
+  const body={
+    part_no:document.getElementById('poitem-f-partno').value.trim(),
+    description:desc,
+    quantity:document.getElementById('poitem-f-qty').value||0,
+    unit_price:document.getElementById('poitem-f-price').value||0
+  };
+  try{
+    const res=await fetch(API+'/purchase-orders/'+poItemsPOId+'/line-items',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!res.ok){const e=await res.json();throw new Error(e.error||'Add failed');}
+    document.getElementById('poitem-f-partno').value='';
+    document.getElementById('poitem-f-desc').value='';
+    document.getElementById('poitem-f-qty').value='';
+    document.getElementById('poitem-f-price').value='';
+    await loadPOLineItems();
+    gToast('Item added!');
+  }catch(err){gToast(err.message,'error');}
+}
+async function updatePOLineItem(lineId,field,value){
+  try{
+    const body={[field]:value};
+    const res=await fetch(API+'/purchase-orders/'+poItemsPOId+'/line-items/'+lineId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!res.ok){const e=await res.json();throw new Error(e.error||'Update failed');}
+    await loadPOLineItems();
+  }catch(err){gToast(err.message,'error');}
+}
+async function deletePOLineItem(lineId){
+  if(!confirm('Remove this item?'))return;
+  try{
+    const res=await fetch(API+'/purchase-orders/'+poItemsPOId+'/line-items/'+lineId,{method:'DELETE'});
+    if(!res.ok){const e=await res.json();throw new Error(e.error||'Delete failed');}
+    await loadPOLineItems();
+    gToast('Item removed.');
+  }catch(err){gToast(err.message,'error');}
 }
 function openPODelModal(id,name){poDeleteId=id;document.getElementById('po-del-name').textContent=name;document.getElementById('po-del-modal').classList.add('open');}
 function closePODelModal(){document.getElementById('po-del-modal').classList.remove('open');}
@@ -4455,6 +4674,7 @@ async function sendPONotification(){
     if(!res.ok) throw new Error(data.error||'Send failed');
     gToast('✉ '+data.message,'success');
     closePONotifyModal();
+    loadPO(); // refresh the table so the ⚠️ Email failed badge clears now that it's sent
   }catch(err){
     gToast(err.name==='AbortError'?'Request timed out. Check your Gmail credentials in Railway.':err.message,'error');
     btn.disabled=false;
@@ -4473,7 +4693,7 @@ function renderSQ(){
   document.getElementById('sq-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${esc(r.quote_number)}</strong></td><td>${esc(r.supplier)||'—'}</td><td>${esc(r.contact_person)||'—'}</td><td>${r.quote_date||'—'}</td><td>${r.valid_until||'—'}</td><td>${fmt(r.total_amount)}</td><td>${badge(r.status)}</td><td>${fileLink(r)}</td><td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openSQModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSQDelModal(${r.id},'${(r.quote_number||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="10"><div class="no-results">No supplier quotations found.</div></td></tr>';
 }
 function sqCalcTotal(){const up=parseFloat(document.getElementById('sq-f-unitprice').value)||0;const qty=parseFloat(document.getElementById('sq-f-qty').value)||0;if(up&&qty)document.getElementById('sq-f-total').value=(up*qty).toFixed(2);}
-async function openSQModal(id=null){sqEditId=id;const r=id?sqData.find(x=>x.id===id):null;document.getElementById('sq-modal-title').textContent=id?'Edit Quotation':'Add Supplier Quotation';const noInput=document.getElementById('sq-f-no');if(id){noInput.value=r?r.quote_number:'';noInput.readOnly=false;noInput.style.background='';noInput.style.color='';noInput.style.cursor='';}else{noInput.value='Generating...';noInput.readOnly=true;noInput.style.background='var(--surface-2,#f5f5f5)';noInput.style.color='var(--text-2)';noInput.style.cursor='not-allowed';try{const res=await fetch(API+'/supplier-quotations/next-quote-number');const d=await res.json();noInput.value=d.quote_number;}catch{noInput.value='SQ-'+new Date().getFullYear()+'-001';}}document.getElementById('sq-f-supplier').value=r?r.supplier:'';document.getElementById('sq-f-contact').value=r?r.contact_person:'';document.getElementById('sq-f-status').value=r?r.status:'Pending';document.getElementById('sq-f-date').value=r?r.quote_date:today();document.getElementById('sq-f-valid').value=r?r.valid_until:'';document.getElementById('sq-f-unitprice').value=r?r.unit_price:'';document.getElementById('sq-f-qty').value=r?r.quantity:'';document.getElementById('sq-f-total').value=r?r.total_amount:'';document.getElementById('sq-f-desc').value=r?r.items_description:'';document.getElementById('sq-f-remarks').value=r?r.remarks:'';document.getElementById('sq-f-file').value='';document.getElementById('sq-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('sq-modal').classList.add('open');}
+async function openSQModal(id=null){ensureSupplierDatalist();sqEditId=id;const r=id?sqData.find(x=>x.id===id):null;document.getElementById('sq-modal-title').textContent=id?'Edit Quotation':'Add Supplier Quotation';const noInput=document.getElementById('sq-f-no');if(id){noInput.value=r?r.quote_number:'';noInput.readOnly=false;noInput.style.background='';noInput.style.color='';noInput.style.cursor='';}else{noInput.value='Generating...';noInput.readOnly=true;noInput.style.background='var(--surface-2,#f5f5f5)';noInput.style.color='var(--text-2)';noInput.style.cursor='not-allowed';try{const res=await fetch(API+'/supplier-quotations/next-quote-number');const d=await res.json();noInput.value=d.quote_number;}catch{noInput.value='SQ-'+new Date().getFullYear()+'-001';}}document.getElementById('sq-f-supplier').value=r?r.supplier:'';document.getElementById('sq-f-contact').value=r?r.contact_person:'';document.getElementById('sq-f-status').value=r?r.status:'Pending';document.getElementById('sq-f-date').value=r?r.quote_date:today();document.getElementById('sq-f-valid').value=r?r.valid_until:'';document.getElementById('sq-f-unitprice').value=r?r.unit_price:'';document.getElementById('sq-f-qty').value=r?r.quantity:'';document.getElementById('sq-f-total').value=r?r.total_amount:'';document.getElementById('sq-f-desc').value=r?r.items_description:'';document.getElementById('sq-f-remarks').value=r?r.remarks:'';document.getElementById('sq-f-file').value='';document.getElementById('sq-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('sq-modal').classList.add('open');}
 function closeSQModal(){document.getElementById('sq-modal').classList.remove('open');}
 async function saveSQ(){
   const fd=new FormData();fd.append('quote_number',document.getElementById('sq-f-no').value.trim());fd.append('supplier',document.getElementById('sq-f-supplier').value.trim());fd.append('contact_person',document.getElementById('sq-f-contact').value.trim());fd.append('status',document.getElementById('sq-f-status').value);fd.append('quote_date',document.getElementById('sq-f-date').value);fd.append('valid_until',document.getElementById('sq-f-valid').value);fd.append('unit_price',parseFloat(document.getElementById('sq-f-unitprice').value)||0);fd.append('quantity',parseFloat(document.getElementById('sq-f-qty').value)||0);fd.append('total_amount',parseFloat(document.getElementById('sq-f-total').value)||0);fd.append('items_description',document.getElementById('sq-f-desc').value.trim());fd.append('remarks',document.getElementById('sq-f-remarks').value.trim());const fi=document.getElementById('sq-f-file');if(fi.files[0])fd.append('file',fi.files[0]);
@@ -4485,15 +4705,63 @@ function closeSQDelModal(){document.getElementById('sq-del-modal').classList.rem
 async function confirmDeleteSQ(){try{await fetch(API+'/supplier-quotations/'+sqDeleteId,{method:'DELETE'});gToast('Deleted.');closeSQDelModal();logActivity('DELETE','Supplier Quotations','Deleted supplier quotation');loadSQ();}catch{gToast('Delete failed','error');}}
 
 // ── SUPPLIERS ────────────────────────────────────────────────
-async function loadSup(){try{const r=await fetch(API+'/suppliers');supData=await r.json();renderSup();}catch{document.getElementById('sup-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
+async function loadSup(){try{const r=await fetch(API+'/suppliers');supData=await r.json();populateSupplierDatalist(supData);renderSup();updateSupEmailReminder();}catch{document.getElementById('sup-body').innerHTML='<tr><td colspan="10"><div class="no-results">Backend offline.</div></td></tr>';}}
+
+// Reminder banner on the Suppliers page: flags suppliers with no email on
+// file, since a missing/mismatched email is the #1 reason PO approval
+// notifications silently fail to send. Only shows when there's actually a
+// gap to fix — hidden when every supplier record is complete.
+function updateSupEmailReminder(){
+  const box=document.getElementById('sup-email-reminder');
+  const txt=document.getElementById('sup-email-reminder-text');
+  if(!box||!txt)return;
+  const missing=(supData||[]).filter(s=>!s.email||!String(s.email).trim());
+  if(missing.length){
+    txt.textContent='Please keep supplier records accurate and complete — '+missing.length+' supplier(s) have no email on file, so Purchase Order approval notifications cannot reach them: '+missing.map(s=>s.name).join(', ')+'.';
+    box.style.display='flex';
+  } else {
+    box.style.display='none';
+  }
+}
+// ── Shared Supplier-name autocomplete (PO / Supplier Quotations / Goods Received) ──
+// Populates the <datalist id="supplier-datalist"> used by the free-text supplier
+// inputs on those 3 forms, so typing suggests known suppliers instead of relying
+// on memory / free typing (reduces typos & inconsistent supplier names).
+function populateSupplierDatalist(list){
+  if(list)supplierAutoList=list;
+  const dl=document.getElementById('supplier-datalist');
+  if(!dl)return;
+  dl.innerHTML=supplierAutoList.map(s=>`<option value="${esc(s.name)}">${esc(s.contact_person||'')}</option>`).join('');
+}
+async function ensureSupplierDatalist(){
+  if(supplierAutoList.length)return; // already loaded once this session — good enough, refreshed whenever the Suppliers page itself loads
+  try{const r=await fetch(API+'/suppliers');populateSupplierDatalist(await r.json());}catch(_){}
+}
+// If the typed supplier name matches a known supplier exactly, auto-fill the
+// Supplier Quotations "Contact Person" field (only when it's still empty, so we
+// never clobber something the user already typed/edited).
+function onSQSupplierAutofill(){
+  const val=(document.getElementById('sq-f-supplier').value||'').trim().toLowerCase();
+  const contactEl=document.getElementById('sq-f-contact');
+  if(!val||contactEl.value.trim())return;
+  const match=supplierAutoList.find(s=>(s.name||'').trim().toLowerCase()===val);
+  if(match&&match.contact_person)contactEl.value=match.contact_person;
+}
 function renderSup(){
   const q=(document.getElementById('sup-search').value||'').toLowerCase();
   const rows=q?supData.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.code||'').toLowerCase().includes(q)||(r.contact_person||'').toLowerCase().includes(q)):supData;
-  document.getElementById('sup-meta').textContent=`Showing ${rows.length} of ${supData.length}`;
+  const missingEmailCount=(supData||[]).filter(r=>!r.email||!r.email.trim()).length;
+  const metaEl=document.getElementById('sup-meta');
+  metaEl.textContent=`Showing ${rows.length} of ${supData.length}`+(missingEmailCount?` — ⚠️ ${missingEmailCount} with no email on file (PO approval emails will fail for these)`:'');
+  metaEl.style.color=missingEmailCount?'#dc2626':'';
   document.getElementById('sup-body').innerHTML=rows.map((r,i)=>{
     const bg=avatarColor(r.name);
+    const noEmail=!r.email||!r.email.trim();
+    const emailCell=noEmail
+      ?`<span style="color:#dc2626;font-weight:600" title="No email on file — PO approval emails to this supplier will fail">⚠️ Missing</span>`
+      :r.email;
     return `<tr><td>${i+1}</td><td><div style="display:flex;align-items:center;gap:8px"><div class="sup-avatar" style="background:${bg}">${ini(r.name)}</div><div><div style="font-weight:600">${r.name}</div><div style="font-size:11px;color:var(--text-2)">${r.code}</div></div></div></td>
-    <td>${r.contact_person||'—'}</td><td>${r.email||'—'}</td><td>${r.phone||'—'}</td><td>${r.category||'—'}</td><td>${r.location||'—'}</td><td>${badge(r.status||'Active')}</td>
+    <td>${r.contact_person||'—'}</td><td>${emailCell}</td><td>${r.phone||'—'}</td><td>${r.category||'—'}</td><td>${r.location||'—'}</td><td>${badge(r.status||'Active')}</td>
     <td>${r.file_2303_name?`<a class="file-link" href="${window.location.origin}${r.file_2303_path}" target="_blank">📎 ${r.file_2303_name}</a>`:'—'}</td>
     <td><button class="page-act-btn btn-edit" onclick="openSupModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSupDelModal(${r.id},'${(r.name||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`;
   }).join('')||'<tr><td colspan="10"><div class="no-results">No suppliers.</div></td></tr>';
@@ -4519,10 +4787,13 @@ function renderGR(){
   const rows=q?grData.filter(r=>(r.gr_number||'').toLowerCase().includes(q)||(r.supplier||'').toLowerCase().includes(q)):grData;
   document.getElementById('gr-meta').textContent=`Showing ${rows.length} of ${grData.length}`;
   document.getElementById('gr-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.gr_number}</strong></td><td>${r.po_number||'—'}</td><td>${r.supplier}</td><td>${r.received_date||'—'}</td><td>${r.received_by||'—'}</td><td>${r.total_items||0}</td><td>${badge(r.status)}</td>
-    <td><button class="page-act-btn btn-edit" onclick="openGRModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openGRDelModal(${r.id},'${(r.gr_number||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="9"><div class="no-results">No records.</div></td></tr>';
+    <td><button class="page-act-btn btn-edit" onclick="openGRModal(${r.id})">Edit</button><button class="page-act-btn" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe" onclick="openDocItemsModal('gr',${r.id},'${(r.gr_number||'').replace(/'/g,"\\'")}')">📋 Items</button><button class="page-act-btn btn-del" onclick="openGRDelModal(${r.id},'${(r.gr_number||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="9"><div class="no-results">No records.</div></td></tr>';
 }
 function generateGRNumber(){const maxSeq=grData.reduce((m,r)=>{const s=parseInt((r.gr_number||'').split('-').pop())||0;return Math.max(m,s);},0);const next=String(maxSeq+1).padStart(4,'0');const now=new Date();const mm=String(now.getMonth()+1).padStart(2,'0');const dd=String(now.getDate()).padStart(2,'0');const yyyy=now.getFullYear();return `GR${mm}${dd}${yyyy}-${next}`;}
-function openGRModal(id=null){grEditId=id;const r=id?grData.find(x=>x.id===id):null;document.getElementById('gr-modal-title').textContent=id?'Edit GR':'Add Goods Received';const grInput=document.getElementById('gr-f-grno');grInput.value=r?r.gr_number:generateGRNumber();grInput.readOnly=!id;grInput.style.background=id?'':'var(--hover)';grInput.style.cursor=id?'':'default';const poSel=document.getElementById('gr-f-pono');const usedPOs=new Set(grData.filter(g=>g.id!==id&&g.po_number).map(g=>g.po_number));const availPOs=(poData||[]).filter(p=>!usedPOs.has(p.po_number));poSel.innerHTML='<option value="">-- Select PO (optional) --</option>'+availPOs.map(p=>`<option value="${p.po_number}">${p.po_number} — ${p.supplier}</option>`).join('');poSel.value=r?(r.po_number||''):'';document.getElementById('gr-f-supplier').value=r?r.supplier:'';document.getElementById('gr-f-date').value=r?(r.received_date||''):'';document.getElementById('gr-f-by').value=r?r.received_by:'';document.getElementById('gr-f-items').value=r?r.total_items:0;document.getElementById('gr-f-status').value=r?r.status:'Pending';document.getElementById('gr-modal').classList.add('open');}
+function openGRModal(id=null){ensureSupplierDatalist();grEditId=id;const r=id?grData.find(x=>x.id===id):null;document.getElementById('gr-modal-title').textContent=id?'Edit GR':'Add Goods Received';const grInput=document.getElementById('gr-f-grno');grInput.value=r?r.gr_number:generateGRNumber();grInput.readOnly=!id;grInput.style.background=id?'':'var(--hover)';grInput.style.cursor=id?'':'default';const poSel=document.getElementById('gr-f-pono');const usedPOs=new Set(grData.filter(g=>g.id!==id&&g.po_number).map(g=>g.po_number));const availPOs=(poData||[]).filter(p=>!usedPOs.has(p.po_number));poSel.innerHTML='<option value="">-- Select PO (optional) --</option>'+availPOs.map(p=>`<option value="${p.po_number}">${p.po_number} — ${p.supplier}</option>`).join('');poSel.value=r?(r.po_number||''):'';document.getElementById('gr-f-supplier').value=r?r.supplier:'';document.getElementById('gr-f-date').value=r?(r.received_date||''):'';document.getElementById('gr-f-by').value=r?r.received_by:'';document.getElementById('gr-f-items').value=r?r.total_items:0;document.getElementById('gr-f-status').value=r?r.status:'Pending';
+  const grItemsInput=document.getElementById('gr-f-items');let grItemsNote=document.getElementById('gr-f-items-note');if(!grItemsNote){grItemsNote=document.createElement('div');grItemsNote.id='gr-f-items-note';grItemsNote.style.cssText='font-size:11px;color:#888;margin-top:3px';grItemsInput.parentElement.appendChild(grItemsNote);}grItemsInput.readOnly=false;grItemsNote.textContent='';
+  if(id){fetch(API+'/goods-received/'+id+'/line-items').then(r=>r.json()).then(items=>{if(items&&items.length){grItemsInput.readOnly=true;grItemsNote.textContent='🔒 Auto-calculated from Items — click "📋 Items" on this record to edit';}}).catch(()=>{});}
+  document.getElementById('gr-modal').classList.add('open');}
 function closeGRModal(){document.getElementById('gr-modal').classList.remove('open');}
 function onGRPOChange(){const sel=document.getElementById('gr-f-pono');const po=(poData||[]).find(p=>p.po_number===sel.value);if(po)document.getElementById('gr-f-supplier').value=po.supplier;}
 async function saveGR(){
@@ -4559,7 +4830,7 @@ function renderST(){
     <td>${badge(r.status)}</td>
     <td>${r.transferred_by||'—'}</td>
     <td>${fileLink(r)}</td>
-    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openSTModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openSTDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td>
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openSTModal(${r.id})">Edit</button><button class="page-act-btn" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe" onclick="openDocItemsModal('transfer',${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">📋 Items</button><button class="page-act-btn btn-del" onclick="openSTDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td>
   </tr>`).join('')||'<tr><td colspan="10"><div class="no-results">No transfers.</div></td></tr>';
   // pagination controls
   const pg=document.getElementById('st-pagination');
@@ -4574,7 +4845,10 @@ function renderST(){
   btns+=`<button class="page-act-btn" ${stPage===totalPages?'disabled':''} onclick="stPage=${totalPages};renderST()">»</button>`;
   pg.innerHTML=btns;
 }
-function openSTModal(id=null){stEditId=id;const r=id?stData.find(x=>x.id===id):null;document.getElementById('st-modal-title').textContent=id?'Edit Transfer':'Add Delivery Receipt';document.getElementById('st-f-no').value=r?r.transfer_no:'';document.getElementById('st-f-date').value=r?r.transfer_date:today();document.getElementById('st-f-from').value=r?r.source_location:'';document.getElementById('st-f-to').value=r?r.destination_location:'';document.getElementById('st-f-items').value=r?r.items_count||'':'';document.getElementById('st-f-status').value=r?r.status:'Pending';document.getElementById('st-f-by').value=r?r.transferred_by:'';document.getElementById('st-f-file').value='';document.getElementById('st-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('st-modal').classList.add('open');}
+function openSTModal(id=null){stEditId=id;const r=id?stData.find(x=>x.id===id):null;document.getElementById('st-modal-title').textContent=id?'Edit Transfer':'Add Delivery Receipt';document.getElementById('st-f-no').value=r?r.transfer_no:'';document.getElementById('st-f-date').value=r?r.transfer_date:today();document.getElementById('st-f-from').value=r?r.source_location:'';document.getElementById('st-f-to').value=r?r.destination_location:'';document.getElementById('st-f-items').value=r?r.items_count||'':'';document.getElementById('st-f-status').value=r?r.status:'Pending';document.getElementById('st-f-by').value=r?r.transferred_by:'';document.getElementById('st-f-file').value='';document.getElementById('st-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';
+  const stItemsInput=document.getElementById('st-f-items');let stItemsNote=document.getElementById('st-f-items-note');if(!stItemsNote){stItemsNote=document.createElement('div');stItemsNote.id='st-f-items-note';stItemsNote.style.cssText='font-size:11px;color:#888;margin-top:3px';stItemsInput.parentElement.appendChild(stItemsNote);}stItemsInput.readOnly=false;stItemsNote.textContent='';
+  if(id){fetch(API+'/stock-transfers/'+id+'/line-items').then(r=>r.json()).then(items=>{if(items&&items.length){stItemsInput.readOnly=true;stItemsNote.textContent='🔒 Auto-calculated from Items — click "📋 Items" on this record to edit';}}).catch(()=>{});}
+  document.getElementById('st-modal').classList.add('open');}
 function closeSTModal(){document.getElementById('st-modal').classList.remove('open');}
 async function saveST(){
   const fd=new FormData();fd.append('transfer_no',document.getElementById('st-f-no').value.trim());fd.append('transfer_date',document.getElementById('st-f-date').value);fd.append('source_location',document.getElementById('st-f-from').value.trim());fd.append('destination_location',document.getElementById('st-f-to').value.trim());fd.append('items_count',document.getElementById('st-f-items').value.trim());fd.append('status',document.getElementById('st-f-status').value);fd.append('transferred_by',document.getElementById('st-f-by').value.trim());const fi=document.getElementById('st-f-file');if(fi.files[0])fd.append('file',fi.files[0]);
@@ -4587,23 +4861,154 @@ async function confirmDeleteST(){try{await fetch(API+'/stock-transfers/'+stDelet
 
 // ── PULLOUT RECEIPTS ─────────────────────────────────────────
 async function loadPull(){try{const r=await fetch(API+'/pullout-receipts');pullData=await r.json();renderPull();}catch{document.getElementById('pull-body').innerHTML='<tr><td colspan="13"><div class="no-results">Backend offline.</div></td></tr>';}}
+function pullSuffix(no){const m=(no||'').match(/-(\d+)$/);return m?+m[1]:0;}
 function renderPull(){
   const q=(document.getElementById('pull-search').value||'').toLowerCase();
+  pullData.sort((a,b)=>pullSuffix(b.transfer_no)-pullSuffix(a.transfer_no));
   const rows=q?pullData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)||(r.pulled_out_by||'').toLowerCase().includes(q)||(r.prepared_by||'').toLowerCase().includes(q)||(r.returned_by||'').toLowerCase().includes(q)||(r.witnessed_by||'').toLowerCase().includes(q)):pullData;
   document.getElementById('pull-meta').textContent=`Showing ${rows.length} of ${pullData.length}`;
-  document.getElementById('pull-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_count||0}</td><td>${badge(r.status)}</td><td>${r.pulled_out_by||'—'}</td><td>${r.prepared_by||'—'}</td><td>${r.returned_by||'—'}</td><td>${r.witnessed_by||'—'}</td><td>${fileLink(r)}</td>
-    <td><button class="page-act-btn btn-edit" onclick="openPullModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openPullDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="13"><div class="no-results">No pullout receipts.</div></td></tr>';
+  document.getElementById('pull-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_description||'—'}</td><td>${badge(r.status)}</td><td>${r.pulled_out_by||'—'}</td><td>${r.prepared_by||'—'}</td><td>${r.returned_by||'—'}</td><td>${r.witnessed_by||'—'}</td><td>${fileLink(r)}</td>
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPullModal(${r.id})">Edit</button><button class="page-act-btn" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe" onclick="openDocItemsModal('pullout',${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">📋 Items</button><button class="page-act-btn" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0" title="Copy this record into a new one" onclick="copyPullAsNew(${r.id})">📑 Copy</button><button class="page-act-btn btn-del" onclick="openPullDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="13"><div class="no-results">No pullout receipts.</div></td></tr>';
 }
-function openPullModal(id=null){pullEditId=id;const r=id?pullData.find(x=>x.id===id):null;document.getElementById('pull-modal-title').textContent=id?'Edit Pullout Receipt':'Add Pullout Receipt';document.getElementById('pull-f-no').value=r?r.transfer_no:'';document.getElementById('pull-f-date').value=r?r.transfer_date:today();document.getElementById('pull-f-from').value=r?r.source_location:'';document.getElementById('pull-f-to').value=r?r.destination_location:'';document.getElementById('pull-f-items').value=r?r.items_count:0;document.getElementById('pull-f-status').value=r?r.status:'Pending';document.getElementById('pull-f-pulled-out-by').value=r?r.pulled_out_by||'':'';document.getElementById('pull-f-prepared-by').value=r?r.prepared_by||'':'';document.getElementById('pull-f-returned-by').value=r?r.returned_by||'':'';document.getElementById('pull-f-witnessed-by').value=r?r.witnessed_by||'':'';document.getElementById('pull-f-file').value='';document.getElementById('pull-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('pull-modal').classList.add('open');}
+// Copy an existing Pullout Receipt into a new blank record — pre-fills From/To,
+// Items Description and the 4 signatory names (usually the same people each
+// time), leaving the Pullout No. blank and the date/status reset to defaults
+// so the user only has to fill in what's actually different this time.
+function copyPullAsNew(id){
+  const src=pullData.find(x=>x.id===id);
+  if(!src)return;
+  openPullModal(null);
+  document.getElementById('pull-f-from').value=src.source_location||'';
+  document.getElementById('pull-f-to').value=src.destination_location||'';
+  document.getElementById('pull-f-items').value=src.items_description||'';
+  document.getElementById('pull-f-pulled-out-by').value=src.pulled_out_by||'';
+  document.getElementById('pull-f-prepared-by').value=src.prepared_by||'';
+  document.getElementById('pull-f-returned-by').value=src.returned_by||'';
+  document.getElementById('pull-f-witnessed-by').value=src.witnessed_by||'';
+  gToast('已複製上一筆內容 — 請填入新的 Pullout No. 並確認日期');
+}
+function openPullModal(id=null){pullEditId=id;const r=id?pullData.find(x=>x.id===id):null;document.getElementById('pull-modal-title').textContent=id?'Edit Pullout Receipt':'Add Pullout Receipt';document.getElementById('pull-f-no').value=r?r.transfer_no:'';document.getElementById('pull-f-date').value=r?r.transfer_date:today();document.getElementById('pull-f-from').value=r?r.source_location:'';document.getElementById('pull-f-to').value=r?r.destination_location:'';document.getElementById('pull-f-items').value=r?(r.items_description||''):'';document.getElementById('pull-f-status').value=r?r.status:'Pending';document.getElementById('pull-f-pulled-out-by').value=r?r.pulled_out_by||'':'';document.getElementById('pull-f-prepared-by').value=r?r.prepared_by||'':'';document.getElementById('pull-f-returned-by').value=r?r.returned_by||'':'';document.getElementById('pull-f-witnessed-by').value=r?r.witnessed_by||'':'';document.getElementById('pull-f-file').value='';document.getElementById('pull-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('pull-modal').classList.add('open');}
 function closePullModal(){document.getElementById('pull-modal').classList.remove('open');}
 async function savePull(){
-  const fd=new FormData();fd.append('transfer_no',document.getElementById('pull-f-no').value.trim());fd.append('transfer_date',document.getElementById('pull-f-date').value);fd.append('source_location',document.getElementById('pull-f-from').value.trim());fd.append('destination_location',document.getElementById('pull-f-to').value.trim());fd.append('items_count',document.getElementById('pull-f-items').value||0);fd.append('status',document.getElementById('pull-f-status').value);fd.append('pulled_out_by',document.getElementById('pull-f-pulled-out-by').value.trim());fd.append('prepared_by',document.getElementById('pull-f-prepared-by').value.trim());fd.append('returned_by',document.getElementById('pull-f-returned-by').value.trim());fd.append('witnessed_by',document.getElementById('pull-f-witnessed-by').value.trim());const fi=document.getElementById('pull-f-file');if(fi.files[0])fd.append('file',fi.files[0]);
+  const fd=new FormData();fd.append('transfer_no',document.getElementById('pull-f-no').value.trim());fd.append('transfer_date',document.getElementById('pull-f-date').value);fd.append('source_location',document.getElementById('pull-f-from').value.trim());fd.append('destination_location',document.getElementById('pull-f-to').value.trim());fd.append('items_description',document.getElementById('pull-f-items').value.trim());fd.append('status',document.getElementById('pull-f-status').value);fd.append('pulled_out_by',document.getElementById('pull-f-pulled-out-by').value.trim());fd.append('prepared_by',document.getElementById('pull-f-prepared-by').value.trim());fd.append('returned_by',document.getElementById('pull-f-returned-by').value.trim());fd.append('witnessed_by',document.getElementById('pull-f-witnessed-by').value.trim());const fi=document.getElementById('pull-f-file');if(fi.files[0])fd.append('file',fi.files[0]);
   if(!fd.get('transfer_no')||!fd.get('source_location')||!fd.get('destination_location')){gToast('Pullout No, From, and To are required.','error');return;}
   try{const url=pullEditId?API+'/pullout-receipts/'+pullEditId:API+'/pullout-receipts';const res=await fetch(url,{method:pullEditId?'PUT':'POST',body:fd});if(!res.ok){const e=await res.json();throw new Error(e.error||'Save failed');}gToast(pullEditId?'Updated!':'Added!');logActivity(pullEditId?'UPDATE':'CREATE','Pullout Receipts',pullEditId?'Updated pullout receipt':'Added pullout receipt');closePullModal();loadPull();}catch(err){gToast(err.message,'error');}
 }
 function openPullDelModal(id,name){pullDeleteId=id;document.getElementById('pull-del-name').textContent=name;document.getElementById('pull-del-modal').classList.add('open');}
 function closePullDelModal(){document.getElementById('pull-del-modal').classList.remove('open');}
 async function confirmDeletePull(){try{await fetch(API+'/pullout-receipts/'+pullDeleteId,{method:'DELETE'});gToast('Deleted.');closePullDelModal();logActivity('DELETE','Pullout Receipts','Deleted pullout receipt');loadPull();}catch{gToast('Delete failed','error');}}
+
+// ── Generic Line Items (Goods Received / Stock Transfers / Pullout Receipts) ──
+// Same design as the PO Items modal (openPOItemsModal etc.) above, reused here
+// across the 3 other document types via a small kind -> API-path/data-array map.
+// Goods Received and Pullout Receipts items adjust real Stock Monitoring quantities
+// once the record is marked Completed (done on the backend) — Stock Transfers items
+// are record-keeping only. Once a record is Completed, its items lock (read-only)
+// here; set the record's status back to Pending to unlock and edit them again.
+const DOC_ITEMS_KIND={
+  gr:       {apiPath:'goods-received',  dataArr:()=>grData},
+  transfer: {apiPath:'stock-transfers', dataArr:()=>stData},
+  pullout:  {apiPath:'pullout-receipts',dataArr:()=>pullData}
+};
+let docItemsKind=null,docItemsDocId=null,docItemsLocked=false;
+async function openDocItemsModal(kind,docId,docLabel){
+  docItemsKind=kind;docItemsDocId=docId;
+  const cfg=DOC_ITEMS_KIND[kind];
+  const doc=(cfg.dataArr()||[]).find(x=>x.id===docId);
+  docItemsLocked=!!(doc&&doc.status==='Completed');
+  document.getElementById('doc-items-modal-title').textContent='Items — '+(docLabel||'');
+  document.getElementById('doc-items-add-row').style.display=docItemsLocked?'none':'grid';
+  document.getElementById('doc-items-note').textContent=docItemsLocked
+    ?'🔒 This record is Completed — items are locked. Set status back to Pending to edit items.'
+    :(kind==='gr'?"Add each item received. Completing this record will increase the matching Stock Monitoring part's On Hand quantity."
+      :kind==='pullout'?"Add each item pulled out. Completing this record will decrease the matching Stock Monitoring part's On Hand quantity."
+      :'Add each item on this transfer. This is for record-keeping — it does not change total stock quantity.');
+  document.getElementById('docitem-f-partno').value='';
+  document.getElementById('docitem-f-desc').value='';
+  document.getElementById('docitem-f-qty').value='';
+  document.getElementById('docitem-f-price').value='';
+  document.getElementById('doc-items-modal').classList.add('open');
+  try{
+    const parts=await fetch(API+'/spare-parts').then(r=>r.json());
+    document.getElementById('docitem-partno-list').innerHTML=parts.map(p=>`<option value="${p.part_no}">${p.name||''}</option>`).join('');
+  }catch{}
+  await loadDocLineItems();
+}
+function closeDocItemsModal(){
+  const kind=docItemsKind;
+  document.getElementById('doc-items-modal').classList.remove('open');
+  docItemsKind=null;docItemsDocId=null;
+  if(kind==='gr')loadGR();
+  else if(kind==='transfer')loadST();
+  else if(kind==='pullout')loadPull();
+}
+async function loadDocLineItems(){
+  if(!docItemsKind||!docItemsDocId)return;
+  try{
+    const cfg=DOC_ITEMS_KIND[docItemsKind];
+    const items=await fetch(API+'/'+cfg.apiPath+'/'+docItemsDocId+'/line-items').then(r=>r.json());
+    renderDocLineItems(items);
+  }catch(err){gToast(err.message,'error');}
+}
+function renderDocLineItems(items){
+  document.getElementById('doc-items-body').innerHTML=items.map(it=>docItemsLocked?`<tr>
+    <td>${it.part_no||'—'}</td>
+    <td>${it.description}</td>
+    <td style="text-align:center">${it.quantity}</td>
+    <td style="text-align:center">${fmt(it.unit_price)}</td>
+    <td style="text-align:center;font-weight:600">${fmt(it.line_total)}</td>
+    <td></td>
+  </tr>`:`<tr>
+    <td>${it.part_no||'—'}</td>
+    <td>${it.description}</td>
+    <td style="text-align:center"><input type="number" min="0" step="1" value="${it.quantity}" style="width:60px;padding:3px 5px;border:1px solid #ddd;border-radius:5px" onchange="updateDocLineItem(${it.id},'quantity',this.value)"></td>
+    <td style="text-align:center"><input type="number" min="0" step="0.01" value="${it.unit_price}" style="width:80px;padding:3px 5px;border:1px solid #ddd;border-radius:5px" onchange="updateDocLineItem(${it.id},'unit_price',this.value)"></td>
+    <td style="text-align:center;font-weight:600">${fmt(it.line_total)}</td>
+    <td><button class="page-act-btn btn-del" style="padding:3px 8px" onclick="deleteDocLineItem(${it.id})">🗑</button></td>
+  </tr>`).join('')||'<tr><td colspan="6"><div class="no-results">No items added yet.</div></td></tr>';
+  const total=items.reduce((s,it)=>s+(+it.line_total||0),0);
+  document.getElementById('doc-items-total').textContent=fmt(total);
+}
+async function addDocLineItem(){
+  const desc=document.getElementById('docitem-f-desc').value.trim();
+  if(!desc){gToast('Description is required.','error');return;}
+  const cfg=DOC_ITEMS_KIND[docItemsKind];
+  const body={
+    part_no:document.getElementById('docitem-f-partno').value.trim(),
+    description:desc,
+    quantity:document.getElementById('docitem-f-qty').value||0,
+    unit_price:document.getElementById('docitem-f-price').value||0
+  };
+  try{
+    const res=await fetch(API+'/'+cfg.apiPath+'/'+docItemsDocId+'/line-items',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!res.ok){const e=await res.json();throw new Error(e.error||'Add failed');}
+    document.getElementById('docitem-f-partno').value='';
+    document.getElementById('docitem-f-desc').value='';
+    document.getElementById('docitem-f-qty').value='';
+    document.getElementById('docitem-f-price').value='';
+    await loadDocLineItems();
+    gToast('Item added!');
+  }catch(err){gToast(err.message,'error');}
+}
+async function updateDocLineItem(lineId,field,value){
+  try{
+    const cfg=DOC_ITEMS_KIND[docItemsKind];
+    const body={[field]:value};
+    const res=await fetch(API+'/'+cfg.apiPath+'/'+docItemsDocId+'/line-items/'+lineId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!res.ok){const e=await res.json();throw new Error(e.error||'Update failed');}
+    await loadDocLineItems();
+  }catch(err){gToast(err.message,'error');}
+}
+async function deleteDocLineItem(lineId){
+  if(!confirm('Remove this item?'))return;
+  try{
+    const cfg=DOC_ITEMS_KIND[docItemsKind];
+    const res=await fetch(API+'/'+cfg.apiPath+'/'+docItemsDocId+'/line-items/'+lineId,{method:'DELETE'});
+    if(!res.ok){const e=await res.json();throw new Error(e.error||'Delete failed');}
+    await loadDocLineItems();
+    gToast('Item removed.');
+  }catch(err){gToast(err.message,'error');}
+}
 
 // ── TRANSMITTAL RECEIPTS ──────────────────────────────────────
 async function loadTrmit(){try{const r=await fetch(API+'/transmittal-receipts');trmitData=await r.json();renderTrmit();}catch{document.getElementById('trmit-body').innerHTML='<tr><td colspan="13"><div class="no-results">Backend offline.</div></td></tr>';}}
@@ -4612,7 +5017,21 @@ function renderTrmit(){
   const rows=q?trmitData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)||(r.turned_over_by||'').toLowerCase().includes(q)||(r.received_by||'').toLowerCase().includes(q)):trmitData;
   document.getElementById('trmit-meta').textContent=`Showing ${rows.length} of ${trmitData.length}`;
   document.getElementById('trmit-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_description||'—'}</td><td>${badge(r.status)}</td><td>${r.turned_over_by||'—'}</td><td>${r.received_by||'—'}</td><td>${r.witnessed_by||'—'}</td><td>${r.noted_by||'—'}</td><td>${fileLink(r)}</td>
-    <td><button class="page-act-btn btn-edit" onclick="openTrmitModal(${r.id})">Edit</button><button class="page-act-btn btn-del" onclick="openTrmitDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="13"><div class="no-results">No transmittal receipts.</div></td></tr>';
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openTrmitModal(${r.id})">Edit</button><button class="page-act-btn" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0" title="Copy this record into a new one" onclick="copyTrmitAsNew(${r.id})">📑 Copy</button><button class="page-act-btn btn-del" onclick="openTrmitDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="13"><div class="no-results">No transmittal receipts.</div></td></tr>';
+}
+// Copy an existing Transmittal Receipt into a new blank record — see copyPullAsNew() above for rationale.
+function copyTrmitAsNew(id){
+  const src=trmitData.find(x=>x.id===id);
+  if(!src)return;
+  openTrmitModal(null);
+  document.getElementById('trmit-f-from').value=src.source_location||'';
+  document.getElementById('trmit-f-to').value=src.destination_location||'';
+  document.getElementById('trmit-f-items').value=src.items_description||'';
+  document.getElementById('trmit-f-by').value=src.turned_over_by||'';
+  document.getElementById('trmit-f-received-by').value=src.received_by||'';
+  document.getElementById('trmit-f-witnessed-by').value=src.witnessed_by||'';
+  document.getElementById('trmit-f-noted-by').value=src.noted_by||'';
+  gToast('已複製上一筆內容 — 請填入新的 Transmittal No. 並確認日期');
 }
 function openTrmitModal(id=null){trmitEditId=id;const r=id?trmitData.find(x=>x.id===id):null;document.getElementById('trmit-modal-title').textContent=id?'Edit Transmittal Receipt':'Add Transmittal Receipt';document.getElementById('trmit-f-no').value=r?r.transfer_no:'';document.getElementById('trmit-f-date').value=r?r.transfer_date:today();document.getElementById('trmit-f-from').value=r?r.source_location:'';document.getElementById('trmit-f-to').value=r?r.destination_location:'';document.getElementById('trmit-f-items').value=r?r.items_description:'';document.getElementById('trmit-f-status').value=r?r.status:'Pending';document.getElementById('trmit-f-by').value=r?r.turned_over_by:'';document.getElementById('trmit-f-received-by').value=r?r.received_by:'';document.getElementById('trmit-f-witnessed-by').value=r?r.witnessed_by:'';document.getElementById('trmit-f-noted-by').value=r?r.noted_by:'';document.getElementById('trmit-f-file').value='';document.getElementById('trmit-cur-file').innerHTML=r&&r.file_name?`Current: <a class="file-link" href="${window.location.origin}${r.file_path}" target="_blank">${r.file_name.replace(/^\d+[-_]/,'')}</a>`:'';document.getElementById('trmit-modal').classList.add('open');}
 function closeTrmitModal(){document.getElementById('trmit-modal').classList.remove('open');}
@@ -5278,6 +5697,7 @@ async function loadLineConfig(){
     lineConfigured=cfg.token_set;
     const uid=document.getElementById('line-userid');if(uid)uid.value=cfg.user_id||'';
     const auto=document.getElementById('line-auto');if(auto)auto.checked=!!cfg.auto_notify;
+    const lowstock=document.getElementById('line-lowstock');if(lowstock)lowstock.checked=!!cfg.low_stock_notify;
     const st=document.getElementById('line-conn-status');
     if(st){st.textContent=lineConfigured?'● Connected':'● Not Connected';st.className='line-status '+(lineConfigured?'connected':'disconnected');}
   }catch{}
@@ -5287,15 +5707,19 @@ async function saveLineConfig(){
   const token=document.getElementById('line-token').value.trim();
   const uid=document.getElementById('line-userid').value.trim();
   const auto=document.getElementById('line-auto').checked;
+  const lowstock=document.getElementById('line-lowstock').checked;
   if(!token){gToast('Channel Access Token is required.','error');return;}
   try{
-    const r=await fetch(API+'/line/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channel_token:token,user_id:uid,auto_notify:auto})});
+    const r=await fetch(API+'/line/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channel_token:token,user_id:uid,auto_notify:auto,low_stock_notify:lowstock})});
     if(!r.ok){const e=await r.json();throw new Error(e.error||'Save failed');}
     gToast('LINE config saved!');await loadLineConfig();
   }catch(err){gToast(err.message,'error');}
 }
 async function testLineNotify(){
   try{const r=await fetch(API+'/line/test',{method:'POST'});const d=await r.json();if(!r.ok)throw new Error(d.error||'Test failed');gToast(d.message||'Test broadcast sent!');}catch(err){gToast(err.message,'error');}
+}
+async function testLowStockLine(){
+  try{const r=await fetch(API+'/alerts/low-stock/send-line',{method:'POST'});const d=await r.json();if(!r.ok)throw new Error(d.error||'Send failed');gToast(d.message||'Sent!');}catch(err){gToast(err.message,'error');}
 }
 
 /* ===== SPARE PARTS MONITORING - SPM NAV TOGGLE ===== */
@@ -5888,45 +6312,6 @@ async function sendLowStockAlert(){
     if(btn){btn.disabled=false;btn.innerHTML='⚠️ Send Low-Stock Alert <span id="dash-low-count" style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 7px;margin-left:4px">...</span>';}
     setTimeout(loadDashboardCharts,500);
   }
-}
-
-// ── AUDIT LOG ────────────────────────────────────────────────────
-let auditData=[],auditOffset=0;
-async function loadAuditLog(reset){
-  if(reset===undefined||reset)auditOffset=0,auditData=[];
-  const b=document.getElementById('alog-body');
-  if(b)b.innerHTML='<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px">Loading…</td></tr>';
-  try{
-    const r=await fetch(API+'/audit-log?limit=100&offset='+auditOffset);
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const d=await r.json();
-    auditData=[...auditData,...(d.rows||[])];
-    auditOffset=auditData.length;
-    const mb=document.getElementById('alog-load-more');
-    if(mb)mb.style.display=(auditData.length<(d.total||0))?'inline-flex':'none';
-    renderAuditLog();
-  }catch(e){console.error('[auditLog]',e);if(b)b.innerHTML='<tr><td colspan="6"><div class="no-results">Could not load audit log: '+String(e)+'</div></td></tr>';}
-}
-function loadMoreAudit(){loadAuditLog(false);}
-function renderAuditLog(){
-  const q=(document.getElementById('alog-search')||{}).value||'';
-  const ql=q.toLowerCase();
-  const rows=auditData.filter(r=>!ql||(r.user_name||'').toLowerCase().includes(ql)||(r.action||'').toLowerCase().includes(ql)||(r.entity||'').toLowerCase().includes(ql)||(r.details||'').toLowerCase().includes(ql));
-  const meta=document.getElementById('alog-meta');
-  if(meta)meta.textContent='Showing '+rows.length+' of '+auditData.length+' entries';
-  const AC={CREATE:'#10b981',UPDATE:'#f59e0b',DELETE:'#ef4444',SEND_ALERT:'#6366f1'};
-  const b=document.getElementById('alog-body');
-  if(!b)return;
-  b.innerHTML=rows.length?rows.map(function(r,i){
-    var ts=r.created_at?new Date(r.created_at).toLocaleString():'—';
-    var col=AC[r.action]||'#64748b';
-    var name=esc(r.user_name||'—');
-    var email=esc(r.user_email||'');
-    var entity=esc(r.entity||'—');
-    var details=esc(r.details||'—');
-    var eid=r.entity_id?' #'+r.entity_id:'';
-    return '<tr><td>'+(i+1)+'</td><td style="white-space:nowrap;font-size:12px;color:#64748b">'+ts+'</td><td><strong>'+name+'</strong><br><span style="font-size:11px;color:#94a3b8">'+email+'</span></td><td><span style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">'+(r.action||'—')+'</span></td><td>'+entity+eid+'</td><td style="font-size:12px;max-width:300px">'+details+'</td></tr>';
-  }).join(''):'<tr><td colspan="6"><div class="no-results">No audit entries found.</div></td></tr>';
 }
 
 // ── STOCK MOVEMENTS ──────────────────────────────────────────────
