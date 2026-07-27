@@ -1,7 +1,12 @@
 'use strict';
 const express = require('express');
 const { dbPromise } = require('../database');
+const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
+
+// Read-only dashboard stats — no writes exist in this file. Any logged-in
+// role may view.
+router.use(['/stats', '/stock-movements'], requireAuth);
 
 // GET /api/stats/monthly-purchases — PO total by month (all available data)
 router.get('/stats/monthly-purchases', async (req, res) => {

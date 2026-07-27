@@ -2,6 +2,12 @@ const express = require('express');
 const router  = express.Router();
 const { dbPromise } = require('../database');
 const { pushLine, broadcastLine, buildCalendarMessage } = require('../utils/lineService');
+const { requireAuth, requireRole } = require('../middleware/auth');
+
+// LINE config/notify/broadcast/test live in Settings — Admin/Manager only.
+// /webhook/line is called BY the LINE platform itself (not our frontend)
+// and is deliberately left ungated below.
+const settingsOnly = requireRole('Admin', 'Manager');
 
 // -- Helpers --
 async function getConfig(db) {
@@ -16,7 +22,7 @@ async function getConfig(db) {
 }
 
 // GET /api/line/config
-router.get('/line/config', async (req, res) => {
+router.get('/line/config', requireAuth, settingsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const cfg = await getConfig(db);
@@ -35,7 +41,7 @@ router.get('/line/config', async (req, res) => {
 // Fields are merged onto the existing row (rather than blindly overwritten)
 // so that saving one setting (e.g. the low-stock toggle) never resets a
 // field the caller didn't send (e.g. the calendar auto_notify toggle).
-router.post('/line/config', async (req, res) => {
+router.post('/line/config', requireAuth, settingsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await getConfig(db);
@@ -57,7 +63,7 @@ router.post('/line/config', async (req, res) => {
 });
 
 // POST /api/line/notify — push urgent tasks to a single configured user ID
-router.post('/line/notify', async (req, res) => {
+router.post('/line/notify', requireAuth, settingsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const cfg = await getConfig(db);
@@ -88,7 +94,7 @@ router.post('/line/notify', async (req, res) => {
 });
 
 // POST /api/line/broadcast — broadcast to ALL friends/followers of the Line Official Account
-router.post('/line/broadcast', async (req, res) => {
+router.post('/line/broadcast', requireAuth, settingsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const cfg = await getConfig(db);
@@ -143,7 +149,7 @@ router.post('/line/broadcast', async (req, res) => {
 });
 
 // POST /api/line/test — sends a test broadcast to confirm token works
-router.post('/line/test', async (req, res) => {
+router.post('/line/test', requireAuth, settingsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const cfg = await getConfig(db);

@@ -2,7 +2,13 @@
 const express = require('express');
 const { dbPromise } = require('../database');
 const { pushLine } = require('../utils/lineService');
+const { requireAuth, requireWrite } = require('../middleware/auth');
 const router = express.Router();
+
+// Alerts send-actions live in Settings (Admin/Manager only); the GET
+// stays viewable by any logged-in role.
+router.use('/alerts', requireAuth);
+const writeGate = requireWrite(false);
 
 // ── Shared low-stock helpers (used by the manual "send" routes below AND by
 // the daily scheduler in server.js) ─────────────────────────────────────────
@@ -84,7 +90,7 @@ router.get('/alerts/low-stock', async (req, res) => {
 });
 
 // POST /api/alerts/low-stock/send — email the low-stock list
-router.post('/alerts/low-stock/send', async (req, res) => {
+router.post('/alerts/low-stock/send', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const rows = await db.getAll(
@@ -173,7 +179,7 @@ router.post('/alerts/low-stock/send', async (req, res) => {
 
 // POST /api/alerts/low-stock/send-line — manual "Test Now" button in Settings;
 // sends immediately regardless of the daily schedule/last-sent gating.
-router.post('/alerts/low-stock/send-line', async (req, res) => {
+router.post('/alerts/low-stock/send-line', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const result = await sendLowStockLineNow(db);

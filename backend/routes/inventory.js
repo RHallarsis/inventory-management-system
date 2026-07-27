@@ -3,12 +3,29 @@ const path    = require('path');
 const fs      = require('fs');
 const multer  = require('multer');
 const { dbPromise, calcStatus } = require('../database');
+const { requireAuth, requireWrite } = require('../middleware/auth');
 // Lazy-load email service so a missing/slow module never blocks startup
 let sendApprovedPODraft = async () => {};
 try { ({ sendApprovedPODraft } = require('../services/outlookDraftService')); }
 catch (e) { console.warn('[inventory] outlookDraftService unavailable:', e.message); }
 
 const router = express.Router();
+
+// Must be logged in just to view anything in this file.
+router.use([
+  '/inventory', '/spare-parts', '/categories', '/suppliers',
+  '/purchase-orders', '/stock-movements', '/goods-received',
+  '/stock-transfers', '/pullout-receipts', '/transmittal-receipts',
+  '/machine-monitoring'
+], requireAuth);
+// "Documents" resources (Suppliers, Purchase Orders/Sales Invoice, Stock
+// Transfers, Pullout Receipts, Transmittal Receipts — all have file
+// upload/management): Admin/Manager/Staff get full CRUD.
+const writeGateDoc = requireWrite(true);
+// Everything else in this file (Inventory items, Spare Parts, Categories,
+// Goods Received, Machine Monitoring — no file upload/"Documents" nature):
+// only Admin/Manager may write; Staff and Viewer are read-only.
+const writeGateNonDoc = requireWrite(false);
 
 // ── Multer setup for PO file uploads ──────────────────────────
 const PO_UPLOAD_DIR = path.join(__dirname, '../uploads/po');
@@ -69,7 +86,7 @@ router.get('/inventory/:id', async (req, res) => {
 });
 
 // ── POST /api/inventory ───────────────────────────────────────
-router.post('/inventory', async (req, res) => {
+router.post('/inventory', writeGateNonDoc, async (req, res) => {
   const { product_code, name, category, quantity, unit_price } = req.body;
 
   if (!product_code || !name || !category || quantity == null || unit_price == null) {
@@ -113,7 +130,7 @@ router.post('/inventory', async (req, res) => {
 });
 
 // ── PUT /api/inventory/:id ────────────────────────────────────
-router.put('/inventory/:id', async (req, res) => {
+router.put('/inventory/:id', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne('SELECT * FROM products WHERE id = ?', [+req.params.id]);
@@ -162,7 +179,7 @@ router.put('/inventory/:id', async (req, res) => {
 });
 
 // ── DELETE /api/inventory/:id ─────────────────────────────────
-router.delete('/inventory/:id', async (req, res) => {
+router.delete('/inventory/:id', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne('SELECT id FROM products WHERE id = ?', [+req.params.id]);
@@ -210,7 +227,7 @@ router.get('/spare-parts/:id', async (req, res) => {
 });
 
 // ── POST /api/spare-parts ─────────────────────────────────────
-router.post('/spare-parts', async (req, res) => {
+router.post('/spare-parts', writeGateNonDoc, async (req, res) => {
   const { name, part_no, machine, on_hand, on_order, monthly_usage, lead_time, buffer, safety_stock } = req.body;
   if (!name || !part_no) return res.status(400).json({ error: 'name and part_no are required' });
   try {
@@ -242,7 +259,7 @@ router.post('/spare-parts', async (req, res) => {
 });
 
 // ── PUT /api/spare-parts/:id ──────────────────────────────────
-router.put('/spare-parts/:id', async (req, res) => {
+router.put('/spare-parts/:id', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM spare_parts WHERE id = ?', [+req.params.id]);
@@ -289,7 +306,7 @@ router.put('/spare-parts/:id', async (req, res) => {
 });
 
 // ── DELETE /api/spare-parts/:id ───────────────────────────────
-router.delete('/spare-parts/:id', async (req, res) => {
+router.delete('/spare-parts/:id', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM spare_parts WHERE id = ?', [+req.params.id]);
@@ -372,7 +389,7 @@ router.get('/categories/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/categories', async (req, res) => {
+router.post('/categories', writeGateNonDoc, async (req, res) => {
   const { name, specification, quantity } = req.body;
   if (!name) return res.status(400).json({ error: 'name is required' });
   try {
@@ -388,7 +405,7 @@ router.post('/categories', async (req, res) => {
   }
 });
 
-router.put('/categories/:id', async (req, res) => {
+router.put('/categories/:id', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM categories WHERE id = ?', [+req.params.id]);
@@ -405,7 +422,7 @@ router.put('/categories/:id', async (req, res) => {
   }
 });
 
-router.delete('/categories/:id', async (req, res) => {
+router.delete('/categories/:id', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM categories WHERE id = ?', [+req.params.id]);
@@ -435,7 +452,7 @@ router.get('/suppliers/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/suppliers', supUpload.single('file_2303'), async (req, res) => {
+router.post('/suppliers', writeGateDoc, supUpload.single('file_2303'), async (req, res) => {
   const { code, name, contact_person, role, email, phone, category, location, status } = req.body;
   if (!name || !code) return res.status(400).json({ error: 'code and name are required' });
   try {
@@ -455,7 +472,7 @@ router.post('/suppliers', supUpload.single('file_2303'), async (req, res) => {
   }
 });
 
-router.put('/suppliers/:id', supUpload.single('file_2303'), async (req, res) => {
+router.put('/suppliers/:id', writeGateDoc, supUpload.single('file_2303'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM suppliers WHERE id = ?', [+req.params.id]);
@@ -486,7 +503,7 @@ router.put('/suppliers/:id', supUpload.single('file_2303'), async (req, res) => 
   }
 });
 
-router.delete('/suppliers/:id', async (req, res) => {
+router.delete('/suppliers/:id', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM suppliers WHERE id = ?', [+req.params.id]);
@@ -516,7 +533,7 @@ router.get('/purchase-orders/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/purchase-orders', poUpload.single('file'), async (req, res) => {
+router.post('/purchase-orders', writeGateDoc, poUpload.single('file'), async (req, res) => {
   const { po_number, supplier, order_date, status, total_amount } = req.body;
   if (!po_number || !supplier) return res.status(400).json({ error: 'po_number and supplier are required' });
   try {
@@ -535,7 +552,7 @@ router.post('/purchase-orders', poUpload.single('file'), async (req, res) => {
   }
 });
 
-router.put('/purchase-orders/:id', poUpload.single('file'), async (req, res) => {
+router.put('/purchase-orders/:id', writeGateDoc, poUpload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]);
@@ -627,7 +644,7 @@ router.get('/purchase-orders/:id/line-items', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/purchase-orders/:id/line-items', async (req, res) => {
+router.post('/purchase-orders/:id/line-items', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const poId = +req.params.id;
@@ -647,7 +664,7 @@ router.post('/purchase-orders/:id/line-items', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/purchase-orders/:id/line-items/:lineId', async (req, res) => {
+router.put('/purchase-orders/:id/line-items/:lineId', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const poId = +req.params.id;
@@ -666,7 +683,7 @@ router.put('/purchase-orders/:id/line-items/:lineId', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/purchase-orders/:id/line-items/:lineId', async (req, res) => {
+router.delete('/purchase-orders/:id/line-items/:lineId', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const poId = +req.params.id;
@@ -727,7 +744,7 @@ router.get('/purchase-orders/:id/preview-email', async (req, res) => {
 
 // ── Manually notify supplier for an approved PO ───────────────
 // Body: { to: 'override@email.com' }  — optional recipient override
-router.post('/purchase-orders/:id/notify-supplier', async (req, res) => {
+router.post('/purchase-orders/:id/notify-supplier', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const po = await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]);
@@ -793,7 +810,7 @@ router.post('/purchase-orders/:id/notify-supplier', async (req, res) => {
 });
 
 // ── Update SI submitted date and/or SI file ───────────────────
-router.patch('/purchase-orders/:id/si', siUpload.single('si_file'), async (req, res) => {
+router.patch('/purchase-orders/:id/si', writeGateDoc, siUpload.single('si_file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]);
@@ -821,7 +838,7 @@ router.patch('/purchase-orders/:id/si', siUpload.single('si_file'), async (req, 
 });
 
 // ── Remove SI file only ───────────────────────────────────────
-router.delete('/purchase-orders/:id/si', async (req, res) => {
+router.delete('/purchase-orders/:id/si', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]);
@@ -837,7 +854,7 @@ router.delete('/purchase-orders/:id/si', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/purchase-orders/:id', async (req, res) => {
+router.delete('/purchase-orders/:id', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM purchase_orders WHERE id = ?', [+req.params.id]);
@@ -923,7 +940,7 @@ router.get('/goods-received', async (_req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/goods-received', async (req, res) => {
+router.post('/goods-received', writeGateNonDoc, async (req, res) => {
   const { gr_number, po_number, supplier, received_date, received_by, status, total_items } = req.body;
   if (!gr_number || !supplier) return res.status(400).json({ error: 'gr_number and supplier are required' });
   try {
@@ -941,7 +958,7 @@ router.post('/goods-received', async (req, res) => {
   }
 });
 
-router.put('/goods-received/:id', async (req, res) => {
+router.put('/goods-received/:id', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM goods_received WHERE id = ?', [+req.params.id]);
@@ -997,7 +1014,7 @@ router.get('/goods-received/:id/line-items', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/goods-received/:id/line-items', async (req, res) => {
+router.post('/goods-received/:id/line-items', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const grId = +req.params.id;
@@ -1017,7 +1034,7 @@ router.post('/goods-received/:id/line-items', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/goods-received/:id/line-items/:lineId', async (req, res) => {
+router.put('/goods-received/:id/line-items/:lineId', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const grId = +req.params.id;
@@ -1037,7 +1054,7 @@ router.put('/goods-received/:id/line-items/:lineId', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/goods-received/:id/line-items/:lineId', async (req, res) => {
+router.delete('/goods-received/:id/line-items/:lineId', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const grId = +req.params.id;
@@ -1050,7 +1067,7 @@ router.delete('/goods-received/:id/line-items/:lineId', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/goods-received/:id', async (req, res) => {
+router.delete('/goods-received/:id', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM goods_received WHERE id = ?', [+req.params.id]);
@@ -1085,7 +1102,7 @@ router.get('/stock-transfers', async (_req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/stock-transfers', stUpload.single('file'), async (req, res) => {
+router.post('/stock-transfers', writeGateDoc, stUpload.single('file'), async (req, res) => {
   const { transfer_no, transfer_date, source_location, destination_location, items_count, status, transferred_by } = req.body;
   if (!transfer_no || !source_location || !destination_location) {
     return res.status(400).json({ error: 'transfer_no, source_location, and destination_location are required' });
@@ -1108,7 +1125,7 @@ router.post('/stock-transfers', stUpload.single('file'), async (req, res) => {
   }
 });
 
-router.put('/stock-transfers/:id', stUpload.single('file'), async (req, res) => {
+router.put('/stock-transfers/:id', writeGateDoc, stUpload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM stock_transfers WHERE id = ?', [+req.params.id]);
@@ -1156,7 +1173,7 @@ router.get('/stock-transfers/:id/line-items', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/stock-transfers/:id/line-items', async (req, res) => {
+router.post('/stock-transfers/:id/line-items', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const transferId = +req.params.id;
@@ -1176,7 +1193,7 @@ router.post('/stock-transfers/:id/line-items', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/stock-transfers/:id/line-items/:lineId', async (req, res) => {
+router.put('/stock-transfers/:id/line-items/:lineId', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const transferId = +req.params.id;
@@ -1196,7 +1213,7 @@ router.put('/stock-transfers/:id/line-items/:lineId', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/stock-transfers/:id/line-items/:lineId', async (req, res) => {
+router.delete('/stock-transfers/:id/line-items/:lineId', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const transferId = +req.params.id;
@@ -1209,7 +1226,7 @@ router.delete('/stock-transfers/:id/line-items/:lineId', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/stock-transfers/:id', async (req, res) => {
+router.delete('/stock-transfers/:id', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM stock_transfers WHERE id = ?', [+req.params.id]);
@@ -1250,7 +1267,7 @@ router.get('/pullout-receipts', async (_req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/pullout-receipts', pullUpload.single('file'), async (req, res) => {
+router.post('/pullout-receipts', writeGateDoc, pullUpload.single('file'), async (req, res) => {
   const { transfer_no, transfer_date, source_location, destination_location, items_count, items_description, status, pulled_out_by, prepared_by, returned_by, witnessed_by } = req.body;
   if (!transfer_no || !source_location || !destination_location) {
     return res.status(400).json({ error: 'transfer_no, source_location, and destination_location are required' });
@@ -1275,7 +1292,7 @@ router.post('/pullout-receipts', pullUpload.single('file'), async (req, res) => 
   }
 });
 
-router.put('/pullout-receipts/:id', pullUpload.single('file'), async (req, res) => {
+router.put('/pullout-receipts/:id', writeGateDoc, pullUpload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM pullout_receipts WHERE id = ?', [+req.params.id]);
@@ -1327,7 +1344,7 @@ router.get('/pullout-receipts/:id/line-items', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/pullout-receipts/:id/line-items', async (req, res) => {
+router.post('/pullout-receipts/:id/line-items', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const pulloutId = +req.params.id;
@@ -1347,7 +1364,7 @@ router.post('/pullout-receipts/:id/line-items', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/pullout-receipts/:id/line-items/:lineId', async (req, res) => {
+router.put('/pullout-receipts/:id/line-items/:lineId', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const pulloutId = +req.params.id;
@@ -1367,7 +1384,7 @@ router.put('/pullout-receipts/:id/line-items/:lineId', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/pullout-receipts/:id/line-items/:lineId', async (req, res) => {
+router.delete('/pullout-receipts/:id/line-items/:lineId', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const pulloutId = +req.params.id;
@@ -1380,7 +1397,7 @@ router.delete('/pullout-receipts/:id/line-items/:lineId', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/pullout-receipts/:id', async (req, res) => {
+router.delete('/pullout-receipts/:id', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM pullout_receipts WHERE id = ?', [+req.params.id]);
@@ -1399,7 +1416,7 @@ router.get('/transmittal-receipts', async (_req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/transmittal-receipts', trmitUpload.single('file'), async (req, res) => {
+router.post('/transmittal-receipts', writeGateDoc, trmitUpload.single('file'), async (req, res) => {
   const { transfer_no, transfer_date, source_location, destination_location, items_description, status, turned_over_by, received_by, witnessed_by, noted_by } = req.body;
   if (!transfer_no || !source_location || !destination_location) {
     return res.status(400).json({ error: 'transfer_no, source_location, and destination_location are required' });
@@ -1424,7 +1441,7 @@ router.post('/transmittal-receipts', trmitUpload.single('file'), async (req, res
   }
 });
 
-router.put('/transmittal-receipts/:id', trmitUpload.single('file'), async (req, res) => {
+router.put('/transmittal-receipts/:id', writeGateDoc, trmitUpload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM transmittal_receipts WHERE id = ?', [+req.params.id]);
@@ -1450,7 +1467,7 @@ router.put('/transmittal-receipts/:id', trmitUpload.single('file'), async (req, 
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/transmittal-receipts/:id', async (req, res) => {
+router.delete('/transmittal-receipts/:id', writeGateDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM transmittal_receipts WHERE id = ?', [+req.params.id]);
@@ -1484,7 +1501,7 @@ function mmTotal(r) {
   return (+r.ez || 0) + (+r.br || 0) + (+r.ez2 || 0) + (+r.ezl || 0) + (+r.lb || 0) + (+r.j_ark || 0);
 }
 
-router.post('/machine-monitoring', async (req, res) => {
+router.post('/machine-monitoring', writeGateNonDoc, async (req, res) => {
   const { site, group_name, area, ez, br, ez2, ezl, lb, j_ark } = req.body;
   if (!site || !area) return res.status(400).json({ error: 'site and area are required' });
   try {
@@ -1499,7 +1516,7 @@ router.post('/machine-monitoring', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/machine-monitoring/:id', async (req, res) => {
+router.put('/machine-monitoring/:id', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM machine_monitoring WHERE id = ?', [+req.params.id]);
@@ -1525,7 +1542,7 @@ router.put('/machine-monitoring/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/machine-monitoring/:id', async (req, res) => {
+router.delete('/machine-monitoring/:id', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM machine_monitoring WHERE id = ?', [+req.params.id]);

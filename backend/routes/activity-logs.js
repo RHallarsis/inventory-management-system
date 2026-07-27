@@ -10,10 +10,18 @@
 
 const express       = require('express');
 const { dbPromise } = require('../database');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const router        = express.Router();
 
+// Viewing/clearing the log is the "Logs" section — Admin/Manager only,
+// hidden entirely from Staff/Viewer. Recording a NEW entry (POST) stays
+// open to any logged-in role: it's how each user's own actions elsewhere
+// in the app get written to the log, not a "view logs" permission.
+router.use('/activity-logs', requireAuth);
+const logsOnly = requireRole('Admin', 'Manager');
+
 // ── GET /api/activity-logs ──────────────────────────────────────────────────
-router.get('/activity-logs', async (req, res) => {
+router.get('/activity-logs', logsOnly, async (req, res) => {
   try {
     const { db } = await dbPromise;
 
@@ -68,7 +76,7 @@ router.post('/activity-logs', async (req, res) => {
 });
 
 // ── DELETE /api/activity-logs ───────────────────────────────────────────────
-router.delete('/activity-logs', async (_req, res) => {
+router.delete('/activity-logs', logsOnly, async (_req, res) => {
   try {
     const { db } = await dbPromise;
     await db.run('DELETE FROM user_activity_logs');

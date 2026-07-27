@@ -19,6 +19,7 @@ const diag = {
   routeErrors: {},
   dbError:     null,
   iifeError:   null,
+  authError:   null,
   ready:       false,
   databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
   node:        process.version,
@@ -30,6 +31,22 @@ app.get('/api/diag', (_req, res) => res.json({
   BREVO_API_KEY: process.env.BREVO_API_KEY ? `✅ set (length=${process.env.BREVO_API_KEY.length})` : '❌ NOT SET',
   GMAIL_USER:    process.env.GMAIL_USER    ? `✅ set (${process.env.GMAIL_USER})`                  : '❌ NOT SET',
 }));
+
+// Identify the caller (if any) on every /api/* request, from the
+// X-User-Id / X-Session-Token headers the frontend now sends on every
+// call. This does NOT block anything by itself — individual routes
+// decide what to require via requireAuth/requireRole/requireWrite
+// (see routes/*.js and middleware/auth.js). Loaded defensively so a
+// problem here can never take down /health or /api/diag.
+let attachUser = (_req, _res, next) => next();
+try {
+  ({ attachUser } = require('./middleware/auth'));
+  console.log('[server] auth middleware loaded');
+} catch (e) {
+  console.error('[server] FAILED middleware/auth:', e.message);
+  diag.authError = e.message;
+}
+app.use('/api', attachUser);
 
 // Serve static files — HTML is never cached so browsers always get fresh JS
 app.use(express.static(path.join(__dirname, '../frontend'), {
@@ -43,7 +60,21 @@ app.use(express.static(path.join(__dirname, '../frontend'), {
     }
   }
 }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Uploaded files (PO/SI/CI-PL/Suppliers/Stock-Transfers/Pullout/
+// Transmittal/Logistics/Supplier-Quotations attachments): every one of
+// these modules counts as a "Documents" section, so Admin/Manager/Staff
+// may open or download any file; Viewer may never open, preview, or
+// download any attachment, anywhere (view-only, matches the access-
+// privileges spec). Must be logged in at all to reach any file.
+app.use('/uploads', attachUser, (req, res, next) => {
+  const role = req.currentUser && req.currentUser.role;
+  if (!role) return res.status(401).json({ error: 'Login required.' });
+  if (role === 'Viewer') {
+    return res.status(403).json({ error: 'Viewer accounts cannot open, preview, or download files.' });
+  }
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
 
 // Bind port FIRST so Railway healthcheck always passes
 app.listen(PORT, '0.0.0.0', () => console.log(`[server] Listening on port ${PORT}`));

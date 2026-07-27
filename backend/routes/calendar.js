@@ -2,6 +2,12 @@ const express = require('express');
 const router  = express.Router();
 const { dbPromise } = require('../database');
 const { broadcastLine, buildCalendarMessage } = require('../utils/lineService');
+const { requireAuth, requireWrite } = require('../middleware/auth');
+
+// Activity Calendar has no file/"Documents" nature: only Admin/Manager
+// may write; Staff and Viewer are read-only.
+router.use(['/ph-holidays', '/calendar'], requireAuth);
+const writeGate = requireWrite(false);
 
 // ── PH Holidays proxy — server-side cache so Railway only fetches once per year ──
 const phCache = {};
@@ -68,7 +74,7 @@ router.get('/calendar/tasks/:id', async (req, res) => {
 });
 
 // POST /api/calendar/tasks
-router.post('/calendar/tasks', async (req, res) => {
+router.post('/calendar/tasks', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const {
@@ -93,7 +99,7 @@ router.post('/calendar/tasks', async (req, res) => {
 });
 
 // PUT /api/calendar/tasks/:id
-router.put('/calendar/tasks/:id', async (req, res) => {
+router.put('/calendar/tasks/:id', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const {
@@ -118,7 +124,7 @@ router.put('/calendar/tasks/:id', async (req, res) => {
 });
 
 // DELETE /api/calendar/tasks/:id
-router.delete('/calendar/tasks/:id', async (req, res) => {
+router.delete('/calendar/tasks/:id', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     await db.run('DELETE FROM calendar_tasks WHERE id=?', [+req.params.id]);

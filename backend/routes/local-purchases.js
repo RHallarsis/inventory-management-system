@@ -1,6 +1,12 @@
 const express = require('express');
 const { dbPromise } = require('../database');
+const { requireAuth, requireWrite } = require('../middleware/auth');
 const router = express.Router();
+
+// Local Purchases has no file/"Documents" nature: only Admin/Manager
+// may write; Staff and Viewer are read-only.
+router.use('/local-purchases', requireAuth);
+const writeGate = requireWrite(false);
 
 // GET /api/local-purchases
 router.get('/local-purchases', async (_req, res) => {
@@ -22,7 +28,7 @@ router.get('/local-purchases/:id', async (req, res) => {
 });
 
 // POST /api/local-purchases
-router.post('/local-purchases', async (req, res) => {
+router.post('/local-purchases', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const { po_number, part_name, supplier = '', qty_ordered = 0, unit_price = 0, total = 0,
@@ -40,7 +46,7 @@ router.post('/local-purchases', async (req, res) => {
 });
 
 // PUT /api/local-purchases/:id
-router.put('/local-purchases/:id', async (req, res) => {
+router.put('/local-purchases/:id', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM local_purchases WHERE id=?', [+req.params.id]);
@@ -71,7 +77,7 @@ router.put('/local-purchases/:id', async (req, res) => {
 });
 
 // DELETE /api/local-purchases/:id
-router.delete('/local-purchases/:id', async (req, res) => {
+router.delete('/local-purchases/:id', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     await db.run('DELETE FROM local_purchases WHERE id=?', [+req.params.id]);

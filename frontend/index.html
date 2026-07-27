@@ -545,6 +545,68 @@ body.viewer-mode .ac-task-del,
 body.viewer-mode .ac-sum-edit,
 body.viewer-mode .ac-sum-del,
 body.viewer-mode .line-notify-btn { display:none !important; }
+
+/* Staff mode — read-only everywhere by default (same lockdown as Viewer),
+   EXCEPT on the "Documents" pages (Purchase Orders, Suppliers, CI/PL,
+   Stock Transfers, Pullout Receipts, Transmittal Receipts, Logistics,
+   Supplier Quotations) where Staff gets full CRUD + file management —
+   see the override block right below this one. */
+body.staff-mode .page-add-btn,
+body.staff-mode .btn-edit,
+body.staff-mode .btn-del,
+body.staff-mode .ua-btn,
+body.staff-mode .ua-btn-edit,
+body.staff-mode .ua-btn-del,
+body.staff-mode .ac-add-btn,
+body.staff-mode .ac-task-edit,
+body.staff-mode .ac-task-del,
+body.staff-mode .ac-sum-edit,
+body.staff-mode .ac-sum-del,
+body.staff-mode .line-notify-btn { display:none !important; }
+
+/* Staff mode — re-enable full CRUD on the "Documents" pages only */
+body.staff-mode #page-purchaseorders .page-add-btn,
+body.staff-mode #page-suppliers .page-add-btn,
+body.staff-mode #page-cipl .page-add-btn,
+body.staff-mode #page-stocktransfers .page-add-btn,
+body.staff-mode #page-pulloutreceipts .page-add-btn,
+body.staff-mode #page-transmittalreceipts .page-add-btn,
+body.staff-mode #page-logistics .page-add-btn,
+body.staff-mode #page-supplierquotations .page-add-btn { display:flex !important; }
+body.staff-mode #page-purchaseorders .btn-edit,
+body.staff-mode #page-purchaseorders .btn-del,
+body.staff-mode #page-purchaseorders .page-act-btn,
+body.staff-mode #page-suppliers .btn-edit,
+body.staff-mode #page-suppliers .btn-del,
+body.staff-mode #page-suppliers .page-act-btn,
+body.staff-mode #page-cipl .btn-edit,
+body.staff-mode #page-cipl .btn-del,
+body.staff-mode #page-cipl .page-act-btn,
+body.staff-mode #page-stocktransfers .btn-edit,
+body.staff-mode #page-stocktransfers .btn-del,
+body.staff-mode #page-stocktransfers .page-act-btn,
+body.staff-mode #page-pulloutreceipts .btn-edit,
+body.staff-mode #page-pulloutreceipts .btn-del,
+body.staff-mode #page-pulloutreceipts .page-act-btn,
+body.staff-mode #page-transmittalreceipts .btn-edit,
+body.staff-mode #page-transmittalreceipts .btn-del,
+body.staff-mode #page-transmittalreceipts .page-act-btn,
+body.staff-mode #page-logistics .btn-edit,
+body.staff-mode #page-logistics .btn-del,
+body.staff-mode #page-logistics .page-act-btn,
+body.staff-mode #page-supplierquotations .btn-edit,
+body.staff-mode #page-supplierquotations .btn-del,
+body.staff-mode #page-supplierquotations .page-act-btn { display:inline-block !important; }
+/* Viewer can never open/preview/download an attached file, anywhere
+   (matches the backend gate on the /uploads static route). Staff and
+   Admin/Manager keep normal clickable file links. */
+body.viewer-mode .file-link,
+body.viewer-mode .log-file-link {
+  pointer-events:none;
+  opacity:.55;
+  cursor:not-allowed;
+  text-decoration:none !important;
+}
 /* Staff access-denied screen (shown when a blocked page is attempted) */
 .staff-blocked-notice {
   display:none;
@@ -3494,6 +3556,35 @@ function _startHeartbeat(userId){
     }catch(_){}
   },60000);
 }
+
+// ── Auto-attach auth headers to every backend API call ───────────────────────
+// The backend now validates X-User-Id / X-Session-Token on every /api/*
+// route (see backend/middleware/auth.js — previously these routes had NO
+// server-side check at all). Rather than touching every one of the 100+
+// existing fetch(API+...) call sites in this file, the global fetch is
+// patched once here: any request whose URL starts with our own API base
+// automatically gets the current session's headers attached.
+(function(){
+  const _origFetch=window.fetch.bind(window);
+  window.fetch=function(input,init){
+    try{
+      const url=typeof input==='string'?input:(input&&input.url)||'';
+      // Some call sites use the absolute API constant (API+'/x'), others use
+      // a plain relative path ('/api/x') — e.g. loadUsers/saveUser/deleteUser
+      // in the User Accounts panel. Match both forms so neither is missed.
+      const isApiCall=url.indexOf(API)===0 || url.indexOf('/api/')===0 || url==='/api';
+      if(isApiCall && _sessionToken && currentUser && currentUser.id){
+        init=init?Object.assign({},init):{};
+        init.headers=Object.assign({},init.headers||{},{
+          'X-User-Id':String(currentUser.id),
+          'X-Session-Token':_sessionToken
+        });
+      }
+    }catch(_){}
+    return _origFetch(input,init);
+  };
+})();
+
 async function _resumeSession(){
   // Sessions are memory-only — nothing to restore on page load.
   // Login overlay is display:flex by default, so login page always shows.

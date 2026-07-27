@@ -3,8 +3,14 @@ const multer  = require('multer');
 const path    = require('path');
 const fs      = require('fs');
 const { dbPromise } = require('../database');
+const { requireAuth, requireWrite } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Logistics is a "Documents" module: Admin/Manager/Staff get full CRUD +
+// file management; Viewer is read-only. Must be logged in just to view.
+router.use('/logistics', requireAuth);
+const writeGate = requireWrite(true);
 
 // ── Upload directory ──────────────────────────────────────────
 const UPLOAD_DIR = path.join(__dirname, '../uploads/logistics');
@@ -29,7 +35,7 @@ router.get('/logistics/trucking', async (_req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/logistics/trucking', upload.single('file'), async (req, res) => {
+router.post('/logistics/trucking', writeGate, upload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const { quote_number, trucking_service, date_of_activity, sites, total_amount, status } = req.body;
@@ -49,7 +55,7 @@ router.post('/logistics/trucking', upload.single('file'), async (req, res) => {
   }
 });
 
-router.put('/logistics/trucking/:id', upload.single('file'), async (req, res) => {
+router.put('/logistics/trucking/:id', writeGate, upload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne('SELECT * FROM trucking_quotations WHERE id=?', [+req.params.id]);
@@ -74,7 +80,7 @@ router.put('/logistics/trucking/:id', upload.single('file'), async (req, res) =>
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/logistics/trucking/:id', async (req, res) => {
+router.delete('/logistics/trucking/:id', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne('SELECT * FROM trucking_quotations WHERE id=?', [+req.params.id]);
@@ -110,7 +116,7 @@ router.get('/logistics/manpower/next-request-no', async (_req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/logistics/manpower', upload.single('file'), async (req, res) => {
+router.post('/logistics/manpower', writeGate, upload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const { request_no, location, machine_type, machine_quantity, manpower_quantity, purpose, unit_price, remarks } = req.body;
@@ -138,7 +144,7 @@ router.post('/logistics/manpower', upload.single('file'), async (req, res) => {
   }
 });
 
-router.put('/logistics/manpower/:id', upload.single('file'), async (req, res) => {
+router.put('/logistics/manpower/:id', writeGate, upload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne('SELECT * FROM manpower_requests WHERE id=?', [+req.params.id]);
@@ -165,7 +171,7 @@ router.put('/logistics/manpower/:id', upload.single('file'), async (req, res) =>
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.patch('/logistics/manpower/:id/payment', async (req, res) => {
+router.patch('/logistics/manpower/:id/payment', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const { payment_status } = req.body;
@@ -179,7 +185,7 @@ router.patch('/logistics/manpower/:id/payment', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/logistics/manpower/:id', async (req, res) => {
+router.delete('/logistics/manpower/:id', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne('SELECT * FROM manpower_requests WHERE id=?', [+req.params.id]);
@@ -203,7 +209,7 @@ router.get('/logistics/sites-activity', async (_req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/logistics/sites-activity', upload.single('file'), async (req, res) => {
+router.post('/logistics/sites-activity', writeGate, upload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const { site_name, activity_type, activity_date, location, description, status } = req.body;
@@ -220,7 +226,7 @@ router.post('/logistics/sites-activity', upload.single('file'), async (req, res)
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/logistics/sites-activity/:id', upload.single('file'), async (req, res) => {
+router.put('/logistics/sites-activity/:id', writeGate, upload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne('SELECT * FROM sites_activity WHERE id=?', [+req.params.id]);
@@ -244,7 +250,7 @@ router.put('/logistics/sites-activity/:id', upload.single('file'), async (req, r
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/logistics/sites-activity/:id', async (req, res) => {
+router.delete('/logistics/sites-activity/:id', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne('SELECT * FROM sites_activity WHERE id=?', [+req.params.id]);
@@ -268,7 +274,7 @@ router.get('/logistics/waybills', async (_req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/logistics/waybills', upload.single('file'), async (req, res) => {
+router.post('/logistics/waybills', writeGate, upload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const { waybill_number, date, origin, destination, notes } = req.body;
@@ -288,7 +294,7 @@ router.post('/logistics/waybills', upload.single('file'), async (req, res) => {
   }
 });
 
-router.put('/logistics/waybills/:id', upload.single('file'), async (req, res) => {
+router.put('/logistics/waybills/:id', writeGate, upload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne('SELECT * FROM waybills WHERE id=?', [+req.params.id]);
@@ -311,7 +317,7 @@ router.put('/logistics/waybills/:id', upload.single('file'), async (req, res) =>
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/logistics/waybills/:id', async (req, res) => {
+router.delete('/logistics/waybills/:id', writeGate, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const existing = await db.getOne('SELECT * FROM waybills WHERE id=?', [+req.params.id]);
