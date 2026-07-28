@@ -556,22 +556,24 @@ body.staff-mode .ac-sum-edit,
 body.staff-mode .ac-sum-del,
 body.staff-mode .line-notify-btn { display:none !important; }
 
-/* Staff mode — re-enable create/edit (not delete) on the "Documents"
-   pages only. Staff can add, edit, upload/replace files, and use Items/
-   Copy/Notify — but never delete a record outright, so .btn-del is
-   deliberately NOT re-enabled here and stays hidden by the base
-   body.staff-mode .btn-del rule above. */
+/* Staff mode — re-enable full CRUD (including delete) on the "Documents"
+   pages only (2026-07 product decision: Staff's Documents access includes
+   delete, not just create/edit/upload). */
 body.staff-mode #page-cipl .page-add-btn,
 body.staff-mode #page-stocktransfers .page-add-btn,
 body.staff-mode #page-pulloutreceipts .page-add-btn,
 body.staff-mode #page-transmittalreceipts .page-add-btn { display:flex !important; }
 body.staff-mode #page-cipl .btn-edit,
+body.staff-mode #page-cipl .btn-del,
 body.staff-mode #page-cipl .page-act-btn,
 body.staff-mode #page-stocktransfers .btn-edit,
+body.staff-mode #page-stocktransfers .btn-del,
 body.staff-mode #page-stocktransfers .page-act-btn,
 body.staff-mode #page-pulloutreceipts .btn-edit,
+body.staff-mode #page-pulloutreceipts .btn-del,
 body.staff-mode #page-pulloutreceipts .page-act-btn,
 body.staff-mode #page-transmittalreceipts .btn-edit,
+body.staff-mode #page-transmittalreceipts .btn-del,
 body.staff-mode #page-transmittalreceipts .page-act-btn { display:inline-block !important; }
 /* Purchase Orders and Goods Received are NOT "Documents" modules, so Staff
    is read-only there — but each has extra action-only buttons (Items /
