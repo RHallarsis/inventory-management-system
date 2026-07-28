@@ -2,7 +2,13 @@
 // emailService.js (outlookDraftService.js)
 // Sends PO approval emails. Priority:
 //   1. Gmail SMTP via Nodemailer (GMAIL_USER + GMAIL_APP_PASSWORD) — DMARC-safe
-//   2. Brevo transactional API (BREVO_API_KEY) — fallback
+//   2. Brevo transactional API (BREVO_API_KEY) — automatic fallback if
+//      Gmail SMTP fails for any reason (wrong/expired app password, or —
+//      the common case on Railway's free/Hobby tier — outbound SMTP
+//      ports 25/465/587 being blocked outright, which makes the Gmail
+//      connection attempt hang instead of erroring quickly. sendViaGmail
+//      now uses an 8s connection/greeting/socket timeout so that hang
+//      can't outlast this fallback logic or the frontend's 30s abort.)
 //
 // Railway env vars:
 //   GMAIL_USER         – Gmail address used as sender
@@ -109,6 +115,16 @@ async function sendViaGmail(po, subject, htmlBody) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: { user: GMAIL_USER, pass: GMAIL_PASS },
+    // Railway (and several other hosts) block outbound SMTP ports
+    // (25/465/587) on their free/Hobby tier — the TCP handshake to
+    // smtp.gmail.com never completes, and without an explicit timeout
+    // nodemailer/smtp-connection will hang for its own default (~2 min)
+    // before giving up. Fail fast instead so sendApprovedPODraft() below
+    // has a chance to fall back to the Brevo API (plain HTTPS, not
+    // blocked) well within the frontend's 30-second abort window.
+    connectionTimeout: 8000,
+    greetingTimeout:   8000,
+    socketTimeout:     8000,
   });
   const ccList  = parseEmailList(po.cc);
   const bccList = parseEmailList(po.bcc);
@@ -161,12 +177,32 @@ async function sendApprovedPODraft(po) {
   if (!po.supplier_email) throw new Error(`No email address for supplier "${po.supplier_name}".`);
   const subject  = `Purchase Order Approved – ${po.po_number} | ${po.supplier_name}`;
   const htmlBody = buildEmailBody(po);
-  if (USE_GMAIL) {
-    console.log('[EmailService] Provider: Gmail SMTP');
-    return sendViaGmail(po, subject, htmlBody);
+
+  if (!USE_GMAIL) {
+    console.log('[EmailService] Provider: Brevo API (no Gmail credentials configured)');
+    return sendViaBrevo(po, subject, htmlBody);
   }
-  console.log('[EmailService] Provider: Brevo API');
-  return sendViaBrevo(po, subject, htmlBody);
+
+  // Try Gmail SMTP first (DMARC-safe — mail actually comes from Google's
+  // servers), but if it fails for ANY reason — bad/expired app password,
+  // or (most likely on Railway's free tier) the SMTP port being blocked
+  // outright — automatically fall back to the Brevo HTTPS API instead of
+  // just failing the whole send. Previously a Gmail failure was fatal
+  // even when Brevo was fully configured and would have worked fine.
+  try {
+    console.log('[EmailService] Provider: Gmail SMTP');
+    return await sendViaGmail(po, subject, htmlBody);
+  } catch (gmailErr) {
+    console.error(`[EmailService] Gmail SMTP failed (${gmailErr.message}).`);
+    if (!BREVO_API_KEY) throw gmailErr; // no fallback available — surface the original error
+    console.log('[EmailService] Falling back to Brevo API...');
+    try {
+      return await sendViaBrevo(po, subject, htmlBody);
+    } catch (brevoErr) {
+      // Both providers failed — report both reasons, not just the last one.
+      throw new Error(`Gmail SMTP failed (${gmailErr.message}); Brevo fallback also failed (${brevoErr.message})`);
+    }
+  }
 }
 
 module.exports = { sendApprovedPODraft };

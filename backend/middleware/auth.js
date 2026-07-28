@@ -51,8 +51,15 @@ const FULL_ACCESS_ROLES = ['Admin', 'Manager'];
  */
 async function attachUser(req, res, next) {
   try {
-    const userId = parseInt(req.headers['x-user-id'], 10);
-    const token = req.headers['x-session-token'];
+    // Normal API calls go through the frontend's fetch() wrapper, which
+    // attaches these as headers. But plain <a href="/uploads/...">
+    // file-download links are followed by the browser as a direct
+    // navigation (or an <a target="_blank"> click) — the browser never
+    // attaches custom headers to that kind of request, only to fetch()/XHR.
+    // So file links instead pass the same identity as ?uid=&token= query
+    // params, and we accept either form here.
+    const userId = parseInt(req.headers['x-user-id'] || req.query.uid, 10);
+    const token = req.headers['x-session-token'] || req.query.token;
     if (!userId || !token) {
       req.currentUser = null;
       return next();
