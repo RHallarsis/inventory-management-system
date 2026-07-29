@@ -108,10 +108,18 @@ function requireRole(...roles) {
 
 /**
  * Gate a write action (POST/PUT/PATCH/DELETE).
- *   isDocumentModule=true   → Admin, Manager, and Staff may write
- *                             ("Documents" section — full file/record access).
- *   isDocumentModule=false  → only Admin/Manager may write; Staff and
- *                             Viewer are read-only on this resource.
+ *   isDocumentModule=true   → Admin, Manager, and Staff get full CRUD,
+ *                             including delete ("Documents" section — see
+ *                             the sidebar's own "Documents" nav group:
+ *                             Stock Transfers, Pullout Receipts,
+ *                             Transmittal Receipts, CI/PL. 2026-07 product
+ *                             decision: Staff's Documents access includes
+ *                             delete, not just create/edit/upload).
+ *   isDocumentModule=false  → only Admin/Manager may write at all; Staff
+ *                             and Viewer are read-only on this resource
+ *                             (Purchase Orders, Suppliers, Supplier
+ *                             Quotations, Logistics, Goods Received, and
+ *                             everything else).
  * Viewer never passes this check, regardless of isDocumentModule.
  */
 function requireWrite(isDocumentModule = false) {

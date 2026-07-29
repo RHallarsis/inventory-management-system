@@ -18,13 +18,18 @@ router.use([
   '/stock-transfers', '/pullout-receipts', '/transmittal-receipts',
   '/machine-monitoring'
 ], requireAuth);
-// "Documents" resources (Suppliers, Purchase Orders/Sales Invoice, Stock
-// Transfers, Pullout Receipts, Transmittal Receipts — all have file
-// upload/management): Admin/Manager/Staff get full CRUD.
+// "Documents" resources — this must match the app's own sidebar "Documents"
+// nav group EXACTLY (Stock Transfers/Delivery Receipts, Pullout Receipts,
+// Transmittal Receipts; CI/PL lives in cipl.js): Admin/Manager/Staff get
+// full CRUD (create/edit/upload), Staff just can't delete (see requireWrite).
+// Purchase Orders and Suppliers are in the "Procurement" nav group, NOT
+// "Documents" — despite having file uploads, they do not get the Staff
+// write exception. (2026-07 clarified with product owner: "Documents" means
+// the literal Documents section, not "has a file field".)
 const writeGateDoc = requireWrite(true);
 // Everything else in this file (Inventory items, Spare Parts, Categories,
-// Goods Received, Machine Monitoring — no file upload/"Documents" nature):
-// only Admin/Manager may write; Staff and Viewer are read-only.
+// Suppliers, Purchase Orders/Sales Invoice, Goods Received, Machine
+// Monitoring): only Admin/Manager may write; Staff and Viewer are read-only.
 const writeGateNonDoc = requireWrite(false);
 
 // ── Multer setup for PO file uploads ──────────────────────────
@@ -452,7 +457,7 @@ router.get('/suppliers/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/suppliers', writeGateDoc, supUpload.single('file_2303'), async (req, res) => {
+router.post('/suppliers', writeGateNonDoc, supUpload.single('file_2303'), async (req, res) => {
   const { code, name, contact_person, role, email, phone, category, location, status } = req.body;
   if (!name || !code) return res.status(400).json({ error: 'code and name are required' });
   try {
@@ -472,7 +477,7 @@ router.post('/suppliers', writeGateDoc, supUpload.single('file_2303'), async (re
   }
 });
 
-router.put('/suppliers/:id', writeGateDoc, supUpload.single('file_2303'), async (req, res) => {
+router.put('/suppliers/:id', writeGateNonDoc, supUpload.single('file_2303'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM suppliers WHERE id = ?', [+req.params.id]);
@@ -503,7 +508,7 @@ router.put('/suppliers/:id', writeGateDoc, supUpload.single('file_2303'), async 
   }
 });
 
-router.delete('/suppliers/:id', writeGateDoc, async (req, res) => {
+router.delete('/suppliers/:id', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM suppliers WHERE id = ?', [+req.params.id]);
@@ -533,7 +538,7 @@ router.get('/purchase-orders/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/purchase-orders', writeGateDoc, poUpload.single('file'), async (req, res) => {
+router.post('/purchase-orders', writeGateNonDoc, poUpload.single('file'), async (req, res) => {
   const { po_number, supplier, order_date, status, total_amount } = req.body;
   if (!po_number || !supplier) return res.status(400).json({ error: 'po_number and supplier are required' });
   try {
@@ -552,7 +557,7 @@ router.post('/purchase-orders', writeGateDoc, poUpload.single('file'), async (re
   }
 });
 
-router.put('/purchase-orders/:id', writeGateDoc, poUpload.single('file'), async (req, res) => {
+router.put('/purchase-orders/:id', writeGateNonDoc, poUpload.single('file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]);
@@ -644,7 +649,7 @@ router.get('/purchase-orders/:id/line-items', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/purchase-orders/:id/line-items', writeGateDoc, async (req, res) => {
+router.post('/purchase-orders/:id/line-items', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const poId = +req.params.id;
@@ -664,7 +669,7 @@ router.post('/purchase-orders/:id/line-items', writeGateDoc, async (req, res) =>
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/purchase-orders/:id/line-items/:lineId', writeGateDoc, async (req, res) => {
+router.put('/purchase-orders/:id/line-items/:lineId', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const poId = +req.params.id;
@@ -683,7 +688,7 @@ router.put('/purchase-orders/:id/line-items/:lineId', writeGateDoc, async (req, 
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/purchase-orders/:id/line-items/:lineId', writeGateDoc, async (req, res) => {
+router.delete('/purchase-orders/:id/line-items/:lineId', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const poId = +req.params.id;
@@ -744,7 +749,7 @@ router.get('/purchase-orders/:id/preview-email', async (req, res) => {
 
 // ── Manually notify supplier for an approved PO ───────────────
 // Body: { to: 'override@email.com' }  — optional recipient override
-router.post('/purchase-orders/:id/notify-supplier', writeGateDoc, async (req, res) => {
+router.post('/purchase-orders/:id/notify-supplier', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const po = await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]);
@@ -810,7 +815,7 @@ router.post('/purchase-orders/:id/notify-supplier', writeGateDoc, async (req, re
 });
 
 // ── Update SI submitted date and/or SI file ───────────────────
-router.patch('/purchase-orders/:id/si', writeGateDoc, siUpload.single('si_file'), async (req, res) => {
+router.patch('/purchase-orders/:id/si', writeGateNonDoc, siUpload.single('si_file'), async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]);
@@ -838,7 +843,7 @@ router.patch('/purchase-orders/:id/si', writeGateDoc, siUpload.single('si_file')
 });
 
 // ── Remove SI file only ───────────────────────────────────────
-router.delete('/purchase-orders/:id/si', writeGateDoc, async (req, res) => {
+router.delete('/purchase-orders/:id/si', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT * FROM purchase_orders WHERE id = ?', [+req.params.id]);
@@ -854,7 +859,7 @@ router.delete('/purchase-orders/:id/si', writeGateDoc, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/purchase-orders/:id', writeGateDoc, async (req, res) => {
+router.delete('/purchase-orders/:id', writeGateNonDoc, async (req, res) => {
   try {
     const { db } = await dbPromise;
     const ex = await db.getOne('SELECT id FROM purchase_orders WHERE id = ?', [+req.params.id]);

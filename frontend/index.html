@@ -443,8 +443,12 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
   .log-tab{padding:7px 11px;font-size:11px;}
 }
 /* ── STAFF / VIEW-ONLY MODE ─────────────────────────────────────────────── */
-/* Hide Stock Movements nav item for staff */
+/* Hide Stock Movements nav item for staff and viewer (spec: "Viewer has
+   the same viewing permissions as the Staff account" — this was
+   previously only hidden for Staff, letting Viewer see a page Staff
+   couldn't, which contradicts that). */
 body.staff-mode .nav-item[data-page="stockmovements"],
+body.viewer-mode .nav-item[data-page="stockmovements"],
 body.staff-mode .nav-item[data-page="activitylogs"],
 body.viewer-mode .nav-item[data-page="activitylogs"] { display:none !important; }
 
@@ -463,43 +467,18 @@ body.staff-mode .ac-sum-edit,
 body.staff-mode .ac-sum-del,
 body.staff-mode .line-notify-btn { display:none !important; }
 
-/* ── Staff CRUD exceptions: full access pages ── */
-body.staff-mode #page-machinemonitoring .page-add-btn,
-
-body.staff-mode #page-machinemonitoring .btn-edit,
-body.staff-mode #page-machinemonitoring .btn-del,
-body.staff-mode #page-goodsreceived .page-add-btn,
-
-body.staff-mode #page-goodsreceived .btn-edit,
-body.staff-mode #page-goodsreceived .btn-del,
-body.staff-mode #page-stocktransfers .page-add-btn,
-
-body.staff-mode #page-stocktransfers .btn-edit,
-body.staff-mode #page-stocktransfers .btn-del,
-body.staff-mode #page-pulloutreceipts .page-add-btn,
-
-body.staff-mode #page-pulloutreceipts .btn-edit,
-body.staff-mode #page-pulloutreceipts .btn-del,
-body.staff-mode #page-transmittalreceipts .page-add-btn,
-
-body.staff-mode #page-transmittalreceipts .btn-edit,
-body.staff-mode #page-transmittalreceipts .btn-del,
-body.staff-mode #page-inventoryreport .page-add-btn,
-
-body.staff-mode #page-inventoryreport .btn-edit,
-body.staff-mode #page-inventoryreport .btn-del,
-body.staff-mode #page-purchasereport .page-add-btn,
-
-body.staff-mode #page-purchasereport .btn-edit,
-body.staff-mode #page-purchasereport .btn-del,
-body.staff-mode #log-panel-sites .page-add-btn,
-
-body.staff-mode #log-panel-sites .btn-edit,
-body.staff-mode #log-panel-sites .btn-del,
-body.staff-mode #log-panel-waybills .page-add-btn,
-
-body.staff-mode #log-panel-waybills .btn-edit,
-body.staff-mode #log-panel-waybills .btn-del { display:inline-flex !important; }
+/* NOTE (2026-07): a stale "Staff CRUD exceptions: full access pages" block
+   used to live here, re-enabling .btn-edit/.btn-del (WITH delete, no less)
+   for #page-machinemonitoring, #page-goodsreceived, #page-stocktransfers,
+   #page-pulloutreceipts, #page-transmittalreceipts, #page-inventoryreport,
+   #page-purchasereport, #log-panel-sites, #log-panel-waybills — via ID
+   selectors, which beat every later body.staff-mode override below on
+   specificity alone, regardless of source order. That silently undid both
+   the "Staff can edit but not delete on Documents pages" fix AND the
+   "Documents means only the sidebar Documents group" narrowing (it kept
+   Machine Monitoring and Goods Received fully editable for Staff even
+   though neither is a Documents module). Removed outright — the correct,
+   current rules are the body.staff-mode blocks below this comment. */
 /* Staff topbar badge */
 .staff-viewonly-badge {
   display:none;
@@ -544,13 +523,26 @@ body.viewer-mode .ac-task-edit,
 body.viewer-mode .ac-task-del,
 body.viewer-mode .ac-sum-edit,
 body.viewer-mode .ac-sum-del,
-body.viewer-mode .line-notify-btn { display:none !important; }
+body.viewer-mode .line-notify-btn,
+/* Row-level action buttons that aren't plain .btn-edit/.btn-del but still
+   let Viewer trigger a write or an extra function: Upload SI, "Notify
+   Supplier" (sends an email), "Copy" (duplicates a record into a new one),
+   and "Items" (opens an edit-capable line-items modal). Marked with
+   .act-hide-viewer at each call site since the shared .page-act-btn class
+   also covers plain pagination controls that Viewer must keep. */
+body.viewer-mode .act-hide-viewer { display:none !important; }
 
 /* Staff mode — read-only everywhere by default (same lockdown as Viewer),
-   EXCEPT on the "Documents" pages (Purchase Orders, Suppliers, CI/PL,
-   Stock Transfers, Pullout Receipts, Transmittal Receipts, Logistics,
-   Supplier Quotations) where Staff gets full CRUD + file management —
-   see the override block right below this one. */
+   EXCEPT on the "Documents" pages — this must match the app's own sidebar
+   "Documents" nav group EXACTLY: Stock Transfers (Delivery Receipts),
+   Pullout Receipts, Transmittal Receipts, CI/PL. Where Staff gets full
+   CRUD + file management — see the override block right below this one.
+   Purchase Orders, Suppliers, Logistics, and Supplier Quotations live in
+   other nav groups (Procurement / standalone), so despite having file
+   uploads they are NOT "Documents" here — Staff is read-only there like
+   any other business module. (2026-07 clarified with product owner:
+   "Documents" means the literal Documents section, not "has a file
+   field".) */
 body.staff-mode .page-add-btn,
 body.staff-mode .btn-edit,
 body.staff-mode .btn-del,
@@ -564,21 +556,13 @@ body.staff-mode .ac-sum-edit,
 body.staff-mode .ac-sum-del,
 body.staff-mode .line-notify-btn { display:none !important; }
 
-/* Staff mode — re-enable full CRUD on the "Documents" pages only */
-body.staff-mode #page-purchaseorders .page-add-btn,
-body.staff-mode #page-suppliers .page-add-btn,
+/* Staff mode — re-enable full CRUD (including delete) on the "Documents"
+   pages only (2026-07 product decision: Staff's Documents access includes
+   delete, not just create/edit/upload). */
 body.staff-mode #page-cipl .page-add-btn,
 body.staff-mode #page-stocktransfers .page-add-btn,
 body.staff-mode #page-pulloutreceipts .page-add-btn,
-body.staff-mode #page-transmittalreceipts .page-add-btn,
-body.staff-mode #page-logistics .page-add-btn,
-body.staff-mode #page-supplierquotations .page-add-btn { display:flex !important; }
-body.staff-mode #page-purchaseorders .btn-edit,
-body.staff-mode #page-purchaseorders .btn-del,
-body.staff-mode #page-purchaseorders .page-act-btn,
-body.staff-mode #page-suppliers .btn-edit,
-body.staff-mode #page-suppliers .btn-del,
-body.staff-mode #page-suppliers .page-act-btn,
+body.staff-mode #page-transmittalreceipts .page-add-btn { display:flex !important; }
 body.staff-mode #page-cipl .btn-edit,
 body.staff-mode #page-cipl .btn-del,
 body.staff-mode #page-cipl .page-act-btn,
@@ -590,13 +574,16 @@ body.staff-mode #page-pulloutreceipts .btn-del,
 body.staff-mode #page-pulloutreceipts .page-act-btn,
 body.staff-mode #page-transmittalreceipts .btn-edit,
 body.staff-mode #page-transmittalreceipts .btn-del,
-body.staff-mode #page-transmittalreceipts .page-act-btn,
-body.staff-mode #page-logistics .btn-edit,
-body.staff-mode #page-logistics .btn-del,
-body.staff-mode #page-logistics .page-act-btn,
-body.staff-mode #page-supplierquotations .btn-edit,
-body.staff-mode #page-supplierquotations .btn-del,
-body.staff-mode #page-supplierquotations .page-act-btn { display:inline-block !important; }
+body.staff-mode #page-transmittalreceipts .page-act-btn { display:inline-block !important; }
+/* Purchase Orders and Goods Received are NOT "Documents" modules, so Staff
+   is read-only there — but each has extra action-only buttons (Items /
+   Notify Supplier / SI upload) that use just .page-act-btn + .act-hide-viewer
+   with no .btn-edit/.btn-del, so the base hide rules above don't catch them.
+   Hide those explicitly for staff-mode too. (Plain pagination buttons on
+   these pages carry only .page-act-btn with no .act-hide-viewer, so they
+   are unaffected by this selector and stay visible.) */
+body.staff-mode #page-purchaseorders .act-hide-viewer,
+body.staff-mode #page-goodsreceived .act-hide-viewer { display:none !important; }
 /* Viewer can never open/preview/download an attached file, anywhere
    (matches the backend gate on the /uploads static route). Staff and
    Admin/Manager keep normal clickable file links. */
@@ -4480,10 +4467,11 @@ function renderPO(){
   let rows=poData.filter(r=>(!q||(r.po_number||'').toLowerCase().includes(q)||(r.supplier||'').toLowerCase().includes(q))&&(!ft||r.status===ft));
   document.getElementById('po-meta').textContent=`Showing ${rows.length} of ${poData.length}`;
   document.getElementById('po-body').innerHTML=rows.map((r,i)=>{
+    const isViewerRow=currentUser&&currentUser.role==='Viewer';
     const siDateCell=`<td style="white-space:nowrap;min-width:130px">
-      <input type="date" value="${r.si_submitted_date||''}" title="Click to set SI submission date"
-        style="border:1px solid #ddd;border-radius:5px;padding:3px 6px;font-size:11.5px;cursor:pointer;background:${r.si_submitted_date?'#e8f5e9':'#fff'};color:${r.si_submitted_date?'#2e7d32':'#555'};width:118px"
-        onchange="saveSIDate(${r.id},this.value,this)">
+      <input type="date" value="${r.si_submitted_date||''}" title="${isViewerRow?'':'Click to set SI submission date'}"
+        style="border:1px solid #ddd;border-radius:5px;padding:3px 6px;font-size:11.5px;cursor:${isViewerRow?'default':'pointer'};background:${r.si_submitted_date?'#e8f5e9':'#fff'};color:${r.si_submitted_date?'#2e7d32':'#555'};width:118px"
+        ${isViewerRow?'disabled':''} onchange="saveSIDate(${r.id},this.value,this)">
     </td>`;
     const siName = r.si_file_name ? r.si_file_name.replace(/^\d+[-_]/,'') : '';
     const siFileCell=`<td style="text-align:center;min-width:110px;white-space:nowrap">
@@ -4500,7 +4488,7 @@ function renderPO(){
               <button class="page-act-btn btn-del" style="font-size:10px;padding:3px 7px;margin:0" title="Remove SI file" onclick="removeSIFile(${r.id})">🗑 Remove</button>
             </div>
           </div>`
-        :`<label class="page-act-btn" style="cursor:pointer;background:#fff7ed;color:#9a3412;border:1.5px dashed #c0844a;font-size:11px;padding:4px 10px;margin:0;display:inline-flex;align-items:center;gap:4px" title="Upload Sales Invoice">
+        :`<label class="page-act-btn act-hide-viewer" style="cursor:pointer;background:#fff7ed;color:#9a3412;border:1.5px dashed #c0844a;font-size:11px;padding:4px 10px;margin:0;display:inline-flex;align-items:center;gap:4px" title="Upload Sales Invoice">
             📎 Upload SI<input type="file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" style="display:none" onchange="uploadSIFile(${r.id},this)">
           </label>`
       }
@@ -4511,7 +4499,7 @@ function renderPO(){
         ?`<div style="font-size:10px;color:#dc2626;margin-top:3px;cursor:help" title="${(r.email_error||'').replace(/"/g,'')}">⚠️ Email failed</div>`
         :'';
     return `<tr><td>${i+1}</td><td><strong>${r.po_number}</strong></td><td>${r.supplier}</td><td>${r.order_date||'—'}</td><td>${badge(r.status)}${emailBadge}</td><td>${fmt(r.total_amount)}</td><td>${fileLink(r)}</td>${siDateCell}${siFileCell}
-    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPOModal(${r.id})">Edit</button><button class="page-act-btn" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe" onclick="openPOItemsModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">📋 Items</button><button class="page-act-btn btn-del" onclick="openPODelModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">Del</button>${r.status==='Approved'&&!r.si_file_name?`<button class="page-act-btn" style="background:linear-gradient(135deg,#6b2e0a,#a0522d);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600" onclick="notifyPOSupplier(${r.id})">✉ Notify Supplier</button>`:''}</td></tr>`;
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPOModal(${r.id})">Edit</button><button class="page-act-btn act-hide-viewer" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe" onclick="openPOItemsModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">📋 Items</button><button class="page-act-btn btn-del" onclick="openPODelModal(${r.id},'${(r.po_number||'').replace(/'/g,"\\'")}')">Del</button>${r.status==='Approved'&&!r.si_file_name?`<button class="page-act-btn act-hide-viewer" style="background:linear-gradient(135deg,#6b2e0a,#a0522d);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600" onclick="notifyPOSupplier(${r.id})">✉ Notify Supplier</button>`:''}</td></tr>`;
   }).join('')||'<tr><td colspan="10"><div class="no-results">No purchase orders.</div></td></tr>';
 }
 async function saveSIDate(id,val,inputEl){
@@ -4788,7 +4776,7 @@ function renderGR(){
   const rows=q?grData.filter(r=>(r.gr_number||'').toLowerCase().includes(q)||(r.supplier||'').toLowerCase().includes(q)):grData;
   document.getElementById('gr-meta').textContent=`Showing ${rows.length} of ${grData.length}`;
   document.getElementById('gr-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.gr_number}</strong></td><td>${r.po_number||'—'}</td><td>${r.supplier}</td><td>${r.received_date||'—'}</td><td>${r.received_by||'—'}</td><td>${r.total_items||0}</td><td>${badge(r.status)}</td>
-    <td><button class="page-act-btn btn-edit" onclick="openGRModal(${r.id})">Edit</button><button class="page-act-btn" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe" onclick="openDocItemsModal('gr',${r.id},'${(r.gr_number||'').replace(/'/g,"\\'")}')">📋 Items</button><button class="page-act-btn btn-del" onclick="openGRDelModal(${r.id},'${(r.gr_number||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="9"><div class="no-results">No records.</div></td></tr>';
+    <td><button class="page-act-btn btn-edit" onclick="openGRModal(${r.id})">Edit</button><button class="page-act-btn act-hide-viewer" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe" onclick="openDocItemsModal('gr',${r.id},'${(r.gr_number||'').replace(/'/g,"\\'")}')">📋 Items</button><button class="page-act-btn btn-del" onclick="openGRDelModal(${r.id},'${(r.gr_number||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="9"><div class="no-results">No records.</div></td></tr>';
 }
 function generateGRNumber(){const maxSeq=grData.reduce((m,r)=>{const s=parseInt((r.gr_number||'').split('-').pop())||0;return Math.max(m,s);},0);const next=String(maxSeq+1).padStart(4,'0');const now=new Date();const mm=String(now.getMonth()+1).padStart(2,'0');const dd=String(now.getDate()).padStart(2,'0');const yyyy=now.getFullYear();return `GR${mm}${dd}${yyyy}-${next}`;}
 function openGRModal(id=null){ensureSupplierDatalist();grEditId=id;const r=id?grData.find(x=>x.id===id):null;document.getElementById('gr-modal-title').textContent=id?'Edit GR':'Add Goods Received';const grInput=document.getElementById('gr-f-grno');grInput.value=r?r.gr_number:generateGRNumber();grInput.readOnly=!id;grInput.style.background=id?'':'var(--hover)';grInput.style.cursor=id?'':'default';const poSel=document.getElementById('gr-f-pono');const usedPOs=new Set(grData.filter(g=>g.id!==id&&g.po_number).map(g=>g.po_number));const availPOs=(poData||[]).filter(p=>!usedPOs.has(p.po_number));poSel.innerHTML='<option value="">-- Select PO (optional) --</option>'+availPOs.map(p=>`<option value="${p.po_number}">${p.po_number} — ${p.supplier}</option>`).join('');poSel.value=r?(r.po_number||''):'';document.getElementById('gr-f-supplier').value=r?r.supplier:'';document.getElementById('gr-f-date').value=r?(r.received_date||''):'';document.getElementById('gr-f-by').value=r?r.received_by:'';document.getElementById('gr-f-items').value=r?r.total_items:0;document.getElementById('gr-f-status').value=r?r.status:'Pending';
@@ -4831,7 +4819,7 @@ function renderST(){
     <td>${badge(r.status)}</td>
     <td>${r.transferred_by||'—'}</td>
     <td>${fileLink(r)}</td>
-    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openSTModal(${r.id})">Edit</button><button class="page-act-btn" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe" onclick="openDocItemsModal('transfer',${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">📋 Items</button><button class="page-act-btn btn-del" onclick="openSTDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td>
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openSTModal(${r.id})">Edit</button><button class="page-act-btn act-hide-viewer" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe" onclick="openDocItemsModal('transfer',${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">📋 Items</button><button class="page-act-btn btn-del" onclick="openSTDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td>
   </tr>`).join('')||'<tr><td colspan="10"><div class="no-results">No transfers.</div></td></tr>';
   // pagination controls
   const pg=document.getElementById('st-pagination');
@@ -4869,7 +4857,7 @@ function renderPull(){
   const rows=q?pullData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)||(r.pulled_out_by||'').toLowerCase().includes(q)||(r.prepared_by||'').toLowerCase().includes(q)||(r.returned_by||'').toLowerCase().includes(q)||(r.witnessed_by||'').toLowerCase().includes(q)):pullData;
   document.getElementById('pull-meta').textContent=`Showing ${rows.length} of ${pullData.length}`;
   document.getElementById('pull-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_description||'—'}</td><td>${badge(r.status)}</td><td>${r.pulled_out_by||'—'}</td><td>${r.prepared_by||'—'}</td><td>${r.returned_by||'—'}</td><td>${r.witnessed_by||'—'}</td><td>${fileLink(r)}</td>
-    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPullModal(${r.id})">Edit</button><button class="page-act-btn" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe" onclick="openDocItemsModal('pullout',${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">📋 Items</button><button class="page-act-btn" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0" title="Copy this record into a new one" onclick="copyPullAsNew(${r.id})">📑 Copy</button><button class="page-act-btn btn-del" onclick="openPullDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="13"><div class="no-results">No pullout receipts.</div></td></tr>';
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openPullModal(${r.id})">Edit</button><button class="page-act-btn act-hide-viewer" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe" onclick="openDocItemsModal('pullout',${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">📋 Items</button><button class="page-act-btn act-hide-viewer" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0" title="Copy this record into a new one" onclick="copyPullAsNew(${r.id})">📑 Copy</button><button class="page-act-btn btn-del" onclick="openPullDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="13"><div class="no-results">No pullout receipts.</div></td></tr>';
 }
 // Copy an existing Pullout Receipt into a new blank record — pre-fills From/To,
 // Items Description and the 4 signatory names (usually the same people each
@@ -5018,7 +5006,7 @@ function renderTrmit(){
   const rows=q?trmitData.filter(r=>(r.transfer_no||'').toLowerCase().includes(q)||(r.source_location||'').toLowerCase().includes(q)||(r.destination_location||'').toLowerCase().includes(q)||(r.turned_over_by||'').toLowerCase().includes(q)||(r.received_by||'').toLowerCase().includes(q)):trmitData;
   document.getElementById('trmit-meta').textContent=`Showing ${rows.length} of ${trmitData.length}`;
   document.getElementById('trmit-body').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${r.transfer_no}</strong></td><td>${r.source_location}</td><td>${r.destination_location}</td><td>${r.transfer_date||'—'}</td><td>${r.items_description||'—'}</td><td>${badge(r.status)}</td><td>${r.turned_over_by||'—'}</td><td>${r.received_by||'—'}</td><td>${r.witnessed_by||'—'}</td><td>${r.noted_by||'—'}</td><td>${fileLink(r)}</td>
-    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openTrmitModal(${r.id})">Edit</button><button class="page-act-btn" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0" title="Copy this record into a new one" onclick="copyTrmitAsNew(${r.id})">📑 Copy</button><button class="page-act-btn btn-del" onclick="openTrmitDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="13"><div class="no-results">No transmittal receipts.</div></td></tr>';
+    <td style="white-space:nowrap"><button class="page-act-btn btn-edit" onclick="openTrmitModal(${r.id})">Edit</button><button class="page-act-btn act-hide-viewer" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0" title="Copy this record into a new one" onclick="copyTrmitAsNew(${r.id})">📑 Copy</button><button class="page-act-btn btn-del" onclick="openTrmitDelModal(${r.id},'${(r.transfer_no||'').replace(/'/g,"\\'")}')">Del</button></td></tr>`).join('')||'<tr><td colspan="13"><div class="no-results">No transmittal receipts.</div></td></tr>';
 }
 // Copy an existing Transmittal Receipt into a new blank record — see copyPullAsNew() above for rationale.
 function copyTrmitAsNew(id){

@@ -18,10 +18,13 @@ const { dbPromise } = require('../database');
 const { requireAuth, requireWrite } = require('../middleware/auth');
 const router        = express.Router();
 
-// Supplier Quotations is a "Documents" module: Admin/Manager/Staff get
-// full CRUD + file management; Viewer is read-only.
+// Supplier Quotations is in the "Procurement" nav group, NOT "Documents"
+// (2026-07 clarified with product owner: "Documents" means only the
+// literal Documents section — Stock Transfers/Pullout/Transmittal/CI-PL —
+// not "any module with a file field"). Staff is read-only here just like
+// any other non-Documents business module; only Admin/Manager may write.
 router.use('/supplier-quotations', requireAuth);
-const writeGate = requireWrite(true);
+const writeGate = requireWrite(false);
 
 // ── File upload setup ────────────────────────────────────────────
 const UPLOAD_DIR = path.join(__dirname, '../uploads/supplier-quotations');
