@@ -7,14 +7,13 @@ const { requireAuth, requireWrite } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Logistics is a standalone nav item, NOT part of the "Documents" sidebar
-// group (2026-07 clarified with product owner: "Documents" means only the
-// literal Documents section — Stock Transfers/Pullout/Transmittal/CI-PL —
-// not "any module with a file field"). So Staff is read-only here just like
-// any other non-Documents business module; only Admin/Manager may write.
-// Must be logged in just to view.
+// Logistics (covers all 4 tabs: Trucking, Manpower, Sites Activity,
+// Waybills — they share this one router/writeGate) is NOT part of the
+// literal "Documents" sidebar group, but Staff gets full CRUD here anyway
+// per an explicit 2026-07 product decision to grant Staff full access on
+// Logistics/Waybills specifically. Must be logged in just to view.
 router.use('/logistics', requireAuth);
-const writeGate = requireWrite(false);
+const writeGate = requireWrite(true);
 
 // ── Upload directory ──────────────────────────────────────────
 const UPLOAD_DIR = path.join(__dirname, '../uploads/logistics');

@@ -557,12 +557,17 @@ body.staff-mode .ac-sum-del,
 body.staff-mode .line-notify-btn { display:none !important; }
 
 /* Staff mode — re-enable full CRUD (including delete) on the "Documents"
-   pages only (2026-07 product decision: Staff's Documents access includes
-   delete, not just create/edit/upload). */
+   pages (2026-07 product decision: Staff's Documents access includes
+   delete, not just create/edit/upload), plus Logistics (all 4 tabs —
+   Trucking/Manpower/Sites Activity/Waybills — live inside #page-logistics,
+   so this one selector covers them all, including Waybills specifically;
+   2026-07 product decision to grant Staff full access there too, even
+   though Logistics isn't in the literal Documents nav group). */
 body.staff-mode #page-cipl .page-add-btn,
 body.staff-mode #page-stocktransfers .page-add-btn,
 body.staff-mode #page-pulloutreceipts .page-add-btn,
-body.staff-mode #page-transmittalreceipts .page-add-btn { display:flex !important; }
+body.staff-mode #page-transmittalreceipts .page-add-btn,
+body.staff-mode #page-logistics .page-add-btn { display:flex !important; }
 body.staff-mode #page-cipl .btn-edit,
 body.staff-mode #page-cipl .btn-del,
 body.staff-mode #page-cipl .page-act-btn,
@@ -574,7 +579,10 @@ body.staff-mode #page-pulloutreceipts .btn-del,
 body.staff-mode #page-pulloutreceipts .page-act-btn,
 body.staff-mode #page-transmittalreceipts .btn-edit,
 body.staff-mode #page-transmittalreceipts .btn-del,
-body.staff-mode #page-transmittalreceipts .page-act-btn { display:inline-block !important; }
+body.staff-mode #page-transmittalreceipts .page-act-btn,
+body.staff-mode #page-logistics .btn-edit,
+body.staff-mode #page-logistics .btn-del,
+body.staff-mode #page-logistics .page-act-btn { display:inline-block !important; }
 /* Purchase Orders and Goods Received are NOT "Documents" modules, so Staff
    is read-only there — but each has extra action-only buttons (Items /
    Notify Supplier / SI upload) that use just .page-act-btn + .act-hide-viewer
