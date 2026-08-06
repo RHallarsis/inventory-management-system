@@ -1,5 +1,5 @@
 'use strict';
-// deploy: 2026-06-11 force redeploy
+// deploy: 2026-08-06 force redeploy (test GitHub App reconnect to Perception-Gaming-Inc org)
 
 process.on('uncaughtException',  err    => console.error('[CRASH] uncaughtException:',  err.stack || err.message));
 process.on('unhandledRejection', reason => console.error('[CRASH] unhandledRejection:', reason));
